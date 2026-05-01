@@ -12,25 +12,27 @@ import { DocumentWorkspace } from "@/features/editor/components/DocumentWorkspac
 import { EditorToolbar } from "@/features/editor/components/EditorToolbar";
 import { PagesSidebar } from "@/features/editor/components/PagesSidebar";
 import type {
+  PdfRect,
   TextOverlay,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
 import { useEditorOverlays } from "@/features/editor/hooks/useEditorOverlays";
 import { defaultTextOverlay } from "@/features/editor/lib/overlay-defaults";
-import { createDefaultOverlayRect } from "@/features/editor/lib/overlay-coordinate-utils";
 import type { PageSize } from "@/features/pdf/components/PdfPageView";
 import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
 
 const minZoom = 0.5;
 const maxZoom = 2;
 const zoomStep = 0.1;
+type ActiveTool = "text" | null;
 
 function AppShell() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
-  const [pageSizes, setPageSizes] = useState<Record<number, PageSize>>({});
+  const [activeTool, setActiveTool] = useState<ActiveTool>(null);
+  const [, setPageSizes] = useState<Record<number, PageSize>>({});
   const [textDefaults, setTextDefaults] = useState(defaultTextOverlay);
   const [zoom, setZoom] = useState(1);
   const {
@@ -121,6 +123,7 @@ function AppShell() {
 
     setCurrentPage(1);
     setEditingOverlayId(null);
+    setActiveTool(null);
     setPageSizes({});
     void openFile(file);
   };
@@ -136,18 +139,20 @@ function AppShell() {
   );
 
   const handleTextToolClick = () => {
-    const pageSize = pageSizes[currentPage];
+    setActiveTool((currentTool) => (currentTool === "text" ? null : "text"));
+    setEditingOverlayId(null);
+  };
 
-    if (!pageSize) {
-      return;
-    }
-
-    addOverlay({
+  const handlePlaceTextOverlay = (pageNumber: number, rect: PdfRect) => {
+    setCurrentPage(pageNumber);
+    const overlay = addOverlay({
       ...textDefaults,
-      pageNumber: currentPage,
-      rect: createDefaultOverlayRect(pageSize),
+      pageNumber,
+      rect,
       type: "text",
     });
+    setActiveTool(null);
+    setEditingOverlayId(overlay.id);
   };
 
   const handleTextSettingsChange = (patch: TextOverlayPatch) => {
@@ -215,6 +220,7 @@ function AppShell() {
         <EditorToolbar
           fileName={loadedDocument?.fileName ?? null}
           isDark={isDark}
+          isTextToolActive={activeTool === "text"}
           onOpenFile={handleOpenFileDialog}
           onTextSettingsChange={handleTextSettingsChange}
           onTextSettingsReset={handleTextSettingsReset}
@@ -237,10 +243,12 @@ function AppShell() {
             document={loadedDocument}
             editingOverlayId={editingOverlayId}
             error={error}
+            isTextToolActive={activeTool === "text"}
             onClearSelection={handleClearSelection}
             onEditOverlay={setEditingOverlayId}
             onOpenFile={handleOpenFileDialog}
             onPageSizeChange={handlePageSizeChange}
+            onPlaceTextOverlay={handlePlaceTextOverlay}
             onSelectOverlay={handleSelectOverlay}
             onUpdateTextOverlay={updateTextOverlay}
             onUpdateOverlayRect={updateOverlayRect}

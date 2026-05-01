@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   createDefaultOverlayRect,
+  createOverlayRectAtPoint,
   pdfRectToViewportRect,
   viewportRectToPdfRect,
 } from "@/features/editor/lib/overlay-coordinate-utils";
@@ -25,6 +26,28 @@ describe("overlay-coordinate-utils", () => {
       width: 140,
       x: 72,
       y: 96,
+    });
+  });
+
+  it("creates a default overlay rect with the point at the middle-left edge", () => {
+    expect(
+      createOverlayRectAtPoint({ x: 50, y: 75 }, { height: 800, width: 600 }),
+    ).toEqual({
+      height: 32,
+      width: 140,
+      x: 50,
+      y: 59,
+    });
+  });
+
+  it("keeps a point-created overlay rect inside the page", () => {
+    expect(
+      createOverlayRectAtPoint({ x: 590, y: 4 }, { height: 800, width: 600 }),
+    ).toEqual({
+      height: 32,
+      width: 140,
+      x: 460,
+      y: 0,
     });
   });
 });

@@ -16,10 +16,12 @@ type DocumentWorkspaceProps = {
   document: LoadedPdfDocument | null;
   editingOverlayId: string | null;
   error: string | null;
+  isTextToolActive: boolean;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
   onOpenFile: () => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
+  onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
@@ -33,10 +35,12 @@ function DocumentWorkspace({
   document,
   editingOverlayId,
   error,
+  isTextToolActive,
   onClearSelection,
   onEditOverlay,
   onOpenFile,
   onPageSizeChange,
+  onPlaceTextOverlay,
   onSelectOverlay,
   onUpdateTextOverlay,
   onUpdateOverlayRect,
@@ -64,9 +68,11 @@ function DocumentWorkspace({
         <PdfDocumentView
           document={document}
           editingOverlayId={editingOverlayId}
+          isTextToolActive={isTextToolActive}
           onClearSelection={onClearSelection}
           onEditOverlay={onEditOverlay}
           onPageSizeChange={onPageSizeChange}
+          onPlaceTextOverlay={onPlaceTextOverlay}
           onSelectOverlay={onSelectOverlay}
           onUpdateTextOverlay={onUpdateTextOverlay}
           onUpdateOverlayRect={onUpdateOverlayRect}

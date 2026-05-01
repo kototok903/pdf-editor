@@ -10,9 +10,11 @@ import type { PDFDocumentProxy } from "@/features/pdf/pdf-types";
 
 type PdfPageViewProps = {
   editingOverlayId: string | null;
+  isTextToolActive: boolean;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
+  onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
@@ -30,9 +32,11 @@ type PageSize = {
 
 function PdfPageView({
   editingOverlayId,
+  isTextToolActive,
   onClearSelection,
   onEditOverlay,
   onPageSizeChange,
+  onPlaceTextOverlay,
   onSelectOverlay,
   onUpdateTextOverlay,
   onUpdateOverlayRect,
@@ -148,8 +152,10 @@ function PdfPageView({
       {pageSize && (
         <OverlayLayer
           editingOverlayId={editingOverlayId}
+          isTextToolActive={isTextToolActive}
           onClearSelection={onClearSelection}
           onEditOverlay={onEditOverlay}
+          onPlaceTextOverlay={onPlaceTextOverlay}
           onSelectOverlay={onSelectOverlay}
           onUpdateTextOverlay={onUpdateTextOverlay}
           onUpdateOverlayRect={onUpdateOverlayRect}

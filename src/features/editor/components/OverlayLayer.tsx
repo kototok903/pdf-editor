@@ -7,14 +7,17 @@ import type {
 } from "@/features/editor/editor-types";
 import { OverlayBox } from "@/features/editor/components/OverlayBox";
 import {
+  createOverlayRectAtPoint,
   pdfRectToViewportRect,
   viewportRectToPdfRect,
 } from "@/features/editor/lib/overlay-coordinate-utils";
 
 type OverlayLayerProps = {
   editingOverlayId: string | null;
+  isTextToolActive: boolean;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
+  onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
@@ -26,8 +29,10 @@ type OverlayLayerProps = {
 
 function OverlayLayer({
   editingOverlayId,
+  isTextToolActive,
   onClearSelection,
   onEditOverlay,
+  onPlaceTextOverlay,
   onSelectOverlay,
   onUpdateTextOverlay,
   onUpdateOverlayRect,
@@ -42,9 +47,32 @@ function OverlayLayer({
 
   return (
     <div
-      className="absolute inset-0"
+      className={
+        isTextToolActive ? "absolute inset-0 cursor-text" : "absolute inset-0"
+      }
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) {
+          if (isTextToolActive) {
+            const bounds = event.currentTarget.getBoundingClientRect();
+            const pageSize = {
+              height: bounds.height / scale,
+              width: bounds.width / scale,
+            };
+
+            event.preventDefault();
+            onPlaceTextOverlay(
+              pageNumber,
+              createOverlayRectAtPoint(
+                {
+                  x: (event.clientX - bounds.left) / scale,
+                  y: (event.clientY - bounds.top) / scale,
+                },
+                pageSize,
+              ),
+            );
+            return;
+          }
+
           onClearSelection();
           onEditOverlay(null);
         }
@@ -111,6 +139,7 @@ function OverlayLayer({
             position={{ x: viewportRect.x, y: viewportRect.y }}
             resizeHandleStyles={isSelected ? resizeHandleStyles : undefined}
             size={{ height: viewportRect.height, width: viewportRect.width }}
+            style={isTextToolActive ? inactiveOverlayStyle : undefined}
           >
             <OverlayBox
               isEditing={isEditing}
@@ -134,6 +163,10 @@ const handleStyle = {
   height: "8px",
   width: "8px",
 };
+
+const inactiveOverlayStyle = {
+  pointerEvents: "none",
+} as const;
 
 const resizeHandleStyles = {
   bottom: handleStyle,

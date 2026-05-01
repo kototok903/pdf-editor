@@ -53,6 +53,7 @@ type EditorToolbarProps = {
   fileName: string | null;
   isDark: boolean;
   isTextSettingsDefault: boolean;
+  isTextToolActive: boolean;
   onOpenFile: () => void;
   onTextSettingsChange: (patch: TextOverlayPatch) => void;
   onTextSettingsReset: () => void;
@@ -77,6 +78,7 @@ function EditorToolbar({
   fileName,
   isDark,
   isTextSettingsDefault,
+  isTextToolActive,
   onOpenFile,
   onTextSettingsChange,
   onTextSettingsReset,
@@ -151,6 +153,7 @@ function EditorToolbar({
         <TextToolButton
           disabled={!hasPdf}
           isDefault={isTextSettingsDefault}
+          isSelected={isTextToolActive}
           onSettingsChange={onTextSettingsChange}
           onSettingsReset={onTextSettingsReset}
           onTextToolClick={onTextToolClick}
@@ -264,6 +267,7 @@ function EditorToolbar({
 function TextToolButton({
   disabled,
   isDefault,
+  isSelected,
   onSettingsChange,
   onSettingsReset,
   onTextToolClick,
@@ -271,6 +275,7 @@ function TextToolButton({
 }: {
   disabled: boolean;
   isDefault: boolean;
+  isSelected: boolean;
   onSettingsChange: (patch: TextOverlayPatch) => void;
   onSettingsReset: () => void;
   onTextToolClick: () => void;
@@ -285,7 +290,7 @@ function TextToolButton({
         onClick={onTextToolClick}
         size="sm"
         type="button"
-        variant="toolbar-active"
+        variant={isSelected ? "toolbar-active" : "toolbar"}
       >
         <TypeIcon aria-hidden="true" />
       </Button>
@@ -297,7 +302,7 @@ function TextToolButton({
             disabled={disabled}
             size="sm"
             type="button"
-            variant="toolbar-active"
+            variant={isSelected ? "toolbar-active" : "toolbar"}
           >
             <ChevronDownIcon aria-hidden="true" />
           </Button>

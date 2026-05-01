@@ -10,9 +10,11 @@ import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 type PdfDocumentViewProps = {
   document: LoadedPdfDocument;
   editingOverlayId: string | null;
+  isTextToolActive: boolean;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
+  onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
@@ -24,9 +26,11 @@ type PdfDocumentViewProps = {
 function PdfDocumentView({
   document,
   editingOverlayId,
+  isTextToolActive,
   onClearSelection,
   onEditOverlay,
   onPageSizeChange,
+  onPlaceTextOverlay,
   onSelectOverlay,
   onUpdateTextOverlay,
   onUpdateOverlayRect,
@@ -39,10 +43,12 @@ function PdfDocumentView({
       {Array.from({ length: document.pageCount }, (_, index) => (
         <PdfPageView
           editingOverlayId={editingOverlayId}
+          isTextToolActive={isTextToolActive}
           key={index + 1}
           onClearSelection={onClearSelection}
           onEditOverlay={onEditOverlay}
           onPageSizeChange={onPageSizeChange}
+          onPlaceTextOverlay={onPlaceTextOverlay}
           onSelectOverlay={onSelectOverlay}
           onUpdateTextOverlay={onUpdateTextOverlay}
           onUpdateOverlayRect={onUpdateOverlayRect}
