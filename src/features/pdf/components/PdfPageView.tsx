@@ -1,0 +1,122 @@
+import { useEffect, useRef, useState } from "react";
+
+import type { PDFDocumentProxy } from "@/features/pdf/pdf-types";
+
+type PdfPageViewProps = {
+  pageNumber: number;
+  pdfDocument: PDFDocumentProxy;
+  scale: number;
+};
+
+type PageSize = {
+  height: number;
+  width: number;
+};
+
+function PdfPageView({ pageNumber, pdfDocument, scale }: PdfPageViewProps) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isRendering, setIsRendering] = useState(true);
+  const [pageSize, setPageSize] = useState<PageSize | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    let isCancelled = false;
+    let renderTask: { cancel: () => void; promise: Promise<void> } | null =
+      null;
+
+    if (!canvas) {
+      return;
+    }
+
+    const canvasElement = canvas;
+
+    setError(null);
+    setIsRendering(true);
+
+    async function renderPage() {
+      try {
+        const page = await pdfDocument.getPage(pageNumber);
+
+        if (isCancelled) {
+          return;
+        }
+
+        const viewport = page.getViewport({ scale });
+        const outputScale = window.devicePixelRatio || 1;
+        const canvasContext = canvasElement.getContext("2d");
+
+        if (!canvasContext) {
+          throw new Error("Canvas rendering is not supported in this browser.");
+        }
+
+        canvasElement.width = Math.floor(viewport.width * outputScale);
+        canvasElement.height = Math.floor(viewport.height * outputScale);
+        canvasElement.style.width = `${viewport.width}px`;
+        canvasElement.style.height = `${viewport.height}px`;
+        setPageSize({ height: viewport.height, width: viewport.width });
+
+        renderTask = page.render({
+          canvas: canvasElement,
+          canvasContext,
+          transform:
+            outputScale === 1
+              ? undefined
+              : [outputScale, 0, 0, outputScale, 0, 0],
+          viewport,
+        });
+
+        await renderTask.promise;
+
+        if (!isCancelled) {
+          setIsRendering(false);
+        }
+      } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+
+        if (
+          error instanceof Error &&
+          error.name === "RenderingCancelledException"
+        ) {
+          return;
+        }
+
+        setError("Unable to render this page.");
+        setIsRendering(false);
+      }
+    }
+
+    void renderPage();
+
+    return () => {
+      isCancelled = true;
+      renderTask?.cancel();
+    };
+  }, [pageNumber, pdfDocument, scale]);
+
+  return (
+    <article
+      className="relative mx-auto overflow-hidden border bg-page text-page-foreground shadow-page"
+      style={{
+        minHeight: pageSize?.height,
+        width: pageSize?.width ?? 430,
+      }}
+    >
+      {isRendering && (
+        <div className="absolute inset-0 grid place-items-center bg-page text-xs text-slate-500">
+          Rendering page {pageNumber}
+        </div>
+      )}
+      {error && (
+        <div className="absolute inset-0 grid place-items-center bg-page px-6 text-center text-sm text-red-700">
+          {error}
+        </div>
+      )}
+      <canvas ref={canvasRef} />
+    </article>
+  );
+}
+
+export { PdfPageView };
