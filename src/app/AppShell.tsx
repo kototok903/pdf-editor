@@ -1,9 +1,18 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DocumentWorkspace } from "@/features/editor/components/DocumentWorkspace";
 import { EditorToolbar } from "@/features/editor/components/EditorToolbar";
 import { PagesSidebar } from "@/features/editor/components/PagesSidebar";
+import { useEditorOverlays } from "@/features/editor/hooks/useEditorOverlays";
+import { createDefaultOverlayRect } from "@/features/editor/lib/overlay-coordinate-utils";
+import type { PageSize } from "@/features/pdf/components/PdfPageView";
 import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
 
 const minZoom = 0.5;
@@ -14,7 +23,16 @@ function AppShell() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isDark, setIsDark] = useState(false);
+  const [pageSizes, setPageSizes] = useState<Record<number, PageSize>>({});
   const [zoom, setZoom] = useState(1);
+  const {
+    addOverlay,
+    clearSelection,
+    overlays,
+    selectOverlay,
+    selectedOverlayId,
+    updateOverlayRect,
+  } = useEditorOverlays();
   const {
     document: loadedDocument,
     error,
@@ -39,7 +57,32 @@ function AppShell() {
     }
 
     setCurrentPage(1);
+    setPageSizes({});
     void openFile(file);
+  };
+
+  const handlePageSizeChange = useCallback(
+    (pageNumber: number, pageSize: PageSize) => {
+      setPageSizes((currentPageSizes) => ({
+        ...currentPageSizes,
+        [pageNumber]: pageSize,
+      }));
+    },
+    [],
+  );
+
+  const handleTextToolClick = () => {
+    const pageSize = pageSizes[currentPage];
+
+    if (!pageSize) {
+      return;
+    }
+
+    addOverlay({
+      pageNumber: currentPage,
+      rect: createDefaultOverlayRect(pageSize),
+      type: "text",
+    });
   };
 
   const handleZoomIn = () => {
@@ -68,6 +111,7 @@ function AppShell() {
           fileName={loadedDocument?.fileName ?? null}
           isDark={isDark}
           onOpenFile={handleOpenFileDialog}
+          onTextToolClick={handleTextToolClick}
           onToggleTheme={() => setIsDark(!isDark)}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
@@ -83,7 +127,13 @@ function AppShell() {
           <DocumentWorkspace
             document={loadedDocument}
             error={error}
+            onClearSelection={clearSelection}
             onOpenFile={handleOpenFileDialog}
+            onPageSizeChange={handlePageSizeChange}
+            onSelectOverlay={selectOverlay}
+            onUpdateOverlayRect={updateOverlayRect}
+            overlays={overlays}
+            selectedOverlayId={selectedOverlayId}
             status={status}
             zoom={zoom}
           />

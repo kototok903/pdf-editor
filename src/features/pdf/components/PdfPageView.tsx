@@ -1,11 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 
+import { OverlayLayer } from "@/features/editor/components/OverlayLayer";
+import type { EditorOverlay, PdfRect } from "@/features/editor/editor-types";
 import type { PDFDocumentProxy } from "@/features/pdf/pdf-types";
 
 type PdfPageViewProps = {
+  onClearSelection: () => void;
+  onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
+  onSelectOverlay: (overlayId: string) => void;
+  onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
+  overlays: EditorOverlay[];
   pageNumber: number;
   pdfDocument: PDFDocumentProxy;
   scale: number;
+  selectedOverlayId: string | null;
 };
 
 type PageSize = {
@@ -13,7 +21,17 @@ type PageSize = {
   width: number;
 };
 
-function PdfPageView({ pageNumber, pdfDocument, scale }: PdfPageViewProps) {
+function PdfPageView({
+  onClearSelection,
+  onPageSizeChange,
+  onSelectOverlay,
+  onUpdateOverlayRect,
+  overlays,
+  pageNumber,
+  pdfDocument,
+  scale,
+  selectedOverlayId,
+}: PdfPageViewProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRendering, setIsRendering] = useState(true);
@@ -54,7 +72,9 @@ function PdfPageView({ pageNumber, pdfDocument, scale }: PdfPageViewProps) {
         canvasElement.height = Math.floor(viewport.height * outputScale);
         canvasElement.style.width = `${viewport.width}px`;
         canvasElement.style.height = `${viewport.height}px`;
-        setPageSize({ height: viewport.height, width: viewport.width });
+        const nextPageSize = { height: viewport.height, width: viewport.width };
+        setPageSize(nextPageSize);
+        onPageSizeChange(pageNumber, nextPageSize);
 
         renderTask = page.render({
           canvas: canvasElement,
@@ -94,7 +114,7 @@ function PdfPageView({ pageNumber, pdfDocument, scale }: PdfPageViewProps) {
       isCancelled = true;
       renderTask?.cancel();
     };
-  }, [pageNumber, pdfDocument, scale]);
+  }, [onPageSizeChange, pageNumber, pdfDocument, scale]);
 
   return (
     <article
@@ -115,8 +135,20 @@ function PdfPageView({ pageNumber, pdfDocument, scale }: PdfPageViewProps) {
         </div>
       )}
       <canvas ref={canvasRef} />
+      {pageSize && (
+        <OverlayLayer
+          onClearSelection={onClearSelection}
+          onSelectOverlay={onSelectOverlay}
+          onUpdateOverlayRect={onUpdateOverlayRect}
+          overlays={overlays}
+          pageNumber={pageNumber}
+          scale={scale}
+          selectedOverlayId={selectedOverlayId}
+        />
+      )}
     </article>
   );
 }
 
 export { PdfPageView };
+export type { PageSize };

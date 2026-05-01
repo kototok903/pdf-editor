@@ -1,5 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import type { EditorOverlay, PdfRect } from "@/features/editor/editor-types";
 import { PdfDocumentView } from "@/features/pdf/components/PdfDocumentView";
+import type { PageSize } from "@/features/pdf/components/PdfPageView";
 import { PdfUploadEmptyState } from "@/features/pdf/components/PdfUploadEmptyState";
 import type {
   LoadedPdfDocument,
@@ -9,7 +11,13 @@ import type {
 type DocumentWorkspaceProps = {
   document: LoadedPdfDocument | null;
   error: string | null;
+  onClearSelection: () => void;
   onOpenFile: () => void;
+  onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
+  onSelectOverlay: (overlayId: string) => void;
+  onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
+  overlays: EditorOverlay[];
+  selectedOverlayId: string | null;
   status: PdfLoadStatus;
   zoom: number;
 };
@@ -17,7 +25,13 @@ type DocumentWorkspaceProps = {
 function DocumentWorkspace({
   document,
   error,
+  onClearSelection,
   onOpenFile,
+  onPageSizeChange,
+  onSelectOverlay,
+  onUpdateOverlayRect,
+  overlays,
+  selectedOverlayId,
   status,
   zoom,
 }: DocumentWorkspaceProps) {
@@ -37,7 +51,16 @@ function DocumentWorkspace({
       )}
 
       {status === "loaded" && document && (
-        <PdfDocumentView document={document} scale={zoom} />
+        <PdfDocumentView
+          document={document}
+          onClearSelection={onClearSelection}
+          onPageSizeChange={onPageSizeChange}
+          onSelectOverlay={onSelectOverlay}
+          onUpdateOverlayRect={onUpdateOverlayRect}
+          overlays={overlays}
+          scale={zoom}
+          selectedOverlayId={selectedOverlayId}
+        />
       )}
     </section>
   );

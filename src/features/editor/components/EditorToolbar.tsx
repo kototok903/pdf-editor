@@ -34,6 +34,7 @@ type EditorToolbarProps = {
   fileName: string | null;
   isDark: boolean;
   onOpenFile: () => void;
+  onTextToolClick: () => void;
   onToggleTheme: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -46,6 +47,7 @@ function EditorToolbar({
   fileName,
   isDark,
   onOpenFile,
+  onTextToolClick,
   onToggleTheme,
   onZoomIn,
   onZoomOut,
@@ -115,6 +117,7 @@ function EditorToolbar({
         <SegmentedButton
           disabled={!hasPdf}
           isActive
+          onClick={onTextToolClick}
           mainLabel="Text tool"
           menuLabel="Text settings"
         >
