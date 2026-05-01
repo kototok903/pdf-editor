@@ -21,7 +21,7 @@ describe("overlay-coordinate-utils", () => {
 
   it("creates a default overlay rect inside the page", () => {
     expect(createDefaultOverlayRect({ height: 800, width: 600 })).toEqual({
-      height: 44,
+      height: 32,
       width: 140,
       x: 72,
       y: 96,

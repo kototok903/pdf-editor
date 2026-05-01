@@ -2,15 +2,10 @@ import { useCallback, useState } from "react";
 
 import type {
   EditorOverlay,
-  OverlayType,
+  EditorOverlayInput,
   PdfRect,
+  TextOverlayPatch,
 } from "@/features/editor/editor-types";
-
-type AddOverlayInput = {
-  pageNumber: number;
-  rect: PdfRect;
-  type: OverlayType;
-};
 
 function createOverlayId() {
   return crypto.randomUUID();
@@ -22,7 +17,7 @@ function useEditorOverlays() {
     null,
   );
 
-  const addOverlay = useCallback((input: AddOverlayInput) => {
+  const addOverlay = useCallback((input: EditorOverlayInput) => {
     const overlay: EditorOverlay = {
       id: createOverlayId(),
       ...input,
@@ -59,6 +54,19 @@ function useEditorOverlays() {
     );
   }, []);
 
+  const updateTextOverlay = useCallback(
+    (overlayId: string, patch: TextOverlayPatch) => {
+      setOverlays((currentOverlays) =>
+        currentOverlays.map((overlay) =>
+          overlay.id === overlayId && overlay.type === "text"
+            ? { ...overlay, ...patch }
+            : overlay,
+        ),
+      );
+    },
+    [],
+  );
+
   return {
     addOverlay,
     clearSelection,
@@ -67,6 +75,7 @@ function useEditorOverlays() {
     selectOverlay,
     selectedOverlayId,
     updateOverlayRect,
+    updateTextOverlay,
   };
 }
 

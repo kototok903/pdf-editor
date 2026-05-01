@@ -23,7 +23,7 @@ function createDefaultOverlayRect(pageSize: {
   width: number;
 }): PdfRect {
   return {
-    height: 44,
+    height: 32,
     width: 140,
     x: Math.max(24, pageSize.width * 0.12),
     y: Math.max(24, pageSize.height * 0.12),

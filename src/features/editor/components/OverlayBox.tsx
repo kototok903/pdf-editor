@@ -1,12 +1,34 @@
-import type { OverlayType } from "@/features/editor/editor-types";
+import type { EditorOverlay } from "@/features/editor/editor-types";
+import { TextOverlayContent } from "@/features/editor/components/TextOverlayContent";
 import { cn } from "@/lib/utils";
 
 type OverlayBoxProps = {
+  isEditing: boolean;
   isSelected: boolean;
-  type: OverlayType;
+  onTextChange: (overlayId: string, text: string) => void;
+  overlay: EditorOverlay;
+  scale: number;
 };
 
-function OverlayBox({ isSelected, type }: OverlayBoxProps) {
+function OverlayBox({
+  isEditing,
+  isSelected,
+  onTextChange,
+  overlay,
+  scale,
+}: OverlayBoxProps) {
+  if (overlay.type === "text") {
+    return (
+      <TextOverlayContent
+        isEditing={isEditing}
+        isSelected={isSelected}
+        onTextChange={(text) => onTextChange(overlay.id, text)}
+        overlay={overlay}
+        scale={scale}
+      />
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -16,12 +38,12 @@ function OverlayBox({ isSelected, type }: OverlayBoxProps) {
           : "border-primary/60",
       )}
     >
-      {getOverlayLabel(type)}
+      {getOverlayLabel(overlay.type)}
     </div>
   );
 }
 
-function getOverlayLabel(type: OverlayType) {
+function getOverlayLabel(type: EditorOverlay["type"]) {
   switch (type) {
     case "text":
       return "Text";

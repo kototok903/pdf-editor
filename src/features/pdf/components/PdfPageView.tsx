@@ -1,13 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 
 import { OverlayLayer } from "@/features/editor/components/OverlayLayer";
-import type { EditorOverlay, PdfRect } from "@/features/editor/editor-types";
+import type {
+  EditorOverlay,
+  PdfRect,
+  TextOverlayPatch,
+} from "@/features/editor/editor-types";
 import type { PDFDocumentProxy } from "@/features/pdf/pdf-types";
 
 type PdfPageViewProps = {
+  editingOverlayId: string | null;
   onClearSelection: () => void;
+  onEditOverlay: (overlayId: string | null) => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
   onSelectOverlay: (overlayId: string) => void;
+  onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
   overlays: EditorOverlay[];
   pageNumber: number;
@@ -22,9 +29,12 @@ type PageSize = {
 };
 
 function PdfPageView({
+  editingOverlayId,
   onClearSelection,
+  onEditOverlay,
   onPageSizeChange,
   onSelectOverlay,
+  onUpdateTextOverlay,
   onUpdateOverlayRect,
   overlays,
   pageNumber,
@@ -137,8 +147,11 @@ function PdfPageView({
       <canvas ref={canvasRef} />
       {pageSize && (
         <OverlayLayer
+          editingOverlayId={editingOverlayId}
           onClearSelection={onClearSelection}
+          onEditOverlay={onEditOverlay}
           onSelectOverlay={onSelectOverlay}
+          onUpdateTextOverlay={onUpdateTextOverlay}
           onUpdateOverlayRect={onUpdateOverlayRect}
           overlays={overlays}
           pageNumber={pageNumber}
