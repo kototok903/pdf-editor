@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  clampMovedOverlayRect,
   createDefaultOverlayRect,
   createImageOverlayRectAtPoint,
   createOverlayRectAtPoint,
@@ -94,6 +95,34 @@ describe("overlay-coordinate-utils", () => {
       width: 200,
       x: 400,
       y: 700,
+    });
+  });
+
+  it("allows moved overlays past page edges while keeping a visible strip", () => {
+    expect(
+      clampMovedOverlayRect(
+        { height: 40, width: 100, x: -95, y: 790 },
+        { height: 800, width: 600 },
+      ),
+    ).toEqual({
+      height: 40,
+      width: 100,
+      x: -92,
+      y: 790,
+    });
+  });
+
+  it("keeps small moved overlays from leaving the page completely", () => {
+    expect(
+      clampMovedOverlayRect(
+        { height: 4, width: 4, x: -20, y: -20 },
+        { height: 800, width: 600 },
+      ),
+    ).toEqual({
+      height: 4,
+      width: 4,
+      x: 0,
+      y: 0,
     });
   });
 });

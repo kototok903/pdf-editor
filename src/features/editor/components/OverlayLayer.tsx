@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { Rnd } from "react-rnd";
 
 import type {
@@ -5,9 +6,11 @@ import type {
   ImageAsset,
   PdfRect,
   TextOverlayPatch,
+  ViewportRect,
 } from "@/features/editor/editor-types";
 import { OverlayBox } from "@/features/editor/components/OverlayBox";
 import {
+  clampMovedOverlayRect,
   createImageOverlayRectAtPoint,
   createOverlayRectAtPoint,
   pdfRectToViewportRect,
@@ -101,77 +104,90 @@ function OverlayLayer({
         const viewportRect = pdfRectToViewportRect(overlay.rect, scale);
         const isSelected = overlay.id === selectedOverlayId;
         const isEditing = overlay.id === editingOverlayId;
+        const boundsSelector = getOverlayBoundsSelector(overlay.id);
         const enabledResizeHandles = getEnabledResizeHandles({
           isSelected,
           overlay,
         });
 
         return (
-          <Rnd
-            bounds="parent"
-            disableDragging={isEditing}
-            enableResizing={enabledResizeHandles}
-            key={overlay.id}
-            onClick={(event: MouseEvent) => {
-              event.stopPropagation();
-              onSelectOverlay(overlay.id);
-              if (editingOverlayId && editingOverlayId !== overlay.id) {
-                onEditOverlay(null);
-              }
-            }}
-            onDoubleClick={(event: MouseEvent) => {
-              event.stopPropagation();
-              onSelectOverlay(overlay.id);
-              if (overlay.type === "text") {
-                onEditOverlay(overlay.id);
-              }
-            }}
-            onDragStart={() => {
-              onSelectOverlay(overlay.id);
-              onEditOverlay(null);
-            }}
-            onDragStop={(_, data) => {
-              onUpdateOverlayRect(overlay.id, {
-                ...overlay.rect,
-                x: data.x / scale,
-                y: data.y / scale,
-              });
-            }}
-            onResizeStart={() => {
-              onSelectOverlay(overlay.id);
-              onEditOverlay(null);
-            }}
-            onResizeStop={(_, __, ref, ___, position) => {
-              onUpdateOverlayRect(
-                overlay.id,
-                viewportRectToPdfRect(
-                  {
-                    height: ref.offsetHeight,
-                    width: ref.offsetWidth,
-                    x: position.x,
-                    y: position.y,
-                  },
-                  scale,
-                ),
-              );
-            }}
-            lockAspectRatio={overlay.type === "image"}
-            position={{ x: viewportRect.x, y: viewportRect.y }}
-            resizeHandleStyles={isSelected ? resizeHandleStyles : undefined}
-            size={{ height: viewportRect.height, width: viewportRect.width }}
-            style={isPlacingOverlay ? inactiveOverlayStyle : undefined}
-          >
-            <OverlayBox
-              imageAssets={imageAssets}
-              isEditing={isEditing}
-              isSelected={isSelected}
-              onTextChange={(overlayId, text) => {
-                onUpdateTextOverlay(overlayId, { text });
-              }}
-              overlay={overlay}
-              scale={scale}
+          <Fragment key={overlay.id}>
+            <div
+              className="pointer-events-none absolute"
+              data-overlay-bounds-id={overlay.id}
+              style={getLooseOverlayBoundsStyle(viewportRect, scale)}
             />
-          </Rnd>
+            <Rnd
+              bounds={boundsSelector}
+              disableDragging={isEditing}
+              enableResizing={enabledResizeHandles}
+              onClick={(event: MouseEvent) => {
+                event.stopPropagation();
+                onSelectOverlay(overlay.id);
+                if (editingOverlayId && editingOverlayId !== overlay.id) {
+                  onEditOverlay(null);
+                }
+              }}
+              onDoubleClick={(event: MouseEvent) => {
+                event.stopPropagation();
+                onSelectOverlay(overlay.id);
+                if (overlay.type === "text") {
+                  onEditOverlay(overlay.id);
+                }
+              }}
+              onDragStart={() => {
+                onSelectOverlay(overlay.id);
+                onEditOverlay(null);
+              }}
+              onDragStop={(_, data) => {
+                onUpdateOverlayRect(
+                  overlay.id,
+                  clampMovedOverlayRect(
+                    {
+                      ...overlay.rect,
+                      x: data.x / scale,
+                      y: data.y / scale,
+                    },
+                    getPageSizeFromEventTarget(data.node.parentElement, scale),
+                  ),
+                );
+              }}
+              onResizeStart={() => {
+                onSelectOverlay(overlay.id);
+                onEditOverlay(null);
+              }}
+              onResizeStop={(_, __, ref, ___, position) => {
+                onUpdateOverlayRect(
+                  overlay.id,
+                  viewportRectToPdfRect(
+                    {
+                      height: ref.offsetHeight,
+                      width: ref.offsetWidth,
+                      x: position.x,
+                      y: position.y,
+                    },
+                    scale,
+                  ),
+                );
+              }}
+              lockAspectRatio={overlay.type === "image"}
+              position={{ x: viewportRect.x, y: viewportRect.y }}
+              resizeHandleStyles={isSelected ? resizeHandleStyles : undefined}
+              size={{ height: viewportRect.height, width: viewportRect.width }}
+              style={isPlacingOverlay ? inactiveOverlayStyle : undefined}
+            >
+              <OverlayBox
+                imageAssets={imageAssets}
+                isEditing={isEditing}
+                isSelected={isSelected}
+                onTextChange={(overlayId, text) => {
+                  onUpdateTextOverlay(overlayId, { text });
+                }}
+                overlay={overlay}
+                scale={scale}
+              />
+            </Rnd>
+          </Fragment>
         );
       })}
     </div>
@@ -203,9 +219,43 @@ function getOverlayLayerClassName({
   return "absolute inset-0";
 }
 
+function getPageSizeFromEventTarget(
+  element: HTMLElement | null,
+  scale: number,
+) {
+  const bounds = element?.getBoundingClientRect();
+
+  if (!bounds) {
+    return { height: 0, width: 0 };
+  }
+
+  return {
+    height: bounds.height / scale,
+    width: bounds.width / scale,
+  };
+}
+
 const inactiveOverlayStyle = {
   pointerEvents: "none",
 } as const;
+
+function getOverlayBoundsSelector(overlayId: string) {
+  return `[data-overlay-bounds-id="${overlayId}"]`;
+}
+
+function getLooseOverlayBoundsStyle(rect: ViewportRect, scale: number) {
+  const visibleX = Math.min(8 * scale, rect.width);
+  const visibleY = Math.min(8 * scale, rect.height);
+  const width = rect.width;
+  const height = rect.height;
+
+  return {
+    height: `calc(100% + ${2 * height - 2 * visibleY}px)`,
+    left: visibleX - width,
+    top: visibleY - height,
+    width: `calc(100% + ${2 * width - 2 * visibleX}px)`,
+  };
+}
 
 function getEnabledResizeHandles({
   isSelected,
