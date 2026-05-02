@@ -207,7 +207,7 @@ function EditorToolbar({
           onUploadImage={onOpenImageDialog}
         />
         <DropdownTool
-          disabled={!hasPdf}
+          disabled
           label="Sign"
           icon={<SignatureIcon aria-hidden="true" />}
         />
@@ -225,7 +225,7 @@ function EditorToolbar({
         />
 
         <SegmentedButton
-          disabled={!hasPdf}
+          disabled
           mainLabel="Whiteout tool"
           menuLabel="Whiteout color options"
         >
@@ -236,7 +236,7 @@ function EditorToolbar({
           <TooltipButton label="Undo">
             <Button
               className="w-[30px] px-0"
-              disabled={!hasPdf}
+              disabled
               size="sm"
               type="button"
               variant="toolbar"
@@ -247,7 +247,7 @@ function EditorToolbar({
           <TooltipButton label="Redo">
             <Button
               className="w-[30px] px-0"
-              disabled={!hasPdf}
+              disabled
               size="sm"
               type="button"
               variant="toolbar"
