@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from "react";
 import {
-  CheckIcon,
   ChevronDownIcon,
   DownloadIcon,
   FileIcon,
@@ -44,8 +43,11 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ImageToolDropdown } from "@/features/editor/components/ImageToolDropdown";
 import { ImageUrlDialog } from "@/features/editor/components/ImageUrlDialog";
+import { MarkToolDropdown } from "@/features/editor/components/MarkToolDropdown";
 import type {
   ImageAsset,
+  MarkOverlayPatch,
+  MarkType,
   TextOverlayDefaults,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
@@ -57,9 +59,15 @@ type EditorToolbarProps = {
   imageAssets: ImageAsset[];
   isDark: boolean;
   isImageToolActive: boolean;
+  isMarkSettingsDefault: boolean;
+  isMarkToolActive: boolean;
   isTextSettingsDefault: boolean;
   isTextToolActive: boolean;
   onImportImageUrl: (url: string) => Promise<void>;
+  onMarkSettingsChange: (patch: MarkOverlayPatch) => void;
+  onMarkSettingsReset: () => void;
+  onMarkToolActivate: () => void;
+  onMarkToolClick: () => void;
   onOpenFile: () => void;
   onOpenImageDialog: () => void;
   onRemoveImageAssetFromRecents: (assetId: string) => void;
@@ -72,6 +80,10 @@ type EditorToolbarProps = {
   onZoomOut: () => void;
   pageCount: number;
   status: "empty" | "loading" | "loaded" | "error";
+  markSettings: {
+    color: string;
+    markType: MarkType;
+  };
   textSettings: TextOverlayDefaults;
   zoomPercent: number;
 };
@@ -89,9 +101,16 @@ function EditorToolbar({
   imageAssets,
   isDark,
   isImageToolActive,
+  isMarkSettingsDefault,
+  isMarkToolActive,
   isTextSettingsDefault,
   isTextToolActive,
+  markSettings,
   onImportImageUrl,
+  onMarkSettingsChange,
+  onMarkSettingsReset,
+  onMarkToolActivate,
+  onMarkToolClick,
   onOpenFile,
   onOpenImageDialog,
   onRemoveImageAssetFromRecents,
@@ -193,13 +212,17 @@ function EditorToolbar({
           icon={<SignatureIcon aria-hidden="true" />}
         />
 
-        <SegmentedButton
+        <MarkToolDropdown
+          color={markSettings.color}
           disabled={!hasPdf}
-          mainLabel="Mark tool"
-          menuLabel="Mark options"
-        >
-          <CheckIcon aria-hidden="true" />
-        </SegmentedButton>
+          isDefault={isMarkSettingsDefault}
+          isSelected={isMarkToolActive}
+          markType={markSettings.markType}
+          onMarkToolActivate={onMarkToolActivate}
+          onMarkToolClick={onMarkToolClick}
+          onSettingsChange={onMarkSettingsChange}
+          onSettingsReset={onMarkSettingsReset}
+        />
 
         <SegmentedButton
           disabled={!hasPdf}

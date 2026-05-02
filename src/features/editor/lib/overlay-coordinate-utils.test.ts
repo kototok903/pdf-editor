@@ -4,6 +4,7 @@ import {
   clampMovedOverlayRect,
   createDefaultOverlayRect,
   createImageOverlayRectAtPoint,
+  createMarkOverlayRectAtPoint,
   createOverlayRectAtPoint,
   nudgeOverlayRect,
   pdfRectToViewportRect,
@@ -96,6 +97,20 @@ describe("overlay-coordinate-utils", () => {
       width: 200,
       x: 400,
       y: 700,
+    });
+  });
+
+  it("creates a mark overlay rect centered at a point", () => {
+    expect(
+      createMarkOverlayRectAtPoint(
+        { x: 300, y: 400 },
+        { height: 800, width: 600 },
+      ),
+    ).toEqual({
+      height: 18,
+      width: 18,
+      x: 291,
+      y: 391,
     });
   });
 

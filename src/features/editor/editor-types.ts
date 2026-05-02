@@ -1,4 +1,5 @@
 type OverlayType = "text" | "image" | "mark" | "signature" | "whiteout";
+type MarkType = "ballot-x" | "check" | "dot" | "heavy-check" | "slash-x" | "x";
 
 type PdfRect = {
   height: number;
@@ -39,15 +40,22 @@ type ImageOverlay = BaseOverlay & {
   type: "image";
 };
 
-type BasicOverlay = BaseOverlay & {
-  type: Exclude<OverlayType, "text" | "image">;
+type MarkOverlay = BaseOverlay & {
+  color: string;
+  markType: MarkType;
+  type: "mark";
 };
 
-type EditorOverlay = TextOverlay | ImageOverlay | BasicOverlay;
+type BasicOverlay = BaseOverlay & {
+  type: Exclude<OverlayType, "text" | "image" | "mark">;
+};
+
+type EditorOverlay = TextOverlay | ImageOverlay | MarkOverlay | BasicOverlay;
 
 type EditorOverlayInput =
   | Omit<TextOverlay, "id">
   | Omit<ImageOverlay, "id">
+  | Omit<MarkOverlay, "id">
   | {
       pageNumber: number;
       rect: PdfRect;
@@ -57,6 +65,7 @@ type EditorOverlayInput =
 type TextOverlayPatch = Partial<
   Pick<TextOverlay, "color" | "fontFamily" | "fontSize" | "text">
 >;
+type MarkOverlayPatch = Partial<Pick<MarkOverlay, "color" | "markType">>;
 
 type TextOverlayDefaults = {
   color: string;
@@ -72,6 +81,9 @@ export type {
   EditorOverlayInput,
   ImageAsset,
   ImageOverlay,
+  MarkOverlay,
+  MarkOverlayPatch,
+  MarkType,
   OverlayType,
   PdfRect,
   TextOverlay,

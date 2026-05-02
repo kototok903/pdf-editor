@@ -20,12 +20,14 @@ type DocumentWorkspaceProps = {
   error: string | null;
   imageAssets: ImageAsset[];
   isImageToolActive: boolean;
+  isMarkToolActive: boolean;
   isTextToolActive: boolean;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
   onOpenFile: () => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
+  onPlaceMarkOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
@@ -43,12 +45,14 @@ function DocumentWorkspace({
   error,
   imageAssets,
   isImageToolActive,
+  isMarkToolActive,
   isTextToolActive,
   onClearSelection,
   onEditOverlay,
   onOpenFile,
   onPageSizeChange,
   onPlaceImageOverlay,
+  onPlaceMarkOverlay,
   onPlaceTextOverlay,
   onSelectOverlay,
   onUpdateTextOverlay,
@@ -80,11 +84,13 @@ function DocumentWorkspace({
           editingOverlayId={editingOverlayId}
           imageAssets={imageAssets}
           isImageToolActive={isImageToolActive}
+          isMarkToolActive={isMarkToolActive}
           isTextToolActive={isTextToolActive}
           onClearSelection={onClearSelection}
           onEditOverlay={onEditOverlay}
           onPageSizeChange={onPageSizeChange}
           onPlaceImageOverlay={onPlaceImageOverlay}
+          onPlaceMarkOverlay={onPlaceMarkOverlay}
           onPlaceTextOverlay={onPlaceTextOverlay}
           onSelectOverlay={onSelectOverlay}
           onUpdateTextOverlay={onUpdateTextOverlay}

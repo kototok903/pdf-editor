@@ -12,6 +12,7 @@ import { OverlayBox } from "@/features/editor/components/OverlayBox";
 import {
   clampMovedOverlayRect,
   createImageOverlayRectAtPoint,
+  createMarkOverlayRectAtPoint,
   createOverlayRectAtPoint,
   pdfRectToViewportRect,
   viewportRectToPdfRect,
@@ -22,10 +23,12 @@ type OverlayLayerProps = {
   editingOverlayId: string | null;
   imageAssets: ImageAsset[];
   isImageToolActive: boolean;
+  isMarkToolActive: boolean;
   isTextToolActive: boolean;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
+  onPlaceMarkOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
@@ -41,10 +44,12 @@ function OverlayLayer({
   editingOverlayId,
   imageAssets,
   isImageToolActive,
+  isMarkToolActive,
   isTextToolActive,
   onClearSelection,
   onEditOverlay,
   onPlaceImageOverlay,
+  onPlaceMarkOverlay,
   onPlaceTextOverlay,
   onSelectOverlay,
   onUpdateTextOverlay,
@@ -57,12 +62,14 @@ function OverlayLayer({
   const pageOverlays = overlays.filter(
     (overlay) => overlay.pageNumber === pageNumber,
   );
-  const isPlacingOverlay = isImageToolActive || isTextToolActive;
+  const isPlacingOverlay =
+    isImageToolActive || isMarkToolActive || isTextToolActive;
 
   return (
     <div
       className={getOverlayLayerClassName({
         isImageToolActive,
+        isMarkToolActive,
         isTextToolActive,
       })}
       onPointerDown={(event) => {
@@ -82,6 +89,15 @@ function OverlayLayer({
             onPlaceImageOverlay(
               pageNumber,
               createImageOverlayRectAtPoint(point, pageSize, activeImageAsset),
+            );
+            return;
+          }
+
+          if (isMarkToolActive) {
+            event.preventDefault();
+            onPlaceMarkOverlay(
+              pageNumber,
+              createMarkOverlayRectAtPoint(point, pageSize),
             );
             return;
           }
@@ -170,7 +186,9 @@ function OverlayLayer({
                   ),
                 );
               }}
-              lockAspectRatio={overlay.type === "image"}
+              lockAspectRatio={
+                overlay.type === "image" || overlay.type === "mark"
+              }
               position={{ x: viewportRect.x, y: viewportRect.y }}
               resizeHandleStyles={isSelected ? resizeHandleStyles : undefined}
               size={{ height: viewportRect.height, width: viewportRect.width }}
@@ -203,12 +221,14 @@ const handleStyle = {
 
 function getOverlayLayerClassName({
   isImageToolActive,
+  isMarkToolActive,
   isTextToolActive,
 }: {
   isImageToolActive: boolean;
+  isMarkToolActive: boolean;
   isTextToolActive: boolean;
 }) {
-  if (isImageToolActive) {
+  if (isImageToolActive || isMarkToolActive) {
     return "absolute inset-0 cursor-crosshair";
   }
 
@@ -264,7 +284,7 @@ function getEnabledResizeHandles({
   isSelected: boolean;
   overlay: EditorOverlay;
 }) {
-  if (overlay.type === "image") {
+  if (overlay.type === "image" || overlay.type === "mark") {
     return isSelected ? cornerResizeHandles : false;
   }
 

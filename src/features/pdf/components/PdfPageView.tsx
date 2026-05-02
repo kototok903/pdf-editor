@@ -14,11 +14,13 @@ type PdfPageViewProps = {
   editingOverlayId: string | null;
   imageAssets: ImageAsset[];
   isImageToolActive: boolean;
+  isMarkToolActive: boolean;
   isTextToolActive: boolean;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
+  onPlaceMarkOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
@@ -40,11 +42,13 @@ function PdfPageView({
   editingOverlayId,
   imageAssets,
   isImageToolActive,
+  isMarkToolActive,
   isTextToolActive,
   onClearSelection,
   onEditOverlay,
   onPageSizeChange,
   onPlaceImageOverlay,
+  onPlaceMarkOverlay,
   onPlaceTextOverlay,
   onSelectOverlay,
   onUpdateTextOverlay,
@@ -164,10 +168,12 @@ function PdfPageView({
           editingOverlayId={editingOverlayId}
           imageAssets={imageAssets}
           isImageToolActive={isImageToolActive}
+          isMarkToolActive={isMarkToolActive}
           isTextToolActive={isTextToolActive}
           onClearSelection={onClearSelection}
           onEditOverlay={onEditOverlay}
           onPlaceImageOverlay={onPlaceImageOverlay}
+          onPlaceMarkOverlay={onPlaceMarkOverlay}
           onPlaceTextOverlay={onPlaceTextOverlay}
           onSelectOverlay={onSelectOverlay}
           onUpdateTextOverlay={onUpdateTextOverlay}

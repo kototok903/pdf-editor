@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import type {
   EditorOverlay,
   EditorOverlayInput,
+  MarkOverlayPatch,
   PdfRect,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
@@ -67,6 +68,19 @@ function useEditorOverlays() {
     [],
   );
 
+  const updateMarkOverlay = useCallback(
+    (overlayId: string, patch: MarkOverlayPatch) => {
+      setOverlays((currentOverlays) =>
+        currentOverlays.map((overlay) =>
+          overlay.id === overlayId && overlay.type === "mark"
+            ? { ...overlay, ...patch }
+            : overlay,
+        ),
+      );
+    },
+    [],
+  );
+
   return {
     addOverlay,
     clearSelection,
@@ -74,6 +88,7 @@ function useEditorOverlays() {
     removeOverlay,
     selectOverlay,
     selectedOverlayId,
+    updateMarkOverlay,
     updateOverlayRect,
     updateTextOverlay,
   };

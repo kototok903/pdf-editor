@@ -2,6 +2,7 @@ import type { PdfRect, ViewportRect } from "@/features/editor/editor-types";
 
 const defaultOverlayHeight = 32;
 const defaultOverlayWidth = 140;
+const defaultMarkSize = 18;
 const maxInitialImageSize = 220;
 const minVisibleOverlaySize = 8;
 const keyboardNudgeStep = 1;
@@ -76,6 +77,26 @@ function createImageOverlayRectAtPoint(
   };
 }
 
+function createMarkOverlayRectAtPoint(
+  point: { x: number; y: number },
+  pageSize: { height: number; width: number },
+): PdfRect {
+  return {
+    height: defaultMarkSize,
+    width: defaultMarkSize,
+    x: clamp(
+      point.x - defaultMarkSize / 2,
+      0,
+      pageSize.width - defaultMarkSize,
+    ),
+    y: clamp(
+      point.y - defaultMarkSize / 2,
+      0,
+      pageSize.height - defaultMarkSize,
+    ),
+  };
+}
+
 function clampMovedOverlayRect(
   rect: PdfRect,
   pageSize: { height: number; width: number },
@@ -130,6 +151,7 @@ export {
   clampMovedOverlayRect,
   createDefaultOverlayRect,
   createImageOverlayRectAtPoint,
+  createMarkOverlayRectAtPoint,
   createOverlayRectAtPoint,
   nudgeOverlayRect,
   pdfRectToViewportRect,

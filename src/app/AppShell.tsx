@@ -12,6 +12,8 @@ import { DocumentWorkspace } from "@/features/editor/components/DocumentWorkspac
 import { EditorToolbar } from "@/features/editor/components/EditorToolbar";
 import { PagesSidebar } from "@/features/editor/components/PagesSidebar";
 import type {
+  MarkOverlay,
+  MarkOverlayPatch,
   PdfRect,
   TextOverlay,
   TextOverlayPatch,
@@ -19,6 +21,7 @@ import type {
 import { useEditorOverlays } from "@/features/editor/hooks/useEditorOverlays";
 import { useEditorKeyboardShortcuts } from "@/features/editor/hooks/useEditorKeyboardShortcuts";
 import { useImageAssets } from "@/features/editor/hooks/useImageAssets";
+import { defaultMarkSettings } from "@/features/editor/lib/mark-definitions";
 import { defaultTextOverlay } from "@/features/editor/lib/overlay-defaults";
 import type { PageSize } from "@/features/pdf/components/PdfPageView";
 import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
@@ -26,7 +29,11 @@ import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
 const minZoom = 0.5;
 const maxZoom = 2;
 const zoomStep = 0.1;
-type ActiveTool = { type: "image"; assetId: string } | { type: "text" } | null;
+type ActiveTool =
+  | { type: "image"; assetId: string }
+  | { type: "mark" }
+  | { type: "text" }
+  | null;
 
 function AppShell() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -36,6 +43,7 @@ function AppShell() {
   const [isDark, setIsDark] = useState(false);
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
   const [pageSizes, setPageSizes] = useState<Record<number, PageSize>>({});
+  const [markDefaults, setMarkDefaults] = useState(defaultMarkSettings);
   const [textDefaults, setTextDefaults] = useState(defaultTextOverlay);
   const [zoom, setZoom] = useState(1);
   const {
@@ -45,6 +53,7 @@ function AppShell() {
     removeOverlay,
     selectOverlay,
     selectedOverlayId,
+    updateMarkOverlay,
     updateOverlayRect,
     updateTextOverlay,
   } = useEditorOverlays();
@@ -70,12 +79,24 @@ function AppShell() {
       ) ?? null,
     [overlays, selectedOverlayId],
   );
+  const selectedMarkOverlay = useMemo(
+    () =>
+      overlays.find(
+        (overlay): overlay is MarkOverlay =>
+          overlay.id === selectedOverlayId && overlay.type === "mark",
+      ) ?? null,
+    [overlays, selectedOverlayId],
+  );
   const selectedOverlay = useMemo(
     () => overlays.find((overlay) => overlay.id === selectedOverlayId) ?? null,
     [overlays, selectedOverlayId],
   );
 
   const currentTextSettings = selectedTextOverlay ?? textDefaults;
+  const currentMarkSettings = selectedMarkOverlay ?? markDefaults;
+  const isMarkSettingsDefault =
+    currentMarkSettings.color === defaultMarkSettings.color &&
+    currentMarkSettings.markType === defaultMarkSettings.markType;
   const isTextSettingsDefault =
     currentTextSettings.color === defaultTextOverlay.color &&
     currentTextSettings.fontFamily === defaultTextOverlay.fontFamily &&
@@ -177,6 +198,18 @@ function AppShell() {
     setEditingOverlayId(null);
   };
 
+  const handleMarkToolClick = () => {
+    setActiveTool((currentTool) =>
+      currentTool?.type === "mark" ? null : { type: "mark" },
+    );
+    setEditingOverlayId(null);
+  };
+
+  const handleMarkToolActivate = () => {
+    setActiveTool({ type: "mark" });
+    setEditingOverlayId(null);
+  };
+
   const handlePlaceTextOverlay = (pageNumber: number, rect: PdfRect) => {
     setCurrentPage(pageNumber);
     const overlay = addOverlay({
@@ -187,6 +220,18 @@ function AppShell() {
     });
     setActiveTool(null);
     setEditingOverlayId(overlay.id);
+  };
+
+  const handlePlaceMarkOverlay = (pageNumber: number, rect: PdfRect) => {
+    setCurrentPage(pageNumber);
+    addOverlay({
+      ...markDefaults,
+      pageNumber,
+      rect,
+      type: "mark",
+    });
+    setActiveTool(null);
+    setEditingOverlayId(null);
   };
 
   const handlePlaceImageOverlay = (pageNumber: number, rect: PdfRect) => {
@@ -203,6 +248,25 @@ function AppShell() {
     });
     setActiveTool(null);
     setEditingOverlayId(null);
+  };
+
+  const handleMarkSettingsChange = (patch: MarkOverlayPatch) => {
+    setMarkDefaults((currentDefaults) => ({
+      ...currentDefaults,
+      ...patch,
+    }));
+
+    if (selectedMarkOverlay) {
+      updateMarkOverlay(selectedMarkOverlay.id, patch);
+    }
+  };
+
+  const handleMarkSettingsReset = () => {
+    setMarkDefaults(defaultMarkSettings);
+
+    if (selectedMarkOverlay) {
+      updateMarkOverlay(selectedMarkOverlay.id, defaultMarkSettings);
+    }
   };
 
   const handleTextSettingsChange = (patch: TextOverlayPatch) => {
@@ -275,10 +339,17 @@ function AppShell() {
           imageAssets={recentImageAssets}
           isDark={isDark}
           isImageToolActive={activeTool?.type === "image"}
-          onOpenFile={handleOpenFileDialog}
+          isMarkSettingsDefault={isMarkSettingsDefault}
+          isMarkToolActive={activeTool?.type === "mark"}
           isTextSettingsDefault={isTextSettingsDefault}
           isTextToolActive={activeTool?.type === "text"}
+          markSettings={currentMarkSettings}
           onImportImageUrl={handleImportImageUrl}
+          onMarkSettingsChange={handleMarkSettingsChange}
+          onMarkSettingsReset={handleMarkSettingsReset}
+          onMarkToolActivate={handleMarkToolActivate}
+          onMarkToolClick={handleMarkToolClick}
+          onOpenFile={handleOpenFileDialog}
           onOpenImageDialog={handleOpenImageDialog}
           onRemoveImageAssetFromRecents={hideImageAssetFromRecents}
           onSelectImageAsset={(assetId) => {
@@ -308,12 +379,14 @@ function AppShell() {
             activeImageAsset={activeImageAsset}
             imageAssets={imageAssets}
             isImageToolActive={activeTool?.type === "image"}
+            isMarkToolActive={activeTool?.type === "mark"}
             isTextToolActive={activeTool?.type === "text"}
             onClearSelection={handleClearSelection}
             onEditOverlay={handleEditOverlay}
             onOpenFile={handleOpenFileDialog}
             onPageSizeChange={handlePageSizeChange}
             onPlaceImageOverlay={handlePlaceImageOverlay}
+            onPlaceMarkOverlay={handlePlaceMarkOverlay}
             onPlaceTextOverlay={handlePlaceTextOverlay}
             onSelectOverlay={handleSelectOverlay}
             onUpdateTextOverlay={updateTextOverlay}

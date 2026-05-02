@@ -1,4 +1,5 @@
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
+import { MarkGlyph } from "@/features/editor/components/MarkGlyph";
 import { TextOverlayContent } from "@/features/editor/components/TextOverlayContent";
 import { cn } from "@/lib/utils";
 
@@ -57,6 +58,25 @@ function OverlayBox({
             Missing image
           </div>
         )}
+      </div>
+    );
+  }
+
+  if (overlay.type === "mark") {
+    return (
+      <div
+        className={cn(
+          "grid h-full w-full place-items-center overflow-hidden border bg-transparent",
+          isSelected
+            ? "border-primary ring-2 ring-primary/25"
+            : "border-transparent hover:border-primary/50",
+        )}
+      >
+        <MarkGlyph
+          className="h-full w-full"
+          color={overlay.color}
+          markType={overlay.markType}
+        />
       </div>
     );
   }
