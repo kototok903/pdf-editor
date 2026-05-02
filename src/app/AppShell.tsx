@@ -17,6 +17,7 @@ import type {
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
 import { useEditorOverlays } from "@/features/editor/hooks/useEditorOverlays";
+import { useEditorKeyboardShortcuts } from "@/features/editor/hooks/useEditorKeyboardShortcuts";
 import { useImageAssets } from "@/features/editor/hooks/useImageAssets";
 import { defaultTextOverlay } from "@/features/editor/lib/overlay-defaults";
 import type { PageSize } from "@/features/pdf/components/PdfPageView";
@@ -34,7 +35,7 @@ function AppShell() {
   const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
-  const [, setPageSizes] = useState<Record<number, PageSize>>({});
+  const [pageSizes, setPageSizes] = useState<Record<number, PageSize>>({});
   const [textDefaults, setTextDefaults] = useState(defaultTextOverlay);
   const [zoom, setZoom] = useState(1);
   const {
@@ -84,50 +85,36 @@ function AppShell() {
     globalThis.document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!selectedOverlay) {
-        return;
-      }
-
-      const isEditingSelectedText =
-        selectedOverlay.type === "text" &&
-        editingOverlayId === selectedOverlay.id;
-
-      if (isEditingSelectedText && event.metaKey && event.key === "Enter") {
-        event.preventDefault();
-        setEditingOverlayId(null);
-        return;
-      }
-
-      if (isEditingSelectedText || isEditableTarget(event.target)) {
-        return;
-      }
-
-      if (event.key === "Backspace" || event.key === "Delete") {
-        event.preventDefault();
-        removeOverlay(selectedOverlay.id);
-        setEditingOverlayId(null);
-        return;
-      }
-
-      if (selectedOverlay.type === "text" && event.key === "Enter") {
-        event.preventDefault();
-        setEditingOverlayId(selectedOverlay.id);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [editingOverlayId, removeOverlay, selectedOverlay]);
-
   const activeImageAsset =
     activeTool?.type === "image"
       ? (imageAssets.find((asset) => asset.id === activeTool.assetId) ?? null)
       : null;
+
+  const handleClearSelection = useCallback(() => {
+    clearSelection();
+    setEditingOverlayId(null);
+  }, [clearSelection]);
+
+  const handleClearActiveTool = useCallback(() => {
+    setActiveTool(null);
+  }, []);
+
+  const handleEditOverlay = useCallback((overlayId: string | null) => {
+    setEditingOverlayId(overlayId);
+  }, []);
+
+  useEditorKeyboardShortcuts({
+    editingOverlayId,
+    hasActiveTool: activeTool !== null,
+    onClearActiveTool: handleClearActiveTool,
+    onClearSelection: handleClearSelection,
+    onEditOverlay: handleEditOverlay,
+    onRemoveOverlay: removeOverlay,
+    onUpdateOverlayRect: updateOverlayRect,
+    pageSizes,
+    scale: zoom,
+    selectedOverlay,
+  });
 
   const handleOpenFileDialog = () => {
     fileInputRef.current?.click();
@@ -253,11 +240,6 @@ function AppShell() {
     );
   };
 
-  const handleClearSelection = () => {
-    clearSelection();
-    setEditingOverlayId(null);
-  };
-
   const handleZoomIn = () => {
     setZoom((currentZoom) =>
       Math.min(maxZoom, Number((currentZoom + zoomStep).toFixed(2))),
@@ -328,7 +310,7 @@ function AppShell() {
             isImageToolActive={activeTool?.type === "image"}
             isTextToolActive={activeTool?.type === "text"}
             onClearSelection={handleClearSelection}
-            onEditOverlay={setEditingOverlayId}
+            onEditOverlay={handleEditOverlay}
             onOpenFile={handleOpenFileDialog}
             onPageSizeChange={handlePageSizeChange}
             onPlaceImageOverlay={handlePlaceImageOverlay}
@@ -344,19 +326,6 @@ function AppShell() {
         </div>
       </main>
     </TooltipProvider>
-  );
-}
-
-function isEditableTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-
-  return Boolean(
-    target.isContentEditable ||
-    target.closest(
-      "input, textarea, select, [role='textbox'], [role='spinbutton']",
-    ),
   );
 }
 

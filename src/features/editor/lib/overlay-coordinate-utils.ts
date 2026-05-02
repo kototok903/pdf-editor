@@ -4,6 +4,7 @@ const defaultOverlayHeight = 32;
 const defaultOverlayWidth = 140;
 const maxInitialImageSize = 220;
 const minVisibleOverlaySize = 8;
+const keyboardNudgeStep = 1;
 
 function pdfRectToViewportRect(rect: PdfRect, scale: number): ViewportRect {
   return {
@@ -94,6 +95,33 @@ function clampMovedOverlayRect(
   };
 }
 
+function nudgeOverlayRect(
+  rect: PdfRect,
+  direction: "down" | "left" | "right" | "up",
+  pageSize: { height: number; width: number },
+  scale: number,
+): PdfRect {
+  const offset = keyboardNudgeStep / scale;
+
+  const nextRect = {
+    ...rect,
+    x:
+      direction === "left"
+        ? rect.x - offset
+        : direction === "right"
+          ? rect.x + offset
+          : rect.x,
+    y:
+      direction === "up"
+        ? rect.y - offset
+        : direction === "down"
+          ? rect.y + offset
+          : rect.y,
+  };
+
+  return clampMovedOverlayRect(nextRect, pageSize);
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), Math.max(min, max));
 }
@@ -103,6 +131,7 @@ export {
   createDefaultOverlayRect,
   createImageOverlayRectAtPoint,
   createOverlayRectAtPoint,
+  nudgeOverlayRect,
   pdfRectToViewportRect,
   viewportRectToPdfRect,
 };

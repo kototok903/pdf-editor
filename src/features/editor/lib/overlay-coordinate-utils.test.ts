@@ -5,6 +5,7 @@ import {
   createDefaultOverlayRect,
   createImageOverlayRectAtPoint,
   createOverlayRectAtPoint,
+  nudgeOverlayRect,
   pdfRectToViewportRect,
   viewportRectToPdfRect,
 } from "@/features/editor/lib/overlay-coordinate-utils";
@@ -124,5 +125,27 @@ describe("overlay-coordinate-utils", () => {
       x: 0,
       y: 0,
     });
+  });
+
+  it("nudges overlays by one viewport pixel", () => {
+    expect(
+      nudgeOverlayRect(
+        { height: 40, width: 100, x: 20, y: 30 },
+        "right",
+        { height: 800, width: 600 },
+        2,
+      ),
+    ).toEqual({ height: 40, width: 100, x: 20.5, y: 30 });
+  });
+
+  it("keeps nudged overlays inside loose page boundaries", () => {
+    expect(
+      nudgeOverlayRect(
+        { height: 40, width: 100, x: -92, y: 30 },
+        "left",
+        { height: 800, width: 600 },
+        1,
+      ),
+    ).toEqual({ height: 40, width: 100, x: -92, y: 30 });
   });
 });
