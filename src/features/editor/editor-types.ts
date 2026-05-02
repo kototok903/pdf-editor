@@ -21,14 +21,33 @@ type TextOverlay = BaseOverlay & {
   type: "text";
 };
 
-type BasicOverlay = BaseOverlay & {
-  type: Exclude<OverlayType, "text">;
+type ImageAsset = {
+  bytes: ArrayBuffer;
+  formatLabel: string;
+  height: number;
+  id: string;
+  isHiddenFromRecents: boolean;
+  mimeType: string;
+  name: string;
+  objectUrl: string;
+  source: "upload" | "url";
+  width: number;
 };
 
-type EditorOverlay = TextOverlay | BasicOverlay;
+type ImageOverlay = BaseOverlay & {
+  assetId: string;
+  type: "image";
+};
+
+type BasicOverlay = BaseOverlay & {
+  type: Exclude<OverlayType, "text" | "image">;
+};
+
+type EditorOverlay = TextOverlay | ImageOverlay | BasicOverlay;
 
 type EditorOverlayInput =
   | Omit<TextOverlay, "id">
+  | Omit<ImageOverlay, "id">
   | {
       pageNumber: number;
       rect: PdfRect;
@@ -51,6 +70,8 @@ type ViewportRect = PdfRect;
 export type {
   EditorOverlay,
   EditorOverlayInput,
+  ImageAsset,
+  ImageOverlay,
   OverlayType,
   PdfRect,
   TextOverlay,

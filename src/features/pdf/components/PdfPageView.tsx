@@ -3,17 +3,22 @@ import { useEffect, useRef, useState } from "react";
 import { OverlayLayer } from "@/features/editor/components/OverlayLayer";
 import type {
   EditorOverlay,
+  ImageAsset,
   PdfRect,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
 import type { PDFDocumentProxy } from "@/features/pdf/pdf-types";
 
 type PdfPageViewProps = {
+  activeImageAsset: ImageAsset | null;
   editingOverlayId: string | null;
+  imageAssets: ImageAsset[];
+  isImageToolActive: boolean;
   isTextToolActive: boolean;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
+  onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
@@ -31,11 +36,15 @@ type PageSize = {
 };
 
 function PdfPageView({
+  activeImageAsset,
   editingOverlayId,
+  imageAssets,
+  isImageToolActive,
   isTextToolActive,
   onClearSelection,
   onEditOverlay,
   onPageSizeChange,
+  onPlaceImageOverlay,
   onPlaceTextOverlay,
   onSelectOverlay,
   onUpdateTextOverlay,
@@ -151,10 +160,14 @@ function PdfPageView({
       <canvas ref={canvasRef} />
       {pageSize && (
         <OverlayLayer
+          activeImageAsset={activeImageAsset}
           editingOverlayId={editingOverlayId}
+          imageAssets={imageAssets}
+          isImageToolActive={isImageToolActive}
           isTextToolActive={isTextToolActive}
           onClearSelection={onClearSelection}
           onEditOverlay={onEditOverlay}
+          onPlaceImageOverlay={onPlaceImageOverlay}
           onPlaceTextOverlay={onPlaceTextOverlay}
           onSelectOverlay={onSelectOverlay}
           onUpdateTextOverlay={onUpdateTextOverlay}

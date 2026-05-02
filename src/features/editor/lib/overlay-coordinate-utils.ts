@@ -2,6 +2,7 @@ import type { PdfRect, ViewportRect } from "@/features/editor/editor-types";
 
 const defaultOverlayHeight = 32;
 const defaultOverlayWidth = 140;
+const maxInitialImageSize = 220;
 
 function pdfRectToViewportRect(rect: PdfRect, scale: number): ViewportRect {
   return {
@@ -49,12 +50,37 @@ function createOverlayRectAtPoint(
   };
 }
 
+function createImageOverlayRectAtPoint(
+  point: { x: number; y: number },
+  pageSize: { height: number; width: number },
+  imageSize: { height: number; width: number },
+): PdfRect {
+  const safeImageSize = {
+    height: imageSize.height > 0 ? imageSize.height : 120,
+    width: imageSize.width > 0 ? imageSize.width : 160,
+  };
+  const scale = Math.min(
+    1,
+    maxInitialImageSize / Math.max(safeImageSize.height, safeImageSize.width),
+  );
+  const width = safeImageSize.width * scale;
+  const height = safeImageSize.height * scale;
+
+  return {
+    height,
+    width,
+    x: clamp(point.x - width / 2, 0, pageSize.width - width),
+    y: clamp(point.y - height / 2, 0, pageSize.height - height),
+  };
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), Math.max(min, max));
 }
 
 export {
   createDefaultOverlayRect,
+  createImageOverlayRectAtPoint,
   createOverlayRectAtPoint,
   pdfRectToViewportRect,
   viewportRectToPdfRect,

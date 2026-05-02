@@ -2,18 +2,23 @@ import { PdfPageView } from "@/features/pdf/components/PdfPageView";
 import type { PageSize } from "@/features/pdf/components/PdfPageView";
 import type {
   EditorOverlay,
+  ImageAsset,
   PdfRect,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 
 type PdfDocumentViewProps = {
+  activeImageAsset: ImageAsset | null;
   document: LoadedPdfDocument;
   editingOverlayId: string | null;
+  imageAssets: ImageAsset[];
+  isImageToolActive: boolean;
   isTextToolActive: boolean;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
+  onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
@@ -24,12 +29,16 @@ type PdfDocumentViewProps = {
 };
 
 function PdfDocumentView({
+  activeImageAsset,
   document,
   editingOverlayId,
+  imageAssets,
+  isImageToolActive,
   isTextToolActive,
   onClearSelection,
   onEditOverlay,
   onPageSizeChange,
+  onPlaceImageOverlay,
   onPlaceTextOverlay,
   onSelectOverlay,
   onUpdateTextOverlay,
@@ -42,12 +51,16 @@ function PdfDocumentView({
     <div className="space-y-7">
       {Array.from({ length: document.pageCount }, (_, index) => (
         <PdfPageView
+          activeImageAsset={activeImageAsset}
           editingOverlayId={editingOverlayId}
+          imageAssets={imageAssets}
+          isImageToolActive={isImageToolActive}
           isTextToolActive={isTextToolActive}
           key={index + 1}
           onClearSelection={onClearSelection}
           onEditOverlay={onEditOverlay}
           onPageSizeChange={onPageSizeChange}
+          onPlaceImageOverlay={onPlaceImageOverlay}
           onPlaceTextOverlay={onPlaceTextOverlay}
           onSelectOverlay={onSelectOverlay}
           onUpdateTextOverlay={onUpdateTextOverlay}

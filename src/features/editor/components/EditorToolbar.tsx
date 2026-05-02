@@ -1,11 +1,10 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   CheckIcon,
   ChevronDownIcon,
   DownloadIcon,
   FileIcon,
   FileTextIcon,
-  ImageIcon,
   MoonIcon,
   PanelLeftIcon,
   Redo2Icon,
@@ -43,18 +42,28 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ImageToolDropdown } from "@/features/editor/components/ImageToolDropdown";
+import { ImageUrlDialog } from "@/features/editor/components/ImageUrlDialog";
 import type {
+  ImageAsset,
   TextOverlayDefaults,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
 import { TooltipButton } from "@/features/editor/components/TooltipButton";
 
 type EditorToolbarProps = {
+  activeImageAssetId: string | null;
   fileName: string | null;
+  imageAssets: ImageAsset[];
   isDark: boolean;
+  isImageToolActive: boolean;
   isTextSettingsDefault: boolean;
   isTextToolActive: boolean;
+  onImportImageUrl: (url: string) => Promise<void>;
   onOpenFile: () => void;
+  onOpenImageDialog: () => void;
+  onRemoveImageAssetFromRecents: (assetId: string) => void;
+  onSelectImageAsset: (assetId: string) => void;
   onTextSettingsChange: (patch: TextOverlayPatch) => void;
   onTextSettingsReset: () => void;
   onTextToolClick: () => void;
@@ -75,11 +84,18 @@ const fontOptions = [
 ];
 
 function EditorToolbar({
+  activeImageAssetId,
   fileName,
+  imageAssets,
   isDark,
+  isImageToolActive,
   isTextSettingsDefault,
   isTextToolActive,
+  onImportImageUrl,
   onOpenFile,
+  onOpenImageDialog,
+  onRemoveImageAssetFromRecents,
+  onSelectImageAsset,
   onTextSettingsChange,
   onTextSettingsReset,
   onTextToolClick,
@@ -93,6 +109,7 @@ function EditorToolbar({
 }: EditorToolbarProps) {
   const hasPdf = pageCount > 0;
   const isLoading = status === "loading";
+  const [isImageUrlDialogOpen, setIsImageUrlDialogOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-20 border-b bg-toolbar text-toolbar-foreground">
@@ -160,10 +177,15 @@ function EditorToolbar({
           settings={textSettings}
         />
 
-        <DropdownTool
+        <ImageToolDropdown
+          activeImageAssetId={activeImageAssetId}
           disabled={!hasPdf}
-          label="Image"
-          icon={<ImageIcon aria-hidden="true" />}
+          imageAssets={imageAssets}
+          isSelected={isImageToolActive}
+          onOpenUrlDialog={() => setIsImageUrlDialogOpen(true)}
+          onRemoveImageAssetFromRecents={onRemoveImageAssetFromRecents}
+          onSelectImageAsset={onSelectImageAsset}
+          onUploadImage={onOpenImageDialog}
         />
         <DropdownTool
           disabled={!hasPdf}
@@ -260,6 +282,11 @@ function EditorToolbar({
           </TooltipButton>
         </div>
       </div>
+      <ImageUrlDialog
+        onImportImageUrl={onImportImageUrl}
+        onOpenChange={setIsImageUrlDialogOpen}
+        open={isImageUrlDialogOpen}
+      />
     </header>
   );
 }

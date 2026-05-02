@@ -1,6 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import type {
   EditorOverlay,
+  ImageAsset,
   PdfRect,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
@@ -13,14 +14,18 @@ import type {
 } from "@/features/pdf/pdf-types";
 
 type DocumentWorkspaceProps = {
+  activeImageAsset: ImageAsset | null;
   document: LoadedPdfDocument | null;
   editingOverlayId: string | null;
   error: string | null;
+  imageAssets: ImageAsset[];
+  isImageToolActive: boolean;
   isTextToolActive: boolean;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
   onOpenFile: () => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
+  onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
@@ -32,14 +37,18 @@ type DocumentWorkspaceProps = {
 };
 
 function DocumentWorkspace({
+  activeImageAsset,
   document,
   editingOverlayId,
   error,
+  imageAssets,
+  isImageToolActive,
   isTextToolActive,
   onClearSelection,
   onEditOverlay,
   onOpenFile,
   onPageSizeChange,
+  onPlaceImageOverlay,
   onPlaceTextOverlay,
   onSelectOverlay,
   onUpdateTextOverlay,
@@ -66,12 +75,16 @@ function DocumentWorkspace({
 
       {status === "loaded" && document && (
         <PdfDocumentView
+          activeImageAsset={activeImageAsset}
           document={document}
           editingOverlayId={editingOverlayId}
+          imageAssets={imageAssets}
+          isImageToolActive={isImageToolActive}
           isTextToolActive={isTextToolActive}
           onClearSelection={onClearSelection}
           onEditOverlay={onEditOverlay}
           onPageSizeChange={onPageSizeChange}
+          onPlaceImageOverlay={onPlaceImageOverlay}
           onPlaceTextOverlay={onPlaceTextOverlay}
           onSelectOverlay={onSelectOverlay}
           onUpdateTextOverlay={onUpdateTextOverlay}

@@ -1,8 +1,9 @@
-import type { EditorOverlay } from "@/features/editor/editor-types";
+import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import { TextOverlayContent } from "@/features/editor/components/TextOverlayContent";
 import { cn } from "@/lib/utils";
 
 type OverlayBoxProps = {
+  imageAssets: ImageAsset[];
   isEditing: boolean;
   isSelected: boolean;
   onTextChange: (overlayId: string, text: string) => void;
@@ -11,6 +12,7 @@ type OverlayBoxProps = {
 };
 
 function OverlayBox({
+  imageAssets,
   isEditing,
   isSelected,
   onTextChange,
@@ -26,6 +28,36 @@ function OverlayBox({
         overlay={overlay}
         scale={scale}
       />
+    );
+  }
+
+  if (overlay.type === "image") {
+    const asset = imageAssets.find(
+      (imageAsset) => imageAsset.id === overlay.assetId,
+    );
+
+    return (
+      <div
+        className={cn(
+          "h-full w-full overflow-hidden border bg-transparent",
+          isSelected
+            ? "border-primary ring-2 ring-primary/25"
+            : "border-transparent hover:border-primary/50",
+        )}
+      >
+        {asset ? (
+          <img
+            alt=""
+            className="h-full w-full object-fill"
+            draggable={false}
+            src={asset.objectUrl}
+          />
+        ) : (
+          <div className="grid h-full w-full place-items-center bg-muted text-xs text-muted-foreground">
+            Missing image
+          </div>
+        )}
+      </div>
     );
   }
 

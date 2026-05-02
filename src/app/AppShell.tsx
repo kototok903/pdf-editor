@@ -17,6 +17,7 @@ import type {
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
 import { useEditorOverlays } from "@/features/editor/hooks/useEditorOverlays";
+import { useImageAssets } from "@/features/editor/hooks/useImageAssets";
 import { defaultTextOverlay } from "@/features/editor/lib/overlay-defaults";
 import type { PageSize } from "@/features/pdf/components/PdfPageView";
 import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
@@ -24,10 +25,11 @@ import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
 const minZoom = 0.5;
 const maxZoom = 2;
 const zoomStep = 0.1;
-type ActiveTool = "text" | null;
+type ActiveTool = { type: "image"; assetId: string } | { type: "text" } | null;
 
 function AppShell() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
@@ -51,6 +53,13 @@ function AppShell() {
     openFile,
     status,
   } = usePdfDocument();
+  const {
+    addImageFile,
+    addImageUrl,
+    hideImageAssetFromRecents,
+    imageAssets,
+    recentImageAssets,
+  } = useImageAssets();
 
   const selectedTextOverlay = useMemo(
     () =>
@@ -58,6 +67,10 @@ function AppShell() {
         (overlay): overlay is TextOverlay =>
           overlay.id === selectedOverlayId && overlay.type === "text",
       ) ?? null,
+    [overlays, selectedOverlayId],
+  );
+  const selectedOverlay = useMemo(
+    () => overlays.find((overlay) => overlay.id === selectedOverlayId) ?? null,
     [overlays, selectedOverlayId],
   );
 
@@ -73,11 +86,13 @@ function AppShell() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!selectedTextOverlay) {
+      if (!selectedOverlay) {
         return;
       }
 
-      const isEditingSelectedText = editingOverlayId === selectedTextOverlay.id;
+      const isEditingSelectedText =
+        selectedOverlay.type === "text" &&
+        editingOverlayId === selectedOverlay.id;
 
       if (isEditingSelectedText && event.metaKey && event.key === "Enter") {
         event.preventDefault();
@@ -91,14 +106,14 @@ function AppShell() {
 
       if (event.key === "Backspace" || event.key === "Delete") {
         event.preventDefault();
-        removeOverlay(selectedTextOverlay.id);
+        removeOverlay(selectedOverlay.id);
         setEditingOverlayId(null);
         return;
       }
 
-      if (event.key === "Enter") {
+      if (selectedOverlay.type === "text" && event.key === "Enter") {
         event.preventDefault();
-        setEditingOverlayId(selectedTextOverlay.id);
+        setEditingOverlayId(selectedOverlay.id);
       }
     };
 
@@ -107,7 +122,12 @@ function AppShell() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [editingOverlayId, removeOverlay, selectedTextOverlay]);
+  }, [editingOverlayId, removeOverlay, selectedOverlay]);
+
+  const activeImageAsset =
+    activeTool?.type === "image"
+      ? (imageAssets.find((asset) => asset.id === activeTool.assetId) ?? null)
+      : null;
 
   const handleOpenFileDialog = () => {
     fileInputRef.current?.click();
@@ -128,6 +148,31 @@ function AppShell() {
     void openFile(file);
   };
 
+  const handleOpenImageDialog = () => {
+    imageInputRef.current?.click();
+  };
+
+  const handleImageFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    void addImageFile(file).then((asset) => {
+      setActiveTool({ assetId: asset.id, type: "image" });
+      setEditingOverlayId(null);
+    });
+  };
+
+  const handleImportImageUrl = async (url: string) => {
+    const asset = await addImageUrl(url);
+
+    setActiveTool({ assetId: asset.id, type: "image" });
+    setEditingOverlayId(null);
+  };
+
   const handlePageSizeChange = useCallback(
     (pageNumber: number, pageSize: PageSize) => {
       setPageSizes((currentPageSizes) => ({
@@ -139,7 +184,9 @@ function AppShell() {
   );
 
   const handleTextToolClick = () => {
-    setActiveTool((currentTool) => (currentTool === "text" ? null : "text"));
+    setActiveTool((currentTool) =>
+      currentTool?.type === "text" ? null : { type: "text" },
+    );
     setEditingOverlayId(null);
   };
 
@@ -153,6 +200,22 @@ function AppShell() {
     });
     setActiveTool(null);
     setEditingOverlayId(overlay.id);
+  };
+
+  const handlePlaceImageOverlay = (pageNumber: number, rect: PdfRect) => {
+    if (!activeImageAsset) {
+      return;
+    }
+
+    setCurrentPage(pageNumber);
+    addOverlay({
+      assetId: activeImageAsset.id,
+      pageNumber,
+      rect,
+      type: "image",
+    });
+    setActiveTool(null);
+    setEditingOverlayId(null);
   };
 
   const handleTextSettingsChange = (patch: TextOverlayPatch) => {
@@ -217,18 +280,35 @@ function AppShell() {
           ref={fileInputRef}
           type="file"
         />
+        <input
+          accept="image/*,.svg"
+          className="hidden"
+          onChange={handleImageFileChange}
+          ref={imageInputRef}
+          type="file"
+        />
         <EditorToolbar
+          activeImageAssetId={activeImageAsset?.id ?? null}
           fileName={loadedDocument?.fileName ?? null}
+          imageAssets={recentImageAssets}
           isDark={isDark}
-          isTextToolActive={activeTool === "text"}
+          isImageToolActive={activeTool?.type === "image"}
           onOpenFile={handleOpenFileDialog}
+          isTextSettingsDefault={isTextSettingsDefault}
+          isTextToolActive={activeTool?.type === "text"}
+          onImportImageUrl={handleImportImageUrl}
+          onOpenImageDialog={handleOpenImageDialog}
+          onRemoveImageAssetFromRecents={hideImageAssetFromRecents}
+          onSelectImageAsset={(assetId) => {
+            setActiveTool({ assetId, type: "image" });
+            setEditingOverlayId(null);
+          }}
           onTextSettingsChange={handleTextSettingsChange}
           onTextSettingsReset={handleTextSettingsReset}
           onTextToolClick={handleTextToolClick}
           onToggleTheme={() => setIsDark(!isDark)}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
-          isTextSettingsDefault={isTextSettingsDefault}
           pageCount={loadedDocument?.pageCount ?? 0}
           status={status}
           textSettings={currentTextSettings}
@@ -243,11 +323,15 @@ function AppShell() {
             document={loadedDocument}
             editingOverlayId={editingOverlayId}
             error={error}
-            isTextToolActive={activeTool === "text"}
+            activeImageAsset={activeImageAsset}
+            imageAssets={imageAssets}
+            isImageToolActive={activeTool?.type === "image"}
+            isTextToolActive={activeTool?.type === "text"}
             onClearSelection={handleClearSelection}
             onEditOverlay={setEditingOverlayId}
             onOpenFile={handleOpenFileDialog}
             onPageSizeChange={handlePageSizeChange}
+            onPlaceImageOverlay={handlePlaceImageOverlay}
             onPlaceTextOverlay={handlePlaceTextOverlay}
             onSelectOverlay={handleSelectOverlay}
             onUpdateTextOverlay={updateTextOverlay}

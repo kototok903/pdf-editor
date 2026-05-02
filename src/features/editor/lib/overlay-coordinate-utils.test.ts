@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   createDefaultOverlayRect,
+  createImageOverlayRectAtPoint,
   createOverlayRectAtPoint,
   pdfRectToViewportRect,
   viewportRectToPdfRect,
@@ -48,6 +49,51 @@ describe("overlay-coordinate-utils", () => {
       width: 140,
       x: 460,
       y: 0,
+    });
+  });
+
+  it("creates an image overlay rect centered at a point", () => {
+    expect(
+      createImageOverlayRectAtPoint(
+        { x: 300, y: 400 },
+        { height: 800, width: 600 },
+        { height: 100, width: 200 },
+      ),
+    ).toEqual({
+      height: 100,
+      width: 200,
+      x: 200,
+      y: 350,
+    });
+  });
+
+  it("scales a large image overlay rect down for initial placement", () => {
+    expect(
+      createImageOverlayRectAtPoint(
+        { x: 300, y: 400 },
+        { height: 800, width: 600 },
+        { height: 1000, width: 2000 },
+      ),
+    ).toEqual({
+      height: 110,
+      width: 220,
+      x: 190,
+      y: 345,
+    });
+  });
+
+  it("keeps an image overlay rect inside the page", () => {
+    expect(
+      createImageOverlayRectAtPoint(
+        { x: 590, y: 790 },
+        { height: 800, width: 600 },
+        { height: 100, width: 200 },
+      ),
+    ).toEqual({
+      height: 100,
+      width: 200,
+      x: 400,
+      y: 700,
     });
   });
 });
