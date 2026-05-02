@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "pdf-editor-scaffold-eupto7",
+      "name": "pdf-editor",
       "dependencies": {
         "@fontsource-variable/geist": "^5.2.8",
         "class-variance-authority": "^0.7.1",
