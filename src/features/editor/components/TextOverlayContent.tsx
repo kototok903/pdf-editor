@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import type { TextOverlay } from "@/features/editor/editor-types";
+import { getTextFontFamily } from "@/features/editor/lib/text-fonts";
 import { cn } from "@/lib/utils";
 
 type TextOverlayContentProps = {
@@ -20,16 +21,17 @@ function TextOverlayContent({
 }: TextOverlayContentProps) {
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const className = cn(
-    "h-full w-full overflow-hidden border bg-transparent p-1 leading-tight outline-none",
-    !isSelected && "border-transparent hover:border-primary/50",
-    isSelected && "border-primary",
+    "h-full w-full overflow-hidden border-0 bg-transparent p-0 font-normal leading-tight outline -outline-offset-1 outline-transparent",
+    !isSelected && "hover:outline-primary/50",
+    isSelected && "outline-primary",
     isEditing && "ring-2 ring-primary/25",
   );
 
   const style = {
     color: overlay.color,
-    fontFamily: overlay.fontFamily,
+    fontFamily: getTextFontFamily(overlay.fontId),
     fontSize: overlay.fontSize * scale,
+    fontSynthesisWeight: "none" as const,
   };
 
   useEffect(() => {

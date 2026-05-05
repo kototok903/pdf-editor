@@ -1,5 +1,6 @@
 type OverlayType = "text" | "image" | "mark" | "signature" | "whiteout";
 type MarkType = "ballot-x" | "check" | "dot" | "heavy-check" | "slash-x" | "x";
+type TextFontId = "courier" | "helvetica" | "times-roman";
 
 type PdfRect = {
   height: number;
@@ -16,7 +17,7 @@ type BaseOverlay = {
 
 type TextOverlay = BaseOverlay & {
   color: string;
-  fontFamily: string;
+  fontId: TextFontId;
   fontSize: number;
   text: string;
   type: "text";
@@ -63,13 +64,13 @@ type EditorOverlayInput =
     };
 
 type TextOverlayPatch = Partial<
-  Pick<TextOverlay, "color" | "fontFamily" | "fontSize" | "text">
+  Pick<TextOverlay, "color" | "fontId" | "fontSize" | "text">
 >;
 type MarkOverlayPatch = Partial<Pick<MarkOverlay, "color" | "markType">>;
 
 type TextOverlayDefaults = {
   color: string;
-  fontFamily: string;
+  fontId: TextFontId;
   fontSize: number;
   text: string;
 };
@@ -89,5 +90,6 @@ export type {
   TextOverlay,
   TextOverlayDefaults,
   TextOverlayPatch,
+  TextFontId,
   ViewportRect,
 };

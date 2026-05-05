@@ -6,7 +6,9 @@ import {
   useState,
   type ChangeEvent,
 } from "react";
+import { toast } from "sonner";
 
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DocumentWorkspace } from "@/features/editor/components/DocumentWorkspace";
 import { EditorToolbar } from "@/features/editor/components/EditorToolbar";
@@ -23,6 +25,8 @@ import { useEditorKeyboardShortcuts } from "@/features/editor/hooks/useEditorKey
 import { useImageAssets } from "@/features/editor/hooks/useImageAssets";
 import { defaultMarkSettings } from "@/features/editor/lib/mark-definitions";
 import { defaultTextOverlay } from "@/features/editor/lib/overlay-defaults";
+import { createExportFileName } from "@/features/pdf-export/lib/export-file-name";
+import { exportPdf } from "@/features/pdf-export/lib/export-pdf";
 import type { PageSize } from "@/features/pdf/components/PdfPageView";
 import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
 
@@ -36,10 +40,12 @@ type ActiveTool =
   | null;
 
 function AppShell() {
+  const exportedFileNamesRef = useRef<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
   const [pageSizes, setPageSizes] = useState<Record<number, PageSize>>({});
@@ -48,6 +54,7 @@ function AppShell() {
   const [zoom, setZoom] = useState(1);
   const {
     addOverlay,
+    clearOverlays,
     clearSelection,
     overlays,
     removeOverlay,
@@ -99,7 +106,7 @@ function AppShell() {
     currentMarkSettings.markType === defaultMarkSettings.markType;
   const isTextSettingsDefault =
     currentTextSettings.color === defaultTextOverlay.color &&
-    currentTextSettings.fontFamily === defaultTextOverlay.fontFamily &&
+    currentTextSettings.fontId === defaultTextOverlay.fontId &&
     currentTextSettings.fontSize === defaultTextOverlay.fontSize;
 
   useEffect(() => {
@@ -150,10 +157,45 @@ function AppShell() {
     }
 
     setCurrentPage(1);
+    clearOverlays();
     setEditingOverlayId(null);
     setActiveTool(null);
     setPageSizes({});
+    exportedFileNamesRef.current = new Set();
     void openFile(file);
+  };
+
+  const handleExportPdf = async () => {
+    if (!loadedDocument || isExporting) {
+      return;
+    }
+
+    setIsExporting(true);
+    setEditingOverlayId(null);
+
+    try {
+      const fileName = createExportFileName(
+        loadedDocument.fileName,
+        exportedFileNamesRef.current,
+      );
+      const exportedBytes = await exportPdf({
+        imageAssets,
+        originalPdfBytes: loadedDocument.bytes,
+        overlays,
+      });
+
+      downloadBytes(exportedBytes, fileName);
+      exportedFileNamesRef.current.add(fileName);
+      toast.success("Exported PDF", {
+        description: fileName,
+      });
+    } catch (error) {
+      toast.error("Unable to export PDF", {
+        description: getExportErrorMessage(error),
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleOpenImageDialog = () => {
@@ -283,7 +325,7 @@ function AppShell() {
   const handleTextSettingsReset = () => {
     const defaultTextPatch = {
       color: defaultTextOverlay.color,
-      fontFamily: defaultTextOverlay.fontFamily,
+      fontId: defaultTextOverlay.fontId,
       fontSize: defaultTextOverlay.fontSize,
     };
 
@@ -338,12 +380,14 @@ function AppShell() {
           fileName={loadedDocument?.fileName ?? null}
           imageAssets={recentImageAssets}
           isDark={isDark}
+          isExporting={isExporting}
           isImageToolActive={activeTool?.type === "image"}
           isMarkSettingsDefault={isMarkSettingsDefault}
           isMarkToolActive={activeTool?.type === "mark"}
           isTextSettingsDefault={isTextSettingsDefault}
           isTextToolActive={activeTool?.type === "text"}
           markSettings={currentMarkSettings}
+          onExportPdf={handleExportPdf}
           onImportImageUrl={handleImportImageUrl}
           onMarkSettingsChange={handleMarkSettingsChange}
           onMarkSettingsReset={handleMarkSettingsReset}
@@ -397,9 +441,34 @@ function AppShell() {
             zoom={zoom}
           />
         </div>
+        <Toaster position="bottom-right" />
       </main>
     </TooltipProvider>
   );
+}
+
+function downloadBytes(bytes: Uint8Array, fileName: string) {
+  const arrayBuffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(arrayBuffer).set(bytes);
+  const blob = new Blob([arrayBuffer], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.rel = "noopener";
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function getExportErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Please try again.";
 }
 
 export { AppShell };

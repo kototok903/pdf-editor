@@ -64,7 +64,8 @@ function usePdfDocument() {
       setState({ document: null, error: null, status: "loading" });
 
       try {
-        const pdfDocument = await loadPdfDocument(file);
+        const bytes = await file.arrayBuffer();
+        const pdfDocument = await loadPdfDocument(bytes);
 
         if (loadIdRef.current !== loadId) {
           void pdfDocument.destroy();
@@ -74,6 +75,7 @@ function usePdfDocument() {
         documentRef.current = pdfDocument;
         setState({
           document: {
+            bytes,
             fileName: file.name,
             pageCount: pdfDocument.numPages,
             pdfDocument,

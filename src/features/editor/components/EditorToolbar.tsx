@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import {
   ChevronDownIcon,
-  DownloadIcon,
+  FileDownIcon,
   FileIcon,
   FileTextIcon,
   MoonIcon,
@@ -48,9 +48,11 @@ import type {
   ImageAsset,
   MarkOverlayPatch,
   MarkType,
+  TextFontId,
   TextOverlayDefaults,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
+import { textFontOptions } from "@/features/editor/lib/text-fonts";
 import { TooltipButton } from "@/features/editor/components/TooltipButton";
 
 type EditorToolbarProps = {
@@ -68,6 +70,7 @@ type EditorToolbarProps = {
   onMarkSettingsReset: () => void;
   onMarkToolActivate: () => void;
   onMarkToolClick: () => void;
+  onExportPdf: () => void;
   onOpenFile: () => void;
   onOpenImageDialog: () => void;
   onRemoveImageAssetFromRecents: (assetId: string) => void;
@@ -80,6 +83,7 @@ type EditorToolbarProps = {
   onZoomOut: () => void;
   pageCount: number;
   status: "empty" | "loading" | "loaded" | "error";
+  isExporting: boolean;
   markSettings: {
     color: string;
     markType: MarkType;
@@ -87,13 +91,6 @@ type EditorToolbarProps = {
   textSettings: TextOverlayDefaults;
   zoomPercent: number;
 };
-
-const fontOptions = [
-  { label: "Arial", value: "Arial, Helvetica, sans-serif" },
-  { label: "Georgia", value: "Georgia, serif" },
-  { label: "Times", value: "'Times New Roman', Times, serif" },
-  { label: "Courier", value: "'Courier New', Courier, monospace" },
-];
 
 function EditorToolbar({
   activeImageAssetId,
@@ -106,6 +103,7 @@ function EditorToolbar({
   isTextSettingsDefault,
   isTextToolActive,
   markSettings,
+  onExportPdf,
   onImportImageUrl,
   onMarkSettingsChange,
   onMarkSettingsReset,
@@ -123,6 +121,7 @@ function EditorToolbar({
   onZoomOut,
   pageCount,
   status,
+  isExporting,
   textSettings,
   zoomPercent,
 }: EditorToolbarProps) {
@@ -178,8 +177,12 @@ function EditorToolbar({
             >
               <FileIcon aria-hidden="true" /> Open PDF
             </DropdownMenuItem>
-            <DropdownMenuItem disabled={!hasPdf}>
-              <DownloadIcon aria-hidden="true" /> Download PDF
+            <DropdownMenuItem
+              disabled={!hasPdf || isExporting}
+              onSelect={onExportPdf}
+            >
+              <FileDownIcon aria-hidden="true" />{" "}
+              {isExporting ? "Exporting..." : "Export PDF"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -367,20 +370,20 @@ function TextToolButton({
             <div className="grid gap-1.5 text-xs font-medium">
               <span>Font</span>
               <Select
-                onValueChange={(fontFamily) => {
-                  onSettingsChange({ fontFamily });
+                onValueChange={(fontId) => {
+                  onSettingsChange({ fontId: fontId as TextFontId });
                 }}
-                value={settings.fontFamily}
+                value={settings.fontId}
               >
                 <SelectTrigger className="h-8 w-full font-normal">
                   <SelectValue placeholder="Font" />
                 </SelectTrigger>
                 <SelectContent>
-                  {fontOptions.map((fontOption) => (
+                  {textFontOptions.map((fontOption) => (
                     <SelectItem
-                      key={fontOption.value}
-                      style={{ fontFamily: fontOption.value }}
-                      value={fontOption.value}
+                      key={fontOption.id}
+                      style={{ fontFamily: fontOption.cssFontFamily }}
+                      value={fontOption.id}
                     >
                       {fontOption.label}
                     </SelectItem>
