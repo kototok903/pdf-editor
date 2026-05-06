@@ -47,8 +47,13 @@ function AppShell() {
   const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [isPagesSidebarOpen, setIsPagesSidebarOpen] = useState(true);
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
   const [pageSizes, setPageSizes] = useState<Record<number, PageSize>>({});
+  const [scrollToPageRequest, setScrollToPageRequest] = useState<{
+    pageNumber: number;
+    requestId: number;
+  } | null>(null);
   const [markDefaults, setMarkDefaults] = useState(defaultMarkSettings);
   const [textDefaults, setTextDefaults] = useState(defaultTextOverlay);
   const [zoom, setZoom] = useState(1);
@@ -358,6 +363,14 @@ function AppShell() {
     );
   };
 
+  const handleSelectSidebarPage = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    setScrollToPageRequest((currentRequest) => ({
+      pageNumber,
+      requestId: (currentRequest?.requestId ?? 0) + 1,
+    }));
+  };
+
   return (
     <TooltipProvider>
       <main className="flex min-h-screen flex-col bg-background text-foreground">
@@ -382,6 +395,7 @@ function AppShell() {
           isDark={isDark}
           isExporting={isExporting}
           isImageToolActive={activeTool?.type === "image"}
+          isPagesSidebarOpen={isPagesSidebarOpen}
           isMarkSettingsDefault={isMarkSettingsDefault}
           isMarkToolActive={activeTool?.type === "mark"}
           isTextSettingsDefault={isTextSettingsDefault}
@@ -403,6 +417,9 @@ function AppShell() {
           onTextSettingsChange={handleTextSettingsChange}
           onTextSettingsReset={handleTextSettingsReset}
           onTextToolClick={handleTextToolClick}
+          onTogglePagesSidebar={() =>
+            setIsPagesSidebarOpen((isOpen) => !isOpen)
+          }
           onToggleTheme={() => setIsDark(!isDark)}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
@@ -412,11 +429,18 @@ function AppShell() {
           zoomPercent={Math.round(zoom * 100)}
         />
         <div className="flex h-[calc(100vh-3rem)] min-h-0 bg-workspace text-workspace-foreground">
-          <PagesSidebar
-            currentPage={currentPage}
-            pageCount={loadedDocument?.pageCount ?? 0}
-          />
+          {isPagesSidebarOpen && (
+            <PagesSidebar
+              currentPage={currentPage}
+              document={loadedDocument}
+              imageAssets={imageAssets}
+              onSelectPage={handleSelectSidebarPage}
+              overlays={overlays}
+              pageCount={loadedDocument?.pageCount ?? 0}
+            />
+          )}
           <DocumentWorkspace
+            currentPage={currentPage}
             document={loadedDocument}
             editingOverlayId={editingOverlayId}
             error={error}
@@ -426,6 +450,7 @@ function AppShell() {
             isMarkToolActive={activeTool?.type === "mark"}
             isTextToolActive={activeTool?.type === "text"}
             onClearSelection={handleClearSelection}
+            onCurrentPageChange={setCurrentPage}
             onEditOverlay={handleEditOverlay}
             onOpenFile={handleOpenFileDialog}
             onPageSizeChange={handlePageSizeChange}
@@ -438,6 +463,7 @@ function AppShell() {
             overlays={overlays}
             selectedOverlayId={selectedOverlayId}
             status={status}
+            scrollToPageRequest={scrollToPageRequest}
             zoom={zoom}
           />
         </div>

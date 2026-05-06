@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { OverlayLayer } from "@/features/editor/components/OverlayLayer";
 import type {
@@ -18,6 +18,10 @@ type PdfPageViewProps = {
   isTextToolActive: boolean;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
+  onPageElementChange: (
+    pageNumber: number,
+    element: HTMLElement | null,
+  ) => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceMarkOverlay: (pageNumber: number, rect: PdfRect) => void;
@@ -46,6 +50,7 @@ function PdfPageView({
   isTextToolActive,
   onClearSelection,
   onEditOverlay,
+  onPageElementChange,
   onPageSizeChange,
   onPlaceImageOverlay,
   onPlaceMarkOverlay,
@@ -63,6 +68,12 @@ function PdfPageView({
   const [error, setError] = useState<string | null>(null);
   const [isRendering, setIsRendering] = useState(true);
   const [pageSize, setPageSize] = useState<PageSize | null>(null);
+  const articleRef = useCallback(
+    (element: HTMLElement | null) => {
+      onPageElementChange(pageNumber, element);
+    },
+    [onPageElementChange, pageNumber],
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -146,6 +157,7 @@ function PdfPageView({
   return (
     <article
       className="relative mx-auto overflow-hidden border bg-page text-page-foreground shadow-page"
+      ref={articleRef}
       style={{
         minHeight: pageSize?.height,
         width: pageSize?.width ?? 430,

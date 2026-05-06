@@ -18,6 +18,10 @@ type PdfDocumentViewProps = {
   isTextToolActive: boolean;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
+  onPageElementChange: (
+    pageNumber: number,
+    element: HTMLElement | null,
+  ) => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceMarkOverlay: (pageNumber: number, rect: PdfRect) => void;
@@ -40,6 +44,7 @@ function PdfDocumentView({
   isTextToolActive,
   onClearSelection,
   onEditOverlay,
+  onPageElementChange,
   onPageSizeChange,
   onPlaceImageOverlay,
   onPlaceMarkOverlay,
@@ -64,6 +69,7 @@ function PdfDocumentView({
           key={index + 1}
           onClearSelection={onClearSelection}
           onEditOverlay={onEditOverlay}
+          onPageElementChange={onPageElementChange}
           onPageSizeChange={onPageSizeChange}
           onPlaceImageOverlay={onPlaceImageOverlay}
           onPlaceMarkOverlay={onPlaceMarkOverlay}

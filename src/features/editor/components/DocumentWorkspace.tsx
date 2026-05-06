@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useRef } from "react";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import type {
   EditorOverlay,
@@ -5,6 +7,10 @@ import type {
   PdfRect,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
+import {
+  findCenteredPageNumber,
+  getScrollTopForPage,
+} from "@/features/editor/lib/page-scroll-utils";
 import { PdfDocumentView } from "@/features/pdf/components/PdfDocumentView";
 import type { PageSize } from "@/features/pdf/components/PdfPageView";
 import { PdfUploadEmptyState } from "@/features/pdf/components/PdfUploadEmptyState";
@@ -15,6 +21,7 @@ import type {
 
 type DocumentWorkspaceProps = {
   activeImageAsset: ImageAsset | null;
+  currentPage: number;
   document: LoadedPdfDocument | null;
   editingOverlayId: string | null;
   error: string | null;
@@ -23,6 +30,7 @@ type DocumentWorkspaceProps = {
   isMarkToolActive: boolean;
   isTextToolActive: boolean;
   onClearSelection: () => void;
+  onCurrentPageChange: (pageNumber: number) => void;
   onEditOverlay: (overlayId: string | null) => void;
   onOpenFile: () => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
@@ -35,11 +43,18 @@ type DocumentWorkspaceProps = {
   overlays: EditorOverlay[];
   selectedOverlayId: string | null;
   status: PdfLoadStatus;
+  scrollToPageRequest: ScrollToPageRequest | null;
   zoom: number;
+};
+
+type ScrollToPageRequest = {
+  pageNumber: number;
+  requestId: number;
 };
 
 function DocumentWorkspace({
   activeImageAsset,
+  currentPage,
   document,
   editingOverlayId,
   error,
@@ -48,6 +63,7 @@ function DocumentWorkspace({
   isMarkToolActive,
   isTextToolActive,
   onClearSelection,
+  onCurrentPageChange,
   onEditOverlay,
   onOpenFile,
   onPageSizeChange,
@@ -60,10 +76,105 @@ function DocumentWorkspace({
   overlays,
   selectedOverlayId,
   status,
+  scrollToPageRequest,
   zoom,
 }: DocumentWorkspaceProps) {
+  const pageElementsRef = useRef<Map<number, HTMLElement>>(new Map());
+  const scrollFrameRef = useRef<number | null>(null);
+  const workspaceRef = useRef<HTMLElement | null>(null);
+
+  const reportCenteredPage = useCallback(() => {
+    scrollFrameRef.current = null;
+
+    const workspace = workspaceRef.current;
+
+    if (!workspace) {
+      return;
+    }
+
+    const workspaceBounds = workspace.getBoundingClientRect();
+    const centeredPage = findCenteredPageNumber({
+      fallbackPage: currentPage,
+      pages: Array.from(pageElementsRef.current, ([pageNumber, element]) => {
+        const bounds = element.getBoundingClientRect();
+
+        return {
+          bottom: bounds.bottom,
+          pageNumber,
+          top: bounds.top,
+        };
+      }),
+      viewportHeight: workspaceBounds.height,
+      viewportTop: workspaceBounds.top,
+    });
+
+    if (centeredPage !== currentPage) {
+      onCurrentPageChange(centeredPage);
+    }
+  }, [currentPage, onCurrentPageChange]);
+
+  const handleScroll = useCallback(() => {
+    if (scrollFrameRef.current !== null) {
+      return;
+    }
+
+    scrollFrameRef.current = requestAnimationFrame(reportCenteredPage);
+  }, [reportCenteredPage]);
+
+  const handlePageElementChange = useCallback(
+    (pageNumber: number, element: HTMLElement | null) => {
+      if (element) {
+        pageElementsRef.current.set(pageNumber, element);
+        return;
+      }
+
+      pageElementsRef.current.delete(pageNumber);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (scrollFrameRef.current !== null) {
+        cancelAnimationFrame(scrollFrameRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!scrollToPageRequest) {
+      return;
+    }
+
+    const workspace = workspaceRef.current;
+    const pageElement = pageElementsRef.current.get(
+      scrollToPageRequest.pageNumber,
+    );
+
+    if (!workspace || !pageElement) {
+      return;
+    }
+
+    const workspaceBounds = workspace.getBoundingClientRect();
+    const pageBounds = pageElement.getBoundingClientRect();
+
+    workspace.scrollTo({
+      behavior: "smooth",
+      top: getScrollTopForPage({
+        containerScrollTop: workspace.scrollTop,
+        containerTop: workspaceBounds.top,
+        pageTop: pageBounds.top,
+        topSpacing: pageScrollTopSpacing,
+      }),
+    });
+  }, [scrollToPageRequest]);
+
   return (
-    <section className="min-h-0 flex-1 overflow-auto px-7 py-7">
+    <section
+      className="min-h-0 flex-1 overflow-auto px-7 py-7"
+      onScroll={handleScroll}
+      ref={workspaceRef}
+    >
       {status === "empty" && <PdfUploadEmptyState onOpenFile={onOpenFile} />}
 
       {status === "loading" && <PdfPageSkeleton />}
@@ -88,6 +199,7 @@ function DocumentWorkspace({
           isTextToolActive={isTextToolActive}
           onClearSelection={onClearSelection}
           onEditOverlay={onEditOverlay}
+          onPageElementChange={handlePageElementChange}
           onPageSizeChange={onPageSizeChange}
           onPlaceImageOverlay={onPlaceImageOverlay}
           onPlaceMarkOverlay={onPlaceMarkOverlay}
@@ -103,6 +215,8 @@ function DocumentWorkspace({
     </section>
   );
 }
+
+const pageScrollTopSpacing = 24;
 
 function PdfPageSkeleton() {
   return (

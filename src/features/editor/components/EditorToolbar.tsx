@@ -5,7 +5,8 @@ import {
   FileIcon,
   FileTextIcon,
   MoonIcon,
-  PanelLeftIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
   Redo2Icon,
   RotateCcwIcon,
   SignatureIcon,
@@ -61,6 +62,7 @@ type EditorToolbarProps = {
   imageAssets: ImageAsset[];
   isDark: boolean;
   isImageToolActive: boolean;
+  isPagesSidebarOpen: boolean;
   isMarkSettingsDefault: boolean;
   isMarkToolActive: boolean;
   isTextSettingsDefault: boolean;
@@ -79,6 +81,7 @@ type EditorToolbarProps = {
   onTextSettingsReset: () => void;
   onTextToolClick: () => void;
   onToggleTheme: () => void;
+  onTogglePagesSidebar: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   pageCount: number;
@@ -98,6 +101,7 @@ function EditorToolbar({
   imageAssets,
   isDark,
   isImageToolActive,
+  isPagesSidebarOpen,
   isMarkSettingsDefault,
   isMarkToolActive,
   isTextSettingsDefault,
@@ -117,6 +121,7 @@ function EditorToolbar({
   onTextSettingsReset,
   onTextToolClick,
   onToggleTheme,
+  onTogglePagesSidebar,
   onZoomIn,
   onZoomOut,
   pageCount,
@@ -134,12 +139,18 @@ function EditorToolbar({
       <div className="flex h-12 items-center gap-1.5 px-2.5">
         <TooltipButton label="Toggle pages">
           <Button
+            aria-pressed={isPagesSidebarOpen}
             className="w-[30px] px-0"
+            onClick={onTogglePagesSidebar}
             size="sm"
             type="button"
             variant="toolbar"
           >
-            <PanelLeftIcon aria-hidden="true" />
+            {isPagesSidebarOpen ? (
+              <PanelLeftCloseIcon aria-hidden="true" />
+            ) : (
+              <PanelLeftOpenIcon aria-hidden="true" />
+            )}
           </Button>
         </TooltipButton>
 
