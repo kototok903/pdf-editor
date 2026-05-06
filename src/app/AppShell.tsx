@@ -708,7 +708,7 @@ function AppShell() {
 
   return (
     <TooltipProvider>
-      <main className="flex min-h-screen flex-col bg-background text-foreground">
+      <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
         <input
           accept="application/pdf"
           className="hidden"
@@ -763,7 +763,7 @@ function AppShell() {
           textSettings={currentTextSettings}
           zoomPercent={Math.round(zoom * 100)}
         />
-        <div className="flex h-[calc(100vh-3rem)] min-h-0 bg-workspace text-workspace-foreground">
+        <div className="flex min-h-0 flex-1 bg-workspace text-workspace-foreground">
           {isPagesSidebarOpen && (
             <PagesSidebar
               currentPage={currentPage}

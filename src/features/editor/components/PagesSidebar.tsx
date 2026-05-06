@@ -43,7 +43,7 @@ function PagesSidebar({
   }, [currentPage]);
 
   return (
-    <aside className="flex h-[calc(100vh-3rem)] w-20 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+    <aside className="flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <div className="shrink-0 border-b border-sidebar-border p-2">
         <div className="flex items-center justify-between text-xs">
           <span>Page</span>
