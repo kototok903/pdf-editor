@@ -8,10 +8,26 @@ const imageMimeTypeLabels: Record<string, string> = {
   "image/webp": "WebP",
 };
 
-async function createImageAssetFromFile(file: File): Promise<ImageAsset> {
+async function createImageAssetFromFile(
+  file: File,
+  sha256Signature?: string,
+): Promise<ImageAsset> {
   return createImageAssetFromBlob({
     blob: file,
     name: file.name || "image",
+    sha256Signature,
+    source: "upload",
+  });
+}
+
+async function createImageAssetFromClipboardBlob(
+  blob: Blob,
+  sha256Signature?: string,
+): Promise<ImageAsset> {
+  return createImageAssetFromBlob({
+    blob,
+    name: getClipboardImageName(blob.type),
+    sha256Signature,
     source: "upload",
   });
 }
@@ -39,10 +55,12 @@ async function createImageAssetFromUrl(url: string): Promise<ImageAsset> {
 async function createImageAssetFromBlob({
   blob,
   name,
+  sha256Signature,
   source,
 }: {
   blob: Blob;
   name: string;
+  sha256Signature?: string;
   source: ImageAsset["source"];
 }) {
   const objectUrl = URL.createObjectURL(blob);
@@ -59,6 +77,8 @@ async function createImageAssetFromBlob({
       mimeType: blob.type || "application/octet-stream",
       name,
       objectUrl,
+      sha256Signature:
+        sha256Signature ?? (await createImageSha256Signature(blob)),
       source,
       width,
     };
@@ -99,6 +119,27 @@ function getFileNameFromUrl(url: string) {
   }
 }
 
+function getClipboardImageName(mimeType: string) {
+  const extension = mimeType.split("/").at(1);
+
+  return extension ? `Pasted image.${extension}` : "Pasted image";
+}
+
+async function createImageSha256Signature(blob: Blob) {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    await blob.arrayBuffer(),
+  );
+
+  return arrayBufferToHex(digest);
+}
+
+function arrayBufferToHex(buffer: ArrayBuffer) {
+  return [...new Uint8Array(buffer)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 function loadImageDimensions(objectUrl: string) {
   return new Promise<{ height: number; width: number }>((resolve, reject) => {
     const image = new Image();
@@ -117,7 +158,9 @@ function loadImageDimensions(objectUrl: string) {
 }
 
 export {
+  createImageAssetFromClipboardBlob,
   createImageAssetFromFile,
   createImageAssetFromUrl,
+  createImageSha256Signature,
   getImageMetadataLabel,
 };

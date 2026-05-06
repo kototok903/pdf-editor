@@ -32,12 +32,14 @@ type ImageAsset = {
   mimeType: string;
   name: string;
   objectUrl: string;
+  sha256Signature: string;
   source: "upload" | "url";
   width: number;
 };
 
 type ImageOverlay = BaseOverlay & {
   assetId: string;
+  sha256Signature: string;
   type: "image";
 };
 

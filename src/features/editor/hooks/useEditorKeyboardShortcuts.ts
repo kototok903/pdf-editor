@@ -9,7 +9,11 @@ type UseEditorKeyboardShortcutsOptions = {
   hasActiveTool: boolean;
   onClearActiveTool: () => void;
   onClearSelection: () => void;
+  onCopySelectedOverlay: () => void;
+  onDuplicateSelectedOverlay: () => void;
   onEditOverlay: (overlayId: string | null) => void;
+  onPaste: () => void;
+  onPasteWithCurrentTextSettings: () => void;
   onRemoveOverlay: (overlayId: string) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
   pageSizes: Record<number, PageSize>;
@@ -22,7 +26,11 @@ function useEditorKeyboardShortcuts({
   hasActiveTool,
   onClearActiveTool,
   onClearSelection,
+  onCopySelectedOverlay,
+  onDuplicateSelectedOverlay,
   onEditOverlay,
+  onPaste,
+  onPasteWithCurrentTextSettings,
   onRemoveOverlay,
   onUpdateOverlayRect,
   pageSizes,
@@ -45,6 +53,18 @@ function useEditorKeyboardShortcuts({
         return;
       }
 
+      if (isPasteWithCurrentTextSettingsEvent(event)) {
+        event.preventDefault();
+        onPasteWithCurrentTextSettings();
+        return;
+      }
+
+      if (isPasteEvent(event)) {
+        event.preventDefault();
+        onPaste();
+        return;
+      }
+
       if (event.key === "Escape") {
         if (hasActiveTool) {
           event.preventDefault();
@@ -61,6 +81,18 @@ function useEditorKeyboardShortcuts({
       }
 
       if (!selectedOverlay) {
+        return;
+      }
+
+      if (isCopyEvent(event)) {
+        event.preventDefault();
+        onCopySelectedOverlay();
+        return;
+      }
+
+      if (isDuplicateEvent(event)) {
+        event.preventDefault();
+        onDuplicateSelectedOverlay();
         return;
       }
 
@@ -114,7 +146,11 @@ function useEditorKeyboardShortcuts({
     hasActiveTool,
     onClearActiveTool,
     onClearSelection,
+    onCopySelectedOverlay,
+    onDuplicateSelectedOverlay,
     onEditOverlay,
+    onPaste,
+    onPasteWithCurrentTextSettings,
     onRemoveOverlay,
     onUpdateOverlayRect,
     pageSizes,
@@ -143,6 +179,26 @@ function isTextEditExitEvent(event: KeyboardEvent) {
     event.key === "Escape" ||
     ((event.metaKey || event.ctrlKey) && event.key === "Enter")
   );
+}
+
+function isCopyEvent(event: KeyboardEvent) {
+  return isCommandOrControlEvent(event, "c") && !event.shiftKey;
+}
+
+function isDuplicateEvent(event: KeyboardEvent) {
+  return isCommandOrControlEvent(event, "d") && !event.shiftKey;
+}
+
+function isPasteEvent(event: KeyboardEvent) {
+  return isCommandOrControlEvent(event, "v") && !event.shiftKey;
+}
+
+function isPasteWithCurrentTextSettingsEvent(event: KeyboardEvent) {
+  return isCommandOrControlEvent(event, "v") && event.shiftKey;
+}
+
+function isCommandOrControlEvent(event: KeyboardEvent, key: string) {
+  return (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === key;
 }
 
 function isEditableTarget(target: EventTarget | null) {

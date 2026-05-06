@@ -52,7 +52,7 @@ function PagesSidebar({
           </span>
         </div>
       </div>
-      <div className="min-h-0 flex-1 space-y-3 overflow-auto p-2">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden p-2">
         {pages.length > 0 && document ? (
           pages.map((page) => (
             <SidebarPageButton

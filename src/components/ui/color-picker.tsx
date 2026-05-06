@@ -71,9 +71,13 @@ export const ColorPicker = ({
   const initialColor = Color(value ?? defaultValue);
   const initialHsl = initialColor.hsl();
 
-  const [hue, setHue] = useState(initialHsl.hue() || 0);
-  const [saturation, setSaturation] = useState(initialHsl.saturationl() || 100);
-  const [lightness, setLightness] = useState(initialHsl.lightness() || 50);
+  const [hue, setHue] = useState(getFiniteNumber(initialHsl.hue(), 0));
+  const [saturation, setSaturation] = useState(
+    getFiniteNumber(initialHsl.saturationl(), 100),
+  );
+  const [lightness, setLightness] = useState(
+    getFiniteNumber(initialHsl.lightness(), 50),
+  );
   const [alpha, setAlpha] = useState(initialColor.alpha() * 100);
   const [mode, setMode] = useState("hex");
   const onChangeRef = useRef(onChange);
@@ -134,6 +138,10 @@ export const ColorPicker = ({
     </ColorPickerContext.Provider>
   );
 };
+
+function getFiniteNumber(value: number, fallback: number) {
+  return Number.isFinite(value) ? value : fallback;
+}
 
 export type ColorPickerSelectionProps = HTMLAttributes<HTMLDivElement>;
 
