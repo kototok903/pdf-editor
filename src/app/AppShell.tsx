@@ -36,6 +36,7 @@ import type {
 import { useEditorOverlays } from "@/features/editor/hooks/useEditorOverlays";
 import { useEditorKeyboardShortcuts } from "@/features/editor/hooks/useEditorKeyboardShortcuts";
 import { useImageAssets } from "@/features/editor/hooks/useImageAssets";
+import { useEditorPreferences } from "@/features/editor/hooks/useEditorPreferences";
 import { createImageSha256Signature } from "@/features/editor/lib/image-asset-utils";
 import {
   extractPlainTextFromHtml,
@@ -62,13 +63,16 @@ import {
 } from "@/features/editor/lib/overlay-clipboard";
 import { defaultMarkSettings } from "@/features/editor/lib/mark-definitions";
 import { defaultTextOverlay } from "@/features/editor/lib/overlay-defaults";
+import {
+  maxEditorZoom,
+  minEditorZoom,
+  type EditorPreferences,
+} from "@/features/editor/lib/editor-preferences";
 import { createExportFileName } from "@/features/pdf-export/lib/export-file-name";
 import { exportPdf } from "@/features/pdf-export/lib/export-pdf";
 import type { PageSize } from "@/features/pdf/components/PdfPageView";
 import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
 
-const minZoom = 0.5;
-const maxZoom = 2;
 const zoomStep = 0.1;
 type ActiveTool =
   | { type: "image"; assetId: string }
@@ -87,8 +91,6 @@ function AppShell() {
   const [currentPage, setCurrentPage] = useState(1);
   const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const [isDark, setIsDark] = useState(false);
-  const [isPagesSidebarOpen, setIsPagesSidebarOpen] = useState(true);
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
   const [pendingReplacementPdfFile, setPendingReplacementPdfFile] =
     useState<File | null>(null);
@@ -104,9 +106,10 @@ function AppShell() {
   } | null>(null);
   const [lastExternalPaste, setLastExternalPaste] =
     useState<ExternalPasteRecord | null>(null);
-  const [markDefaults, setMarkDefaults] = useState(defaultMarkSettings);
-  const [textDefaults, setTextDefaults] = useState(defaultTextOverlay);
-  const [zoom, setZoom] = useState(1);
+  const [editorPreferences, setEditorPreferences] = useEditorPreferences();
+  const { isPagesSidebarOpen, markDefaults, textDefaults, themeName, zoom } =
+    editorPreferences;
+  const isDark = themeName === "dark";
   const {
     addOverlay,
     clearOverlays,
@@ -164,6 +167,16 @@ function AppShell() {
     currentTextSettings.color === defaultTextOverlay.color &&
     currentTextSettings.fontId === defaultTextOverlay.fontId &&
     currentTextSettings.fontSize === defaultTextOverlay.fontSize;
+
+  const updateEditorPreferences = useCallback(
+    (patch: Partial<EditorPreferences>) => {
+      setEditorPreferences((currentPreferences) => ({
+        ...currentPreferences,
+        ...patch,
+      }));
+    },
+    [setEditorPreferences],
+  );
 
   useEffect(() => {
     globalThis.document.documentElement.classList.toggle("dark", isDark);
@@ -633,9 +646,12 @@ function AppShell() {
   };
 
   const handleMarkSettingsChange = (patch: MarkOverlayPatch) => {
-    setMarkDefaults((currentDefaults) => ({
-      ...currentDefaults,
-      ...patch,
+    setEditorPreferences((currentPreferences) => ({
+      ...currentPreferences,
+      markDefaults: {
+        ...currentPreferences.markDefaults,
+        ...patch,
+      },
     }));
 
     if (selectedMarkOverlay) {
@@ -644,7 +660,7 @@ function AppShell() {
   };
 
   const handleMarkSettingsReset = () => {
-    setMarkDefaults(defaultMarkSettings);
+    updateEditorPreferences({ markDefaults: defaultMarkSettings });
 
     if (selectedMarkOverlay) {
       updateMarkOverlay(selectedMarkOverlay.id, defaultMarkSettings);
@@ -652,9 +668,12 @@ function AppShell() {
   };
 
   const handleTextSettingsChange = (patch: TextOverlayPatch) => {
-    setTextDefaults((currentDefaults) => ({
-      ...currentDefaults,
-      ...patch,
+    setEditorPreferences((currentPreferences) => ({
+      ...currentPreferences,
+      textDefaults: {
+        ...currentPreferences.textDefaults,
+        ...patch,
+      },
     }));
 
     if (selectedTextOverlay) {
@@ -669,9 +688,12 @@ function AppShell() {
       fontSize: defaultTextOverlay.fontSize,
     };
 
-    setTextDefaults((currentDefaults) => ({
-      ...currentDefaults,
-      ...defaultTextPatch,
+    setEditorPreferences((currentPreferences) => ({
+      ...currentPreferences,
+      textDefaults: {
+        ...currentPreferences.textDefaults,
+        ...defaultTextPatch,
+      },
     }));
 
     if (selectedTextOverlay) {
@@ -687,15 +709,23 @@ function AppShell() {
   };
 
   const handleZoomIn = () => {
-    setZoom((currentZoom) =>
-      Math.min(maxZoom, Number((currentZoom + zoomStep).toFixed(2))),
-    );
+    setEditorPreferences((currentPreferences) => ({
+      ...currentPreferences,
+      zoom: Math.min(
+        maxEditorZoom,
+        Number((currentPreferences.zoom + zoomStep).toFixed(2)),
+      ),
+    }));
   };
 
   const handleZoomOut = () => {
-    setZoom((currentZoom) =>
-      Math.max(minZoom, Number((currentZoom - zoomStep).toFixed(2))),
-    );
+    setEditorPreferences((currentPreferences) => ({
+      ...currentPreferences,
+      zoom: Math.max(
+        minEditorZoom,
+        Number((currentPreferences.zoom - zoomStep).toFixed(2)),
+      ),
+    }));
   };
 
   const handleSelectSidebarPage = (pageNumber: number) => {
@@ -753,9 +783,14 @@ function AppShell() {
           onTextSettingsReset={handleTextSettingsReset}
           onTextToolClick={handleTextToolClick}
           onTogglePagesSidebar={() =>
-            setIsPagesSidebarOpen((isOpen) => !isOpen)
+            setEditorPreferences((currentPreferences) => ({
+              ...currentPreferences,
+              isPagesSidebarOpen: !currentPreferences.isPagesSidebarOpen,
+            }))
           }
-          onToggleTheme={() => setIsDark(!isDark)}
+          onToggleTheme={() =>
+            updateEditorPreferences({ themeName: isDark ? "light" : "dark" })
+          }
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           pageCount={loadedDocument?.pageCount ?? 0}

@@ -166,7 +166,9 @@ function EditorToolbar({
                 {fileName ?? "No PDF open"}
               </div>
               <div className="text-[11px] text-muted-foreground">
-                {pageCount > 0 ? `${pageCount} pages` : "Choose a file"}
+                {pageCount > 0
+                  ? `${pageCount} page${pageCount === 1 ? "" : "s"}`
+                  : "Choose a file"}
               </div>
             </>
           )}
