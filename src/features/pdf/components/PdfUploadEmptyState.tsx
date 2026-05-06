@@ -1,15 +1,31 @@
 import { FileIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type PdfUploadEmptyStateProps = {
+  isPdfDropActive?: boolean;
   onOpenFile: () => void;
 };
 
-function PdfUploadEmptyState({ onOpenFile }: PdfUploadEmptyStateProps) {
+function PdfUploadEmptyState({
+  isPdfDropActive = false,
+  onOpenFile,
+}: PdfUploadEmptyStateProps) {
   return (
-    <div className="mx-auto flex min-h-[420px] w-full max-w-xl flex-col items-center justify-center rounded-lg border border-dashed border-border bg-toolbar/70 px-8 text-center">
-      <div className="grid size-12 place-items-center rounded-lg border bg-toolbar-button text-muted-foreground">
+    <div
+      className={cn(
+        "mx-auto flex min-h-[420px] w-full max-w-xl flex-col items-center justify-center rounded-lg border border-dashed border-border bg-toolbar/70 px-8 text-center transition-colors",
+        isPdfDropActive && "border-primary bg-primary/10",
+      )}
+    >
+      <div
+        className={cn(
+          "grid size-12 place-items-center rounded-lg border bg-toolbar-button text-muted-foreground transition-colors",
+          isPdfDropActive &&
+            "border-primary/30 bg-primary text-primary-foreground",
+        )}
+      >
         <FileIcon aria-hidden="true" />
       </div>
       <h1 className="mt-5 text-xl font-semibold">Open a PDF to start</h1>

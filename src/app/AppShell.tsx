@@ -8,6 +8,16 @@ import {
 } from "react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DocumentWorkspace } from "@/features/editor/components/DocumentWorkspace";
@@ -80,6 +90,8 @@ function AppShell() {
   const [isDark, setIsDark] = useState(false);
   const [isPagesSidebarOpen, setIsPagesSidebarOpen] = useState(true);
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
+  const [pendingReplacementPdfFile, setPendingReplacementPdfFile] =
+    useState<File | null>(null);
   const [pageSizes, setPageSizes] = useState<Record<number, PageSize>>({});
   const [scrollToPageRequest, setScrollToPageRequest] = useState<{
     pageNumber: number;
@@ -399,6 +411,21 @@ function AppShell() {
     fileInputRef.current?.click();
   };
 
+  const replacePdfFile = useCallback(
+    (file: File) => {
+      setCurrentPage(1);
+      clearOverlays();
+      setOverlayClipboard(null);
+      setLastExternalPaste(null);
+      setEditingOverlayId(null);
+      setActiveTool(null);
+      setPageSizes({});
+      exportedFileNamesRef.current = new Set();
+      void openFile(file);
+    },
+    [clearOverlays, openFile],
+  );
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -407,15 +434,7 @@ function AppShell() {
       return;
     }
 
-    setCurrentPage(1);
-    clearOverlays();
-    setOverlayClipboard(null);
-    setLastExternalPaste(null);
-    setEditingOverlayId(null);
-    setActiveTool(null);
-    setPageSizes({});
-    exportedFileNamesRef.current = new Set();
-    void openFile(file);
+    replacePdfFile(file);
   };
 
   const handleExportPdf = async () => {
@@ -475,6 +494,73 @@ function AppShell() {
     setActiveTool({ assetId: asset.id, type: "image" });
     setEditingOverlayId(null);
   };
+
+  const handleDropPdfFile = useCallback(
+    (file: File) => {
+      if (loadedDocument) {
+        setPendingReplacementPdfFile(file);
+        return;
+      }
+
+      replacePdfFile(file);
+    },
+    [loadedDocument, replacePdfFile],
+  );
+
+  const handleConfirmReplaceDroppedPdf = useCallback(() => {
+    const file = pendingReplacementPdfFile;
+
+    if (!file) {
+      return;
+    }
+
+    setPendingReplacementPdfFile(null);
+    replacePdfFile(file);
+  }, [pendingReplacementPdfFile, replacePdfFile]);
+
+  const handleDropImageFile = useCallback(
+    (file: File) => {
+      const pageSize = getCurrentPageSize();
+
+      if (!pageSize) {
+        toast.error("Unable to place image", {
+          description: "Open a PDF and wait for the page to finish rendering.",
+        });
+        return;
+      }
+
+      const importAndPlaceImage = async () => {
+        try {
+          const asset = await addImageFile(file);
+
+          addRenderableOverlay(
+            {
+              assetId: asset.id,
+              pageNumber: currentPage,
+              rect: createImageOverlayRectAtPoint(
+                { x: pageSize.width / 2, y: pageSize.height / 2 },
+                pageSize,
+                asset,
+              ),
+              sha256Signature: asset.sha256Signature,
+              type: "image",
+            },
+            { additionalRenderableImageAssetIds: [asset.id] },
+          );
+        } catch (error) {
+          toast.error("Unable to import image", {
+            description:
+              error instanceof Error
+                ? error.message
+                : "Please try another image file.",
+          });
+        }
+      };
+
+      void importAndPlaceImage();
+    },
+    [addImageFile, addRenderableOverlay, currentPage, getCurrentPageSize],
+  );
 
   const handlePageSizeChange = useCallback(
     (pageNumber: number, pageSize: PageSize) => {
@@ -700,6 +786,8 @@ function AppShell() {
             isTextToolActive={activeTool?.type === "text"}
             onClearSelection={handleClearSelection}
             onCurrentPageChange={setCurrentPage}
+            onDropImageFile={handleDropImageFile}
+            onDropPdfFile={handleDropPdfFile}
             onEditOverlay={handleEditOverlay}
             onOpenFile={handleOpenFileDialog}
             onPageSizeChange={handlePageSizeChange}
@@ -716,6 +804,32 @@ function AppShell() {
             zoom={zoom}
           />
         </div>
+        <Dialog
+          open={Boolean(pendingReplacementPdfFile)}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setPendingReplacementPdfFile(null);
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Replace current PDF?</DialogTitle>
+              <DialogDescription>
+                Opening {pendingReplacementPdfFile?.name ?? "this PDF"} will
+                replace the current PDF. Any unsaved changes will be lost.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button onClick={handleConfirmReplaceDroppedPdf} type="button">
+                Replace PDF
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <Toaster position="bottom-right" />
       </main>
     </TooltipProvider>

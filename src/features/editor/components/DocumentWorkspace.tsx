@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+} from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import type {
@@ -11,6 +17,11 @@ import {
   findCenteredPageNumber,
   getScrollTopForPage,
 } from "@/features/editor/lib/page-scroll-utils";
+import {
+  getWorkspaceDragIntent,
+  getWorkspaceDropAction,
+  type WorkspaceDragIntent,
+} from "@/features/editor/lib/workspace-drop-utils";
 import { PdfDocumentView } from "@/features/pdf/components/PdfDocumentView";
 import type { PageSize } from "@/features/pdf/components/PdfPageView";
 import { PdfUploadEmptyState } from "@/features/pdf/components/PdfUploadEmptyState";
@@ -31,6 +42,8 @@ type DocumentWorkspaceProps = {
   isTextToolActive: boolean;
   onClearSelection: () => void;
   onCurrentPageChange: (pageNumber: number) => void;
+  onDropImageFile: (file: File) => void;
+  onDropPdfFile: (file: File) => void;
   onEditOverlay: (overlayId: string | null) => void;
   onOpenFile: () => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
@@ -64,6 +77,8 @@ function DocumentWorkspace({
   isTextToolActive,
   onClearSelection,
   onCurrentPageChange,
+  onDropImageFile,
+  onDropPdfFile,
   onEditOverlay,
   onOpenFile,
   onPageSizeChange,
@@ -80,8 +95,11 @@ function DocumentWorkspace({
   zoom,
 }: DocumentWorkspaceProps) {
   const pageElementsRef = useRef<Map<number, HTMLElement>>(new Map());
+  const dragDepthRef = useRef(0);
   const scrollFrameRef = useRef<number | null>(null);
   const workspaceRef = useRef<HTMLElement | null>(null);
+  const [dragIntent, setDragIntent] = useState<WorkspaceDragIntent>(null);
+  const hasDocument = status === "loaded" && Boolean(document);
 
   const reportCenteredPage = useCallback(() => {
     scrollFrameRef.current = null;
@@ -169,13 +187,106 @@ function DocumentWorkspace({
     });
   }, [scrollToPageRequest]);
 
+  const resetDragState = useCallback(() => {
+    dragDepthRef.current = 0;
+    setDragIntent(null);
+  }, []);
+
+  const handleDragEnter = useCallback(
+    (event: DragEvent<HTMLElement>) => {
+      const intent = getWorkspaceDragIntent(event.dataTransfer, {
+        hasDocument,
+      });
+
+      if (!intent) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      dragDepthRef.current += 1;
+      setDragIntent(intent);
+    },
+    [hasDocument],
+  );
+
+  const handleDragOver = useCallback(
+    (event: DragEvent<HTMLElement>) => {
+      const intent =
+        dragIntent ??
+        getWorkspaceDragIntent(event.dataTransfer, {
+          hasDocument,
+        });
+
+      if (!intent) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.dataTransfer.dropEffect = "copy";
+      setDragIntent(intent);
+    },
+    [dragIntent, hasDocument],
+  );
+
+  const handleDragLeave = useCallback((event: DragEvent<HTMLElement>) => {
+    if (dragDepthRef.current === 0) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    dragDepthRef.current -= 1;
+
+    if (dragDepthRef.current === 0) {
+      setDragIntent(null);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    (event: DragEvent<HTMLElement>) => {
+      const action = getWorkspaceDropAction(
+        Array.from(event.dataTransfer.files),
+        {
+          hasDocument,
+        },
+      );
+
+      resetDragState();
+
+      if (!action) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (action.type === "pdf") {
+        onDropPdfFile(action.file);
+      } else {
+        onDropImageFile(action.file);
+      }
+    },
+    [hasDocument, onDropImageFile, onDropPdfFile, resetDragState],
+  );
+
   return (
     <section
-      className="min-h-0 flex-1 overflow-auto px-7 py-7"
+      className="min-h-0 flex-1 overflow-auto p-7"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
       onScroll={handleScroll}
       ref={workspaceRef}
     >
-      {status === "empty" && <PdfUploadEmptyState onOpenFile={onOpenFile} />}
+      {status === "empty" && (
+        <PdfUploadEmptyState
+          isPdfDropActive={dragIntent === "pdf"}
+          onOpenFile={onOpenFile}
+        />
+      )}
 
       {status === "loading" && <PdfPageSkeleton />}
 
