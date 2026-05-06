@@ -39,6 +39,11 @@ function useEditorOverlays() {
     setSelectedOverlayId(null);
   }, []);
 
+  const replaceOverlays = useCallback((nextOverlays: EditorOverlay[]) => {
+    setOverlays(nextOverlays);
+    setSelectedOverlayId(null);
+  }, []);
+
   const removeOverlay = useCallback((overlayId: string) => {
     setOverlays((currentOverlays) =>
       currentOverlays.filter((overlay) => overlay.id !== overlayId),
@@ -92,6 +97,7 @@ function useEditorOverlays() {
     clearSelection,
     overlays,
     removeOverlay,
+    replaceOverlays,
     selectOverlay,
     selectedOverlayId,
     updateMarkOverlay,

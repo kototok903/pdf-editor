@@ -14,6 +14,7 @@ import {
   SunIcon,
   TypeIcon,
   Undo2Icon,
+  XIcon,
   ZoomInIcon,
   ZoomOutIcon,
 } from "lucide-react";
@@ -72,6 +73,7 @@ type EditorToolbarProps = {
   onMarkSettingsReset: () => void;
   onMarkToolActivate: () => void;
   onMarkToolClick: () => void;
+  onCloseDraft: () => void;
   onExportPdf: () => void;
   onOpenFile: () => void;
   onOpenImageDialog: () => void;
@@ -91,6 +93,7 @@ type EditorToolbarProps = {
     color: string;
     markType: MarkType;
   };
+  canCloseDraft: boolean;
   textSettings: TextOverlayDefaults;
   zoomPercent: number;
 };
@@ -107,6 +110,8 @@ function EditorToolbar({
   isTextSettingsDefault,
   isTextToolActive,
   markSettings,
+  canCloseDraft,
+  onCloseDraft,
   onExportPdf,
   onImportImageUrl,
   onMarkSettingsChange,
@@ -196,6 +201,9 @@ function EditorToolbar({
             >
               <FileDownIcon aria-hidden="true" />{" "}
               {isExporting ? "Exporting..." : "Export PDF"}
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={!canCloseDraft} onSelect={onCloseDraft}>
+              <XIcon aria-hidden="true" /> Close Draft
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

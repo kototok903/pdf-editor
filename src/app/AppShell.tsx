@@ -37,6 +37,7 @@ import { useEditorOverlays } from "@/features/editor/hooks/useEditorOverlays";
 import { useEditorKeyboardShortcuts } from "@/features/editor/hooks/useEditorKeyboardShortcuts";
 import { useImageAssets } from "@/features/editor/hooks/useImageAssets";
 import { useEditorPreferences } from "@/features/editor/hooks/useEditorPreferences";
+import { useLocalDraftPersistence } from "@/features/editor/hooks/useLocalDraftPersistence";
 import { createImageSha256Signature } from "@/features/editor/lib/image-asset-utils";
 import {
   extractPlainTextFromHtml,
@@ -92,6 +93,8 @@ function AppShell() {
   const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
+  const [isCloseDraftDialogOpen, setIsCloseDraftDialogOpen] = useState(false);
+  const [isLocalDraftReady, setIsLocalDraftReady] = useState(false);
   const [pendingReplacementPdfFile, setPendingReplacementPdfFile] =
     useState<File | null>(null);
   const [pageSizes, setPageSizes] = useState<Record<number, PageSize>>({});
@@ -116,6 +119,7 @@ function AppShell() {
     clearSelection,
     overlays,
     removeOverlay,
+    replaceOverlays,
     selectOverlay,
     selectedOverlayId,
     updateMarkOverlay,
@@ -123,8 +127,10 @@ function AppShell() {
     updateTextOverlay,
   } = useEditorOverlays();
   const {
+    clearFile,
     document: loadedDocument,
     error,
+    openBytes,
     openFile,
     status,
   } = usePdfDocument();
@@ -134,8 +140,16 @@ function AppShell() {
     addImageUrl,
     hideImageAssetFromRecents,
     imageAssets,
+    replaceImageAssets,
     recentImageAssets,
   } = useImageAssets();
+  const { clearStoredDraft, hydrateLocalDraft } = useLocalDraftPersistence({
+    currentPage,
+    document: loadedDocument,
+    imageAssets,
+    isReadyToPersist: isLocalDraftReady,
+    overlays,
+  });
 
   const selectedTextOverlay = useMemo(
     () =>
@@ -182,10 +196,79 @@ function AppShell() {
     globalThis.document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
 
+  useEffect(() => {
+    let isCancelled = false;
+
+    const restoreLocalDraft = async () => {
+      const restoredDraft = await hydrateLocalDraft();
+
+      if (isCancelled) {
+        for (const asset of restoredDraft.imageAssets) {
+          URL.revokeObjectURL(asset.objectUrl);
+        }
+
+        return;
+      }
+
+      if (restoredDraft.imageAssets.length > 0) {
+        replaceImageAssets(restoredDraft.imageAssets);
+      }
+
+      if (restoredDraft.draft) {
+        const restoredDocument = await openBytes(
+          restoredDraft.draft.pdfBytes,
+          restoredDraft.draft.fileName,
+        );
+
+        if (isCancelled) {
+          return;
+        }
+
+        if (restoredDocument) {
+          replaceOverlays(restoredDraft.draft.overlays);
+          setCurrentPage(
+            Math.min(
+              restoredDocument.pageCount,
+              Math.max(1, restoredDraft.draft.currentPage),
+            ),
+          );
+        } else {
+          try {
+            await clearStoredDraft();
+          } catch {
+            // The restore path already failed; keep the editor usable.
+          }
+
+          toast.error("Unable to restore draft", {
+            description: "The saved local draft was removed.",
+          });
+        }
+      }
+
+      if (!isCancelled) {
+        setIsLocalDraftReady(true);
+      }
+    };
+
+    void restoreLocalDraft();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    clearStoredDraft,
+    hydrateLocalDraft,
+    openBytes,
+    replaceImageAssets,
+    replaceOverlays,
+  ]);
+
   const activeImageAsset =
     activeTool?.type === "image"
       ? (imageAssets.find((asset) => asset.id === activeTool.assetId) ?? null)
       : null;
+  const displayStatus =
+    !isLocalDraftReady && status === "empty" ? "loading" : status;
 
   const handleClearSelection = useCallback(() => {
     clearSelection();
@@ -438,6 +521,24 @@ function AppShell() {
     },
     [clearOverlays, openFile],
   );
+
+  const handleConfirmCloseDraft = useCallback(() => {
+    setIsCloseDraftDialogOpen(false);
+    setPendingReplacementPdfFile(null);
+    setCurrentPage(1);
+    clearFile();
+    clearOverlays();
+    setOverlayClipboard(null);
+    setLastExternalPaste(null);
+    setEditingOverlayId(null);
+    setActiveTool(null);
+    setPageSizes({});
+    setScrollToPageRequest(null);
+    exportedFileNamesRef.current = new Set();
+    void clearStoredDraft().catch(() => {
+      // Closing the visible draft should not be blocked by storage errors.
+    });
+  }, [clearFile, clearOverlays, clearStoredDraft]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -755,6 +856,7 @@ function AppShell() {
         />
         <EditorToolbar
           activeImageAssetId={activeImageAsset?.id ?? null}
+          canCloseDraft={Boolean(loadedDocument) || overlays.length > 0}
           fileName={loadedDocument?.fileName ?? null}
           imageAssets={recentImageAssets}
           isDark={isDark}
@@ -766,6 +868,7 @@ function AppShell() {
           isTextSettingsDefault={isTextSettingsDefault}
           isTextToolActive={activeTool?.type === "text"}
           markSettings={currentMarkSettings}
+          onCloseDraft={() => setIsCloseDraftDialogOpen(true)}
           onExportPdf={handleExportPdf}
           onImportImageUrl={handleImportImageUrl}
           onMarkSettingsChange={handleMarkSettingsChange}
@@ -794,7 +897,7 @@ function AppShell() {
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           pageCount={loadedDocument?.pageCount ?? 0}
-          status={status}
+          status={displayStatus}
           textSettings={currentTextSettings}
           zoomPercent={Math.round(zoom * 100)}
         />
@@ -834,7 +937,7 @@ function AppShell() {
             onUpdateOverlayRect={updateOverlayRect}
             overlays={overlays}
             selectedOverlayId={selectedOverlayId}
-            status={status}
+            status={displayStatus}
             scrollToPageRequest={scrollToPageRequest}
             zoom={zoom}
           />
@@ -861,6 +964,28 @@ function AppShell() {
               </DialogClose>
               <Button onClick={handleConfirmReplaceDroppedPdf} type="button">
                 Replace PDF
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog
+          open={isCloseDraftDialogOpen}
+          onOpenChange={setIsCloseDraftDialogOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Close current draft?</DialogTitle>
+              <DialogDescription>
+                This will remove the open PDF and local edits from this browser.
+                Your original file will not be deleted.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button onClick={handleConfirmCloseDraft} type="button">
+                Close Draft
               </Button>
             </DialogFooter>
           </DialogContent>

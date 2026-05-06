@@ -47,6 +47,51 @@ function usePdfDocument() {
     setState(initialState);
   }, [destroyCurrentDocument]);
 
+  const openBytes = useCallback(
+    async (bytes: ArrayBuffer, fileName: string) => {
+      const loadId = loadIdRef.current + 1;
+      loadIdRef.current = loadId;
+      destroyCurrentDocument();
+      setState({ document: null, error: null, status: "loading" });
+
+      try {
+        const pdfDocument = await loadPdfDocument(bytes);
+
+        if (loadIdRef.current !== loadId) {
+          void pdfDocument.destroy();
+          return null;
+        }
+
+        const loadedPdfDocument: LoadedPdfDocument = {
+          bytes,
+          fileName,
+          pageCount: pdfDocument.numPages,
+          pdfDocument,
+        };
+
+        documentRef.current = pdfDocument;
+        setState({
+          document: loadedPdfDocument,
+          error: null,
+          status: "loaded",
+        });
+        return loadedPdfDocument;
+      } catch (error) {
+        if (loadIdRef.current !== loadId) {
+          return null;
+        }
+
+        setState({
+          document: null,
+          error: getErrorMessage(error),
+          status: "error",
+        });
+        return null;
+      }
+    },
+    [destroyCurrentDocument],
+  );
+
   const openFile = useCallback(
     async (file: File) => {
       if (file.type && file.type !== "application/pdf") {
@@ -55,47 +100,12 @@ function usePdfDocument() {
           error: "Please choose a PDF file.",
           status: "error",
         });
-        return;
+        return null;
       }
 
-      const loadId = loadIdRef.current + 1;
-      loadIdRef.current = loadId;
-      destroyCurrentDocument();
-      setState({ document: null, error: null, status: "loading" });
-
-      try {
-        const bytes = await file.arrayBuffer();
-        const pdfDocument = await loadPdfDocument(bytes);
-
-        if (loadIdRef.current !== loadId) {
-          void pdfDocument.destroy();
-          return;
-        }
-
-        documentRef.current = pdfDocument;
-        setState({
-          document: {
-            bytes,
-            fileName: file.name,
-            pageCount: pdfDocument.numPages,
-            pdfDocument,
-          },
-          error: null,
-          status: "loaded",
-        });
-      } catch (error) {
-        if (loadIdRef.current !== loadId) {
-          return;
-        }
-
-        setState({
-          document: null,
-          error: getErrorMessage(error),
-          status: "error",
-        });
-      }
+      return openBytes(await file.arrayBuffer(), file.name);
     },
-    [destroyCurrentDocument],
+    [openBytes],
   );
 
   useEffect(() => {
@@ -108,6 +118,7 @@ function usePdfDocument() {
     clearFile,
     document: state.document,
     error: state.error,
+    openBytes,
     openFile,
     status: state.status,
   };

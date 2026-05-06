@@ -24,6 +24,24 @@ function useImageAssets() {
     };
   }, []);
 
+  const replaceImageAssets = useCallback((nextAssets: ImageAsset[]) => {
+    setImageAssets((currentAssets) => {
+      revokeReplacedImageAssetObjectUrls(currentAssets, nextAssets);
+
+      return dedupeImageAssets(nextAssets);
+    });
+  }, []);
+
+  const upsertImageAssets = useCallback((nextAssets: ImageAsset[]) => {
+    setImageAssets((currentAssets) => {
+      const mergedAssets = dedupeImageAssets([...nextAssets, ...currentAssets]);
+
+      revokeReplacedImageAssetObjectUrls(currentAssets, mergedAssets);
+
+      return mergedAssets;
+    });
+  }, []);
+
   const addImageFile = useCallback(async (file: File) => {
     const sha256Signature = await createImageSha256Signature(file);
     const existingAsset = imageAssetsRef.current.find(
@@ -99,7 +117,9 @@ function useImageAssets() {
     addImageUrl,
     hideImageAssetFromRecents,
     imageAssets,
+    replaceImageAssets,
     recentImageAssets,
+    upsertImageAssets,
   };
 }
 
@@ -114,6 +134,36 @@ function moveImageAssetToTop(imageAssets: ImageAsset[], assetId: string) {
     { ...asset, isHiddenFromRecents: false },
     ...imageAssets.filter((currentAsset) => currentAsset.id !== assetId),
   ];
+}
+
+function dedupeImageAssets(imageAssets: ImageAsset[]) {
+  const seenSignatures = new Set<string>();
+  const dedupedAssets: ImageAsset[] = [];
+
+  for (const asset of imageAssets) {
+    if (seenSignatures.has(asset.sha256Signature)) {
+      URL.revokeObjectURL(asset.objectUrl);
+      continue;
+    }
+
+    seenSignatures.add(asset.sha256Signature);
+    dedupedAssets.push(asset);
+  }
+
+  return dedupedAssets;
+}
+
+function revokeReplacedImageAssetObjectUrls(
+  currentAssets: ImageAsset[],
+  nextAssets: ImageAsset[],
+) {
+  const nextObjectUrls = new Set(nextAssets.map((asset) => asset.objectUrl));
+
+  for (const asset of currentAssets) {
+    if (!nextObjectUrls.has(asset.objectUrl)) {
+      URL.revokeObjectURL(asset.objectUrl);
+    }
+  }
 }
 
 export { useImageAssets };
