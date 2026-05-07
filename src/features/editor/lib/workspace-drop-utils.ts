@@ -1,3 +1,8 @@
+import {
+  isSupportedImageFileName,
+  isSupportedImageMimeType,
+} from "@/features/editor/lib/image-asset-utils";
+
 type WorkspaceDropFile = Pick<File, "name" | "type">;
 
 type WorkspaceDropAction =
@@ -75,17 +80,12 @@ function isPdfFile(file: WorkspaceDropFile) {
 
 function isSupportedImageFile(file: WorkspaceDropFile) {
   return (
-    isSupportedImageMimeType(file.type) ||
-    file.name.toLowerCase().endsWith(".svg")
+    isSupportedImageMimeType(file.type) || isSupportedImageFileName(file.name)
   );
 }
 
 function isPdfMimeType(mimeType: string) {
   return mimeType === "application/pdf";
-}
-
-function isSupportedImageMimeType(mimeType: string) {
-  return mimeType.startsWith("image/");
 }
 
 export {

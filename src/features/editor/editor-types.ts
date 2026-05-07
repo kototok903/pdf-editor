@@ -33,7 +33,7 @@ type ImageAsset = {
   name: string;
   objectUrl: string;
   sha256Signature: string;
-  source: "upload" | "url";
+  source: "clipboard" | "upload" | "url";
   width: number;
 };
 

@@ -1,12 +1,34 @@
 import type { ImageAsset } from "@/features/editor/editor-types";
 
-const imageMimeTypeLabels: Record<string, string> = {
-  "image/gif": "GIF",
-  "image/jpeg": "JPG",
-  "image/png": "PNG",
-  "image/svg+xml": "SVG",
-  "image/webp": "WebP",
-};
+const supportedImageTypes = [
+  { extensions: [".png"], label: "PNG", mimeTypes: ["image/png"] },
+  {
+    extensions: [".jpg", ".jpeg"],
+    label: "JPG",
+    mimeTypes: ["image/jpeg", "image/jpg"],
+  },
+  { extensions: [".webp"], label: "WebP", mimeTypes: ["image/webp"] },
+  { extensions: [".gif"], label: "GIF", mimeTypes: ["image/gif"] },
+  { extensions: [".svg"], label: "SVG", mimeTypes: ["image/svg+xml"] },
+] as const;
+const supportedImageMimeTypes = supportedImageTypes.flatMap(
+  (imageType) => imageType.mimeTypes,
+);
+const supportedImageExtensions = supportedImageTypes.flatMap(
+  (imageType) => imageType.extensions,
+);
+const supportedImageAcceptValue = [
+  ...supportedImageMimeTypes,
+  ...supportedImageExtensions,
+].join(",");
+const supportedImageTypeListLabel = supportedImageTypes
+  .map((imageType) => imageType.label)
+  .join(", ");
+const imageMimeTypeLabels: Record<string, string> = Object.fromEntries(
+  supportedImageTypes.flatMap((imageType) =>
+    imageType.mimeTypes.map((mimeType) => [mimeType, imageType.label]),
+  ),
+);
 
 async function createImageAssetFromFile(
   file: File,
@@ -28,7 +50,7 @@ async function createImageAssetFromClipboardBlob(
     blob,
     name: getClipboardImageName(blob.type),
     sha256Signature,
-    source: "upload",
+    source: "clipboard",
   });
 }
 
@@ -41,8 +63,10 @@ async function createImageAssetFromUrl(url: string): Promise<ImageAsset> {
 
   const blob = await response.blob();
 
-  if (!blob.type.startsWith("image/")) {
-    throw new Error("The URL did not return an image.");
+  if (!isSupportedImageMimeType(blob.type)) {
+    throw new Error(
+      `The URL did not return a supported image. Supported types: ${supportedImageTypeListLabel}.`,
+    );
   }
 
   return createImageAssetFromBlob({
@@ -108,6 +132,26 @@ function getImageFormatLabel(mimeType: string, name: string) {
   return extension || "Image";
 }
 
+function findSupportedImageMimeType(mimeTypes: readonly string[]) {
+  return (
+    mimeTypes.find((mimeType) => isSupportedImageMimeType(mimeType)) ?? null
+  );
+}
+
+function isSupportedImageMimeType(mimeType: string) {
+  return supportedImageMimeTypes.includes(
+    mimeType as (typeof supportedImageMimeTypes)[number],
+  );
+}
+
+function isSupportedImageFileName(fileName: string) {
+  const normalizedFileName = fileName.toLowerCase();
+
+  return supportedImageExtensions.some((extension) =>
+    normalizedFileName.endsWith(extension),
+  );
+}
+
 function getFileNameFromUrl(url: string) {
   try {
     const pathName = new URL(url).pathname;
@@ -162,5 +206,11 @@ export {
   createImageAssetFromFile,
   createImageAssetFromUrl,
   createImageSha256Signature,
+  findSupportedImageMimeType,
   getImageMetadataLabel,
+  isSupportedImageFileName,
+  isSupportedImageMimeType,
+  supportedImageAcceptValue,
+  supportedImageTypes,
+  supportedImageTypeListLabel,
 };

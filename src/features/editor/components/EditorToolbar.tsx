@@ -68,6 +68,7 @@ type EditorToolbarProps = {
   isMarkToolActive: boolean;
   isTextSettingsDefault: boolean;
   isTextToolActive: boolean;
+  onImportImageFromClipboard: () => void;
   onImportImageUrl: (url: string) => Promise<void>;
   onMarkSettingsChange: (patch: MarkOverlayPatch) => void;
   onMarkSettingsReset: () => void;
@@ -113,6 +114,7 @@ function EditorToolbar({
   canCloseDraft,
   onCloseDraft,
   onExportPdf,
+  onImportImageFromClipboard,
   onImportImageUrl,
   onMarkSettingsChange,
   onMarkSettingsReset,
@@ -225,6 +227,7 @@ function EditorToolbar({
           disabled={!hasPdf}
           imageAssets={imageAssets}
           isSelected={isImageToolActive}
+          onImportImageFromClipboard={onImportImageFromClipboard}
           onOpenUrlDialog={() => setIsImageUrlDialogOpen(true)}
           onRemoveImageAssetFromRecents={onRemoveImageAssetFromRecents}
           onSelectImageAsset={onSelectImageAsset}

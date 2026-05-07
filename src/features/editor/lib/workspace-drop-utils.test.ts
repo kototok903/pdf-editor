@@ -16,6 +16,7 @@ describe("workspace drop helpers", () => {
   it("accepts supported image files by MIME type or SVG extension", () => {
     expect(isSupportedImageFile(file("photo", "image/png"))).toBe(true);
     expect(isSupportedImageFile(file("signature.svg", ""))).toBe(true);
+    expect(isSupportedImageFile(file("photo", "image/bmp"))).toBe(false);
     expect(isSupportedImageFile(file("form.pdf", "application/pdf"))).toBe(
       false,
     );

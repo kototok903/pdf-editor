@@ -1,4 +1,4 @@
-import type { EditorOverlay } from "@/features/editor/editor-types";
+import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 
 type PersistedImageAssetRecord = {
   bytes: ArrayBuffer;
@@ -11,7 +11,7 @@ type PersistedImageAssetRecord = {
   mimeType: string;
   name: string;
   sha256Signature: string;
-  source: "upload" | "url";
+  source: ImageAsset["source"];
   width: number;
 };
 

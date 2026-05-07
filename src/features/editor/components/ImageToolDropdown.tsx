@@ -25,6 +25,7 @@ type ImageToolDropdownProps = {
   disabled: boolean;
   imageAssets: ImageAsset[];
   isSelected: boolean;
+  onImportImageFromClipboard: () => void;
   onOpenUrlDialog: () => void;
   onRemoveImageAssetFromRecents: (assetId: string) => void;
   onSelectImageAsset: (assetId: string) => void;
@@ -36,6 +37,7 @@ function ImageToolDropdown({
   disabled,
   imageAssets,
   isSelected,
+  onImportImageFromClipboard,
   onOpenUrlDialog,
   onRemoveImageAssetFromRecents,
   onSelectImageAsset,
@@ -71,7 +73,7 @@ function ImageToolDropdown({
           <LinkIcon aria-hidden="true" />
           From URL
         </DropdownMenuItem>
-        <DropdownMenuItem disabled>
+        <DropdownMenuItem onSelect={onImportImageFromClipboard}>
           <ClipboardIcon aria-hidden="true" />
           From Clipboard
         </DropdownMenuItem>

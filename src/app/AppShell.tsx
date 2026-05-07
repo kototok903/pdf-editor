@@ -38,7 +38,12 @@ import { useEditorKeyboardShortcuts } from "@/features/editor/hooks/useEditorKey
 import { useImageAssets } from "@/features/editor/hooks/useImageAssets";
 import { useEditorPreferences } from "@/features/editor/hooks/useEditorPreferences";
 import { useLocalDraftPersistence } from "@/features/editor/hooks/useLocalDraftPersistence";
-import { createImageSha256Signature } from "@/features/editor/lib/image-asset-utils";
+import {
+  createImageSha256Signature,
+  findSupportedImageMimeType,
+  supportedImageAcceptValue,
+  supportedImageTypeListLabel,
+} from "@/features/editor/lib/image-asset-utils";
 import {
   extractPlainTextFromHtml,
   textOverlayInputFromHtml,
@@ -609,6 +614,35 @@ function AppShell() {
     setEditingOverlayId(null);
   };
 
+  const handleImportImageFromClipboard = () => {
+    const importImageFromClipboard = async () => {
+      try {
+        const blob = await readImageBlobFromClipboard();
+
+        if (!blob) {
+          toast.error("Copy an image and try again", {
+            description: `Supported types: ${supportedImageTypeListLabel}`,
+          });
+          return;
+        }
+
+        const asset = await addImageBlob(blob);
+
+        setActiveTool({ assetId: asset.id, type: "image" });
+        setEditingOverlayId(null);
+      } catch (error) {
+        toast.error("Unable to read clipboard", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Allow clipboard access and try again.",
+        });
+      }
+    };
+
+    void importImageFromClipboard();
+  };
+
   const handleDropPdfFile = useCallback(
     (file: File) => {
       if (loadedDocument) {
@@ -848,7 +882,7 @@ function AppShell() {
           type="file"
         />
         <input
-          accept="image/*,.svg"
+          accept={supportedImageAcceptValue}
           className="hidden"
           onChange={handleImageFileChange}
           ref={imageInputRef}
@@ -875,6 +909,7 @@ function AppShell() {
           onMarkSettingsReset={handleMarkSettingsReset}
           onMarkToolActivate={handleMarkToolActivate}
           onMarkToolClick={handleMarkToolClick}
+          onImportImageFromClipboard={handleImportImageFromClipboard}
           onOpenFile={handleOpenFileDialog}
           onOpenImageDialog={handleOpenImageDialog}
           onRemoveImageAssetFromRecents={hideImageAssetFromRecents}
@@ -1074,9 +1109,8 @@ async function isSystemClipboardStillOverlayPayload(
         }
 
         if (
-          item.types.some(
-            (type) => type.startsWith("image/") || type === "text/html",
-          )
+          findSupportedImageMimeType(item.types) ||
+          item.types.includes("text/html")
         ) {
           return false;
         }
@@ -1114,6 +1148,24 @@ function textMatchesOverlayClipboardPayload(
     text === serializeOverlayClipboardPayload(payload) ||
     (payload.overlay.type === "text" && text === payload.overlay.text)
   );
+}
+
+async function readImageBlobFromClipboard() {
+  if (!navigator.clipboard || !("read" in navigator.clipboard)) {
+    throw new Error("Clipboard image import is not available in this browser.");
+  }
+
+  const items = await navigator.clipboard.read();
+
+  for (const item of items) {
+    const imageType = findSupportedImageMimeType(item.types);
+
+    if (imageType) {
+      return item.getType(imageType);
+    }
+  }
+
+  return null;
 }
 
 async function pasteFromSystemClipboard({
@@ -1180,7 +1232,7 @@ async function pasteFromSystemClipboard({
           }
         }
 
-        const imageType = item.types.find((type) => type.startsWith("image/"));
+        const imageType = findSupportedImageMimeType(item.types);
 
         if (imageType) {
           const blob = await item.getType(imageType);
