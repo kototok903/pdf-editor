@@ -107,7 +107,7 @@ async function writeClipboardPlanToSystemClipboard(plan: ClipboardWritePlan) {
   }
 
   if ("ClipboardItem" in window && navigator.clipboard.write) {
-    const clipboardItemData = {};
+    const clipboardItemData: Record<string, Blob> = {};
     for (const [type, value] of Object.entries(plan.systemItems)) {
       if (ClipboardItem.supports(type)) {
         clipboardItemData[type] = value;

@@ -190,7 +190,9 @@ function clipboardData({
   return {
     getData: (type: string) => strings[type] ?? "",
     items: [
-      ...Object.keys(strings).map((type) => clipboardItem("string", type, null)),
+      ...Object.keys(strings).map((type) =>
+        clipboardItem("string", type, null),
+      ),
       ...files.map((file) => clipboardItem("file", file.type, file)),
     ],
   } as unknown as DataTransfer;
