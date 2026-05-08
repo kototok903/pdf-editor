@@ -1206,7 +1206,7 @@ function AppShell() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        <Toaster position="bottom-right" />
+        <Toaster position="bottom-right" theme={isDark ? "dark" : "light"} />
       </main>
     </TooltipProvider>
   );
