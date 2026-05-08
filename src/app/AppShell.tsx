@@ -25,7 +25,7 @@ import { EditorToolbar } from "@/features/editor/components/EditorToolbar";
 import { PagesSidebar } from "@/features/editor/components/PagesSidebar";
 import type {
   EditorOverlayInput,
-  EditorOverlay,
+  ImageAsset,
   MarkOverlay,
   MarkOverlayPatch,
   PdfRect,
@@ -40,7 +40,6 @@ import { useEditorPreferences } from "@/features/editor/hooks/useEditorPreferenc
 import { useLocalDraftPersistence } from "@/features/editor/hooks/useLocalDraftPersistence";
 import {
   createImageSha256Signature,
-  findSupportedImageMimeType,
   supportedImageAcceptValue,
   supportedImageTypeListLabel,
 } from "@/features/editor/lib/image-asset-utils";
@@ -57,13 +56,16 @@ import {
 } from "@/features/editor/lib/external-paste-dedupe";
 import { createImageOverlayRectAtPoint } from "@/features/editor/lib/overlay-coordinate-utils";
 import {
-  APP_OVERLAY_MIME_TYPE,
+  buildOverlayClipboardWritePlan,
+  readPasteIntentFromAsyncClipboard,
+  readPasteIntentFromClipboardData,
+  writeClipboardPlanToEvent,
+  writeClipboardPlanToSystemClipboard,
+  type PasteIntent,
+} from "@/features/editor/lib/editor-clipboard";
+import {
   duplicateOverlayInput,
-  getTextFromOverlayPayload,
-  isSameOverlayClipboardPayload,
-  parseOverlayClipboardPayload,
-  serializeOverlayClipboardPayload,
-  toOverlayClipboardPayload,
+  getOverlayClipboardPayloadKey,
   toOverlayInput,
   type OverlayClipboardPayload,
 } from "@/features/editor/lib/overlay-clipboard";
@@ -85,10 +87,10 @@ type ActiveTool =
   | { type: "mark" }
   | { type: "text" }
   | null;
-type AddRenderableOverlay = (
-  input: EditorOverlayInput,
-  options?: { additionalRenderableImageAssetIds?: string[] },
-) => EditorOverlay | null;
+type LastOverlayPaste = {
+  pasteCount: number;
+  payloadKey: string;
+};
 
 function AppShell() {
   const exportedFileNamesRef = useRef<Set<string>>(new Set());
@@ -107,11 +109,8 @@ function AppShell() {
     pageNumber: number;
     requestId: number;
   } | null>(null);
-  const [overlayClipboard, setOverlayClipboard] = useState<{
-    pasteCount: number;
-    payload: OverlayClipboardPayload;
-    sourceOverlayId: string;
-  } | null>(null);
+  const [lastOverlayPaste, setLastOverlayPaste] =
+    useState<LastOverlayPaste | null>(null);
   const [lastExternalPaste, setLastExternalPaste] =
     useState<ExternalPasteRecord | null>(null);
   const [editorPreferences, setEditorPreferences] = useEditorPreferences();
@@ -147,6 +146,7 @@ function AppShell() {
     imageAssets,
     replaceImageAssets,
     recentImageAssets,
+    showImageAssetInRecents,
   } = useImageAssets();
   const { clearStoredDraft, hydrateLocalDraft } = useLocalDraftPersistence({
     currentPage,
@@ -331,27 +331,36 @@ function AppShell() {
       setActiveTool(null);
       setEditingOverlayId(null);
 
+      if (input.type === "image") {
+        showImageAssetInRecents(input.assetId);
+      }
+
       return addOverlay(input);
     },
-    [addOverlay, imageAssets],
+    [addOverlay, imageAssets, showImageAssetInRecents],
   );
 
-  const handleCopySelectedOverlay = useCallback(() => {
-    if (!selectedOverlay) {
-      return;
-    }
+  const handleCopySelectedOverlay = useCallback(
+    (event?: ClipboardEvent) => {
+      if (!selectedOverlay) {
+        return;
+      }
 
-    const payload = toOverlayClipboardPayload(selectedOverlay);
-    const serializedPayload = serializeOverlayClipboardPayload(payload);
+      const writePlan = buildOverlayClipboardWritePlan(
+        selectedOverlay,
+        imageAssets,
+      );
 
-    setOverlayClipboard({
-      pasteCount: 0,
-      payload,
-      sourceOverlayId: selectedOverlay.id,
-    });
+      // Always use event clipboard write since async API fails to write custom format items
+      if (event?.clipboardData) {
+        writeClipboardPlanToEvent(writePlan, event.clipboardData);
+        return;
+      }
 
-    void writeOverlayToSystemClipboard(selectedOverlay, serializedPayload);
-  }, [selectedOverlay]);
+      void writeClipboardPlanToSystemClipboard(writePlan);
+    },
+    [imageAssets, selectedOverlay],
+  );
 
   const handleDuplicateSelectedOverlay = useCallback(() => {
     if (!selectedOverlay) {
@@ -374,61 +383,263 @@ function AppShell() {
     );
   }, [addRenderableOverlay, pageSizes, selectedOverlay, zoom]);
 
-  const handlePaste = useCallback(() => {
-    const pageSize = getCurrentPageSize();
+  const addPastedImageOverlay = useCallback(
+    async (
+      image: Blob,
+      pageSize: { height: number; width: number },
+      sha256Signature?: string,
+    ) => {
+      const nextSha256Signature =
+        sha256Signature ?? (await createImageSha256Signature(image));
+      const signature = createImageClipboardSignature(
+        image.type,
+        nextSha256Signature,
+      );
 
-    if (!pageSize) {
-      return;
-    }
-
-    const paste = async () => {
-      if (overlayClipboard) {
-        const shouldUseInternalClipboard =
-          await isSystemClipboardStillOverlayPayload(overlayClipboard.payload);
-
-        if (shouldUseInternalClipboard) {
-          const pasteCount = overlayClipboard.pasteCount + 1;
-
-          addRenderableOverlay(
-            toOverlayInput(overlayClipboard.payload, {
-              pageNumber: currentPage,
-              pageSize,
-              pasteCount,
-            }),
-          );
-          setOverlayClipboard({
-            ...overlayClipboard,
-            pasteCount,
-          });
-          return;
-        }
-
-        setOverlayClipboard(null);
+      if (shouldSkipExternalPaste(lastExternalPaste, signature, overlays)) {
+        return;
       }
 
-      await pasteFromSystemClipboard({
-        addImageBlob,
-        addRenderableOverlay,
-        currentPage,
-        lastExternalPaste,
-        onExternalPaste: setLastExternalPaste,
-        overlays,
-        pageSize,
-        textSettings: getCurrentTextDefaults(),
-      });
-    };
+      const asset = await addImageBlob(image, nextSha256Signature);
+      const overlay = addRenderableOverlay(
+        createCenteredImageOverlayInput(asset, currentPage, pageSize),
+        { additionalRenderableImageAssetIds: [asset.id] },
+      );
 
-    void paste();
-  }, [
-    addImageBlob,
-    addRenderableOverlay,
-    currentPage,
-    getCurrentPageSize,
-    getCurrentTextDefaults,
-    lastExternalPaste,
-    overlayClipboard,
-    overlays,
-  ]);
+      if (overlay) {
+        setLastExternalPaste(createExternalPasteRecord(overlay, signature));
+      }
+    },
+    [
+      addImageBlob,
+      addRenderableOverlay,
+      currentPage,
+      lastExternalPaste,
+      overlays,
+    ],
+  );
+
+  const getNextOverlayPaste = useCallback(
+    (payload: OverlayClipboardPayload) => {
+      const payloadKey = getOverlayClipboardPayloadKey(payload);
+      const pasteCount =
+        lastOverlayPaste?.payloadKey === payloadKey
+          ? lastOverlayPaste.pasteCount + 1
+          : 1;
+
+      return { pasteCount, payloadKey };
+    },
+    [lastOverlayPaste],
+  );
+
+  const pasteOverlayIntent = useCallback(
+    async (
+      intent: Extract<PasteIntent, { kind: "overlay" }>,
+      pageSize: { height: number; width: number },
+    ) => {
+      const { pasteCount, payloadKey } = getNextOverlayPaste(intent.payload);
+      const input = toOverlayInput(intent.payload, {
+        pageNumber: currentPage,
+        pageSize,
+        pasteCount,
+      });
+      let renderableInput = input;
+      let additionalRenderableImageAssetIds: string[] | undefined;
+
+      if (input.type === "image") {
+        const existingAsset = imageAssets.find(
+          (asset) => asset.id === input.assetId,
+        );
+
+        if (!existingAsset) {
+          if (!intent.imageBlob) {
+            toast.error("Unable to paste image overlay", {
+              description: "The copied image data is not available.",
+            });
+            return;
+          }
+
+          const asset = await addImageBlob(intent.imageBlob);
+
+          renderableInput = {
+            ...input,
+            assetId: asset.id,
+            sha256Signature: asset.sha256Signature,
+          };
+          additionalRenderableImageAssetIds = [asset.id];
+        }
+      }
+
+      const overlay = addRenderableOverlay(
+        renderableInput,
+        additionalRenderableImageAssetIds
+          ? { additionalRenderableImageAssetIds }
+          : undefined,
+      );
+
+      if (overlay) {
+        setLastOverlayPaste({ pasteCount, payloadKey });
+      }
+    },
+    [
+      addImageBlob,
+      addRenderableOverlay,
+      currentPage,
+      getNextOverlayPaste,
+      imageAssets,
+    ],
+  );
+
+  const pasteExternalTextIntent = useCallback(
+    (
+      intent: Extract<PasteIntent, { kind: "external-text" }>,
+      pageSize: { height: number; width: number },
+      textSettings: TextOverlayDefaults,
+    ) => {
+      const signature = intent.html
+        ? createTextClipboardSignature("text/html", intent.html)
+        : createTextClipboardSignature("text/plain", intent.text);
+
+      if (shouldSkipExternalPaste(lastExternalPaste, signature, overlays)) {
+        return;
+      }
+
+      const input = intent.html
+        ? textOverlayInputFromHtml(intent.html, intent.text, {
+            pageNumber: currentPage,
+            pageSize,
+            textSettings,
+          })
+        : textOverlayInputFromPlainText(intent.text, {
+            pageNumber: currentPage,
+            pageSize,
+            textSettings,
+          });
+
+      if (!input) {
+        return;
+      }
+
+      const overlay = addRenderableOverlay(input);
+
+      if (overlay) {
+        setLastExternalPaste(createExternalPasteRecord(overlay, signature));
+      }
+    },
+    [
+      addRenderableOverlay,
+      currentPage,
+      lastExternalPaste,
+      overlays,
+      setLastExternalPaste,
+    ],
+  );
+
+  const pasteTextWithCurrentSettingsIntent = useCallback(
+    (
+      intent: PasteIntent,
+      pageSize: { height: number; width: number },
+      textSettings: TextOverlayDefaults,
+    ) => {
+      const text =
+        intent.kind === "overlay" && intent.payload.overlay.type === "text"
+          ? intent.payload.overlay.text
+          : intent.kind === "external-text"
+            ? intent.html
+              ? extractPlainTextFromHtml(intent.html) || intent.text
+              : intent.text
+            : "";
+
+      if (!text) {
+        return;
+      }
+
+      const signature = createTextClipboardSignature("text/plain", text);
+
+      if (shouldSkipExternalPaste(lastExternalPaste, signature, overlays)) {
+        return;
+      }
+
+      const input = textOverlayInputUsingCurrentSettings(text, {
+        pageNumber: currentPage,
+        pageSize,
+        textSettings,
+      });
+
+      if (!input) {
+        return;
+      }
+
+      const overlay = addRenderableOverlay(input);
+
+      if (overlay) {
+        setLastExternalPaste(createExternalPasteRecord(overlay, signature));
+      }
+    },
+    [
+      addRenderableOverlay,
+      currentPage,
+      lastExternalPaste,
+      overlays,
+      setLastExternalPaste,
+    ],
+  );
+
+  const handlePasteIntent = useCallback(
+    (intent: PasteIntent) => {
+      const pageSize = getCurrentPageSize();
+
+      if (!pageSize || intent.kind === "empty") {
+        return;
+      }
+
+      const paste = async () => {
+        try {
+          if (intent.kind === "overlay") {
+            await pasteOverlayIntent(intent, pageSize);
+            return;
+          }
+
+          if (intent.kind === "external-image") {
+            await addPastedImageOverlay(intent.blob, pageSize);
+            return;
+          }
+
+          pasteExternalTextIntent(intent, pageSize, getCurrentTextDefaults());
+        } catch (error) {
+          toast.error("Unable to paste", {
+            description:
+              error instanceof Error
+                ? error.message
+                : "Copy another item and try again.",
+          });
+        }
+      };
+
+      void paste();
+    },
+    [
+      addPastedImageOverlay,
+      getCurrentPageSize,
+      getCurrentTextDefaults,
+      pasteExternalTextIntent,
+      pasteOverlayIntent,
+    ],
+  );
+
+  const handlePasteEvent = useCallback(
+    (event: ClipboardEvent) => {
+      const intent = readPasteIntentFromClipboardData(event.clipboardData);
+
+      if (intent.kind === "empty") {
+        return;
+      }
+
+      event.preventDefault();
+      handlePasteIntent(intent);
+    },
+    [handlePasteIntent],
+  );
 
   const handlePasteWithCurrentTextSettings = useCallback(() => {
     const pageSize = getCurrentPageSize();
@@ -438,57 +649,20 @@ function AppShell() {
     }
 
     const paste = async () => {
-      const textSettings = getCurrentTextDefaults();
+      const intent = await readPasteIntentFromAsyncClipboard();
 
-      if (overlayClipboard) {
-        const shouldUseInternalClipboard =
-          await isSystemClipboardStillOverlayPayload(overlayClipboard.payload);
-        const internalOverlayText = shouldUseInternalClipboard
-          ? getTextFromOverlayPayload(overlayClipboard.payload)
-          : null;
-
-        if (!shouldUseInternalClipboard) {
-          setOverlayClipboard(null);
-        }
-
-        if (internalOverlayText) {
-          const input = textOverlayInputUsingCurrentSettings(
-            internalOverlayText,
-            {
-              pageNumber: currentPage,
-              pageSize,
-              textSettings,
-            },
-          );
-
-          if (input) {
-            addRenderableOverlay(input);
-          }
-
-          return;
-        }
-      }
-
-      await pasteTextWithCurrentSettingsFromSystemClipboard({
-        addRenderableOverlay,
-        currentPage,
-        lastExternalPaste,
-        onExternalPaste: setLastExternalPaste,
-        overlays,
+      pasteTextWithCurrentSettingsIntent(
+        intent,
         pageSize,
-        textSettings,
-      });
+        getCurrentTextDefaults(),
+      );
     };
 
     void paste();
   }, [
-    addRenderableOverlay,
-    currentPage,
     getCurrentPageSize,
     getCurrentTextDefaults,
-    lastExternalPaste,
-    overlayClipboard,
-    overlays,
+    pasteTextWithCurrentSettingsIntent,
   ]);
 
   useEditorKeyboardShortcuts({
@@ -499,7 +673,7 @@ function AppShell() {
     onCopySelectedOverlay: handleCopySelectedOverlay,
     onDuplicateSelectedOverlay: handleDuplicateSelectedOverlay,
     onEditOverlay: handleEditOverlay,
-    onPaste: handlePaste,
+    onPasteEvent: handlePasteEvent,
     onPasteWithCurrentTextSettings: handlePasteWithCurrentTextSettings,
     onRemoveOverlay: removeOverlay,
     onUpdateOverlayRect: updateOverlayRect,
@@ -516,7 +690,7 @@ function AppShell() {
     (file: File) => {
       setCurrentPage(1);
       clearOverlays();
-      setOverlayClipboard(null);
+      setLastOverlayPaste(null);
       setLastExternalPaste(null);
       setEditingOverlayId(null);
       setActiveTool(null);
@@ -533,7 +707,7 @@ function AppShell() {
     setCurrentPage(1);
     clearFile();
     clearOverlays();
-    setOverlayClipboard(null);
+    setLastOverlayPaste(null);
     setLastExternalPaste(null);
     setEditingOverlayId(null);
     setActiveTool(null);
@@ -617,7 +791,13 @@ function AppShell() {
   const handleImportImageFromClipboard = () => {
     const importImageFromClipboard = async () => {
       try {
-        const blob = await readImageBlobFromClipboard();
+        const intent = await readPasteIntentFromAsyncClipboard();
+        const blob =
+          intent.kind === "external-image"
+            ? intent.blob
+            : intent.kind === "overlay"
+              ? intent.imageBlob
+              : null;
 
         if (!blob) {
           toast.error("Copy an image and try again", {
@@ -914,6 +1094,7 @@ function AppShell() {
           onOpenImageDialog={handleOpenImageDialog}
           onRemoveImageAssetFromRecents={hideImageAssetFromRecents}
           onSelectImageAsset={(assetId) => {
+            showImageAssetInRecents(assetId);
             setActiveTool({ assetId, type: "image" });
             setEditingOverlayId(null);
           }}
@@ -1047,477 +1228,6 @@ function downloadBytes(bytes: Uint8Array, fileName: string) {
   URL.revokeObjectURL(url);
 }
 
-async function writeOverlayToSystemClipboard(
-  overlay: EditorOverlay,
-  serializedPayload: string,
-) {
-  if (!navigator.clipboard) {
-    return;
-  }
-
-  if ("ClipboardItem" in window && navigator.clipboard.write) {
-    try {
-      const clipboardData: Record<string, Blob> = {
-        [APP_OVERLAY_MIME_TYPE]: new Blob([serializedPayload], {
-          type: APP_OVERLAY_MIME_TYPE,
-        }),
-      };
-
-      if (overlay.type === "text") {
-        clipboardData["text/plain"] = new Blob([overlay.text], {
-          type: "text/plain",
-        });
-      }
-
-      await navigator.clipboard.write([new ClipboardItem(clipboardData)]);
-      return;
-    } catch {
-      // Fall back to plain text below.
-    }
-  }
-
-  try {
-    await navigator.clipboard.writeText(
-      overlay.type === "text" ? overlay.text : serializedPayload,
-    );
-  } catch {
-    // Clipboard permissions vary by browser; internal copy state still works.
-  }
-}
-
-async function isSystemClipboardStillOverlayPayload(
-  payload: OverlayClipboardPayload,
-) {
-  if (!navigator.clipboard) {
-    return true;
-  }
-
-  if ("read" in navigator.clipboard) {
-    try {
-      const items = await navigator.clipboard.read();
-
-      for (const item of items) {
-        if (item.types.includes(APP_OVERLAY_MIME_TYPE)) {
-          const systemPayload = parseOverlayClipboardPayload(
-            await blobToText(await item.getType(APP_OVERLAY_MIME_TYPE)),
-          );
-
-          return Boolean(
-            systemPayload &&
-            isSameOverlayClipboardPayload(payload, systemPayload),
-          );
-        }
-
-        if (
-          findSupportedImageMimeType(item.types) ||
-          item.types.includes("text/html")
-        ) {
-          return false;
-        }
-
-        if (item.types.includes("text/plain")) {
-          return textMatchesOverlayClipboardPayload(
-            await blobToText(await item.getType("text/plain")),
-            payload,
-          );
-        }
-      }
-    } catch {
-      // Fall back to readText below.
-    }
-  }
-
-  if (!navigator.clipboard.readText) {
-    return true;
-  }
-
-  try {
-    const text = await navigator.clipboard.readText();
-
-    return text ? textMatchesOverlayClipboardPayload(text, payload) : true;
-  } catch {
-    return true;
-  }
-}
-
-function textMatchesOverlayClipboardPayload(
-  text: string,
-  payload: OverlayClipboardPayload,
-) {
-  return (
-    text === serializeOverlayClipboardPayload(payload) ||
-    (payload.overlay.type === "text" && text === payload.overlay.text)
-  );
-}
-
-async function readImageBlobFromClipboard() {
-  if (!navigator.clipboard || !("read" in navigator.clipboard)) {
-    throw new Error("Clipboard image import is not available in this browser.");
-  }
-
-  const items = await navigator.clipboard.read();
-
-  for (const item of items) {
-    const imageType = findSupportedImageMimeType(item.types);
-
-    if (imageType) {
-      return item.getType(imageType);
-    }
-  }
-
-  return null;
-}
-
-async function pasteFromSystemClipboard({
-  addImageBlob,
-  addRenderableOverlay,
-  currentPage,
-  lastExternalPaste,
-  onExternalPaste,
-  overlays,
-  pageSize,
-  textSettings,
-}: {
-  addImageBlob: (
-    blob: Blob,
-    sha256Signature?: string,
-  ) => Promise<{
-    height: number;
-    id: string;
-    sha256Signature: string;
-    width: number;
-  }>;
-  addRenderableOverlay: AddRenderableOverlay;
-  currentPage: number;
-  lastExternalPaste: ExternalPasteRecord | null;
-  onExternalPaste: (record: ExternalPasteRecord) => void;
-  overlays: EditorOverlay[];
-  pageSize: { height: number; width: number };
-  textSettings: TextOverlayDefaults;
-}) {
-  const options = {
-    pageNumber: currentPage,
-    pageSize,
-    textSettings,
-  };
-
-  if (navigator.clipboard && "read" in navigator.clipboard) {
-    try {
-      const items = await navigator.clipboard.read();
-      const htmlFallbacks: { fallbackText: string; html: string }[] = [];
-      const plainTextFallbacks: string[] = [];
-
-      for (const item of items) {
-        const overlayType = item.types.find(
-          (type) => type === APP_OVERLAY_MIME_TYPE,
-        );
-
-        if (overlayType) {
-          const payload = parseOverlayClipboardPayload(
-            await blobToText(await item.getType(overlayType)),
-          );
-
-          if (payload) {
-            const addedOverlay = addRenderableOverlay(
-              toOverlayInput(payload, {
-                pageNumber: currentPage,
-                pageSize,
-                pasteCount: 1,
-              }),
-            );
-
-            if (addedOverlay) {
-              return;
-            }
-          }
-        }
-
-        const imageType = findSupportedImageMimeType(item.types);
-
-        if (imageType) {
-          const blob = await item.getType(imageType);
-          const sha256Signature = await createImageSha256Signature(blob);
-          const signature = createImageClipboardSignature(
-            blob.type,
-            sha256Signature,
-          );
-
-          if (shouldSkipExternalPaste(lastExternalPaste, signature, overlays)) {
-            return;
-          }
-
-          const asset = await addImageBlob(blob, sha256Signature);
-
-          const overlay = addRenderableOverlay(
-            {
-              assetId: asset.id,
-              pageNumber: currentPage,
-              rect: createImageOverlayRectAtPoint(
-                { x: pageSize.width / 2, y: pageSize.height / 2 },
-                pageSize,
-                asset,
-              ),
-              sha256Signature: asset.sha256Signature,
-              type: "image",
-            },
-            { additionalRenderableImageAssetIds: [asset.id] },
-          );
-
-          if (overlay) {
-            onExternalPaste(createExternalPasteRecord(overlay, signature));
-          }
-
-          return;
-        }
-
-        if (item.types.includes("text/html")) {
-          const html = await blobToText(await item.getType("text/html"));
-          const fallbackText = item.types.includes("text/plain")
-            ? await blobToText(await item.getType("text/plain"))
-            : "";
-
-          htmlFallbacks.push({ fallbackText, html });
-        } else if (item.types.includes("text/plain")) {
-          plainTextFallbacks.push(
-            await blobToText(await item.getType("text/plain")),
-          );
-        }
-      }
-
-      for (const fallback of htmlFallbacks) {
-        const signature = createTextClipboardSignature(
-          "text/html",
-          fallback.html,
-        );
-
-        if (shouldSkipExternalPaste(lastExternalPaste, signature, overlays)) {
-          return;
-        }
-
-        const input = textOverlayInputFromHtml(
-          fallback.html,
-          fallback.fallbackText,
-          options,
-        );
-
-        if (input) {
-          const overlay = addRenderableOverlay(input);
-
-          if (overlay) {
-            onExternalPaste(createExternalPasteRecord(overlay, signature));
-          }
-
-          return;
-        }
-      }
-
-      for (const text of plainTextFallbacks) {
-        const overlayPayload = parseOverlayClipboardPayload(text);
-
-        if (overlayPayload) {
-          const addedOverlay = addRenderableOverlay(
-            toOverlayInput(overlayPayload, {
-              pageNumber: currentPage,
-              pageSize,
-              pasteCount: 1,
-            }),
-          );
-
-          if (addedOverlay) {
-            return;
-          }
-        }
-
-        const input = textOverlayInputFromPlainText(text, options);
-
-        if (input) {
-          const signature = createTextClipboardSignature("text/plain", text);
-
-          if (shouldSkipExternalPaste(lastExternalPaste, signature, overlays)) {
-            return;
-          }
-
-          const overlay = addRenderableOverlay(input);
-
-          if (overlay) {
-            onExternalPaste(createExternalPasteRecord(overlay, signature));
-          }
-
-          return;
-        }
-      }
-    } catch {
-      // Fall back to readText below.
-    }
-  }
-
-  await pasteTextFromReadText({
-    addRenderableOverlay,
-    currentPage,
-    lastExternalPaste,
-    onExternalPaste,
-    overlays,
-    pageSize,
-    textSettings,
-  });
-}
-
-async function pasteTextWithCurrentSettingsFromSystemClipboard({
-  addRenderableOverlay,
-  currentPage,
-  lastExternalPaste,
-  onExternalPaste,
-  overlays,
-  pageSize,
-  textSettings,
-}: {
-  addRenderableOverlay: AddRenderableOverlay;
-  currentPage: number;
-  lastExternalPaste: ExternalPasteRecord | null;
-  onExternalPaste: (record: ExternalPasteRecord) => void;
-  overlays: EditorOverlay[];
-  pageSize: { height: number; width: number };
-  textSettings: TextOverlayDefaults;
-}) {
-  if (navigator.clipboard && "read" in navigator.clipboard) {
-    try {
-      const items = await navigator.clipboard.read();
-
-      for (const item of items) {
-        if (item.types.includes("text/html")) {
-          const html = await blobToText(await item.getType("text/html"));
-          const signature = createTextClipboardSignature("text/html", html);
-
-          if (shouldSkipExternalPaste(lastExternalPaste, signature, overlays)) {
-            return;
-          }
-
-          const text = extractPlainTextFromHtml(html);
-          const input = textOverlayInputUsingCurrentSettings(text, {
-            pageNumber: currentPage,
-            pageSize,
-            textSettings,
-          });
-
-          if (input) {
-            const overlay = addRenderableOverlay(input);
-
-            if (overlay) {
-              onExternalPaste(createExternalPasteRecord(overlay, signature));
-            }
-
-            return;
-          }
-        }
-
-        if (item.types.includes("text/plain")) {
-          const text = await blobToText(await item.getType("text/plain"));
-          const payload = parseOverlayClipboardPayload(text);
-          const signature = createTextClipboardSignature("text/plain", text);
-
-          if (shouldSkipExternalPaste(lastExternalPaste, signature, overlays)) {
-            return;
-          }
-
-          const input = textOverlayInputUsingCurrentSettings(
-            payload ? (getTextFromOverlayPayload(payload) ?? "") : text,
-            {
-              pageNumber: currentPage,
-              pageSize,
-              textSettings,
-            },
-          );
-
-          if (input) {
-            const overlay = addRenderableOverlay(input);
-
-            if (overlay) {
-              onExternalPaste(createExternalPasteRecord(overlay, signature));
-            }
-
-            return;
-          }
-        }
-      }
-    } catch {
-      // Fall back to readText below.
-    }
-  }
-
-  await pasteTextFromReadText({
-    addRenderableOverlay,
-    currentPage,
-    lastExternalPaste,
-    onExternalPaste,
-    overlays,
-    pageSize,
-    textSettings,
-  });
-}
-
-async function pasteTextFromReadText({
-  addRenderableOverlay,
-  currentPage,
-  lastExternalPaste,
-  onExternalPaste,
-  overlays,
-  pageSize,
-  textSettings,
-}: {
-  addRenderableOverlay: AddRenderableOverlay;
-  currentPage: number;
-  lastExternalPaste: ExternalPasteRecord | null;
-  onExternalPaste: (record: ExternalPasteRecord) => void;
-  overlays: EditorOverlay[];
-  pageSize: { height: number; width: number };
-  textSettings: TextOverlayDefaults;
-}) {
-  if (!navigator.clipboard?.readText) {
-    return;
-  }
-
-  try {
-    const text = await navigator.clipboard.readText();
-    const payload = parseOverlayClipboardPayload(text);
-
-    if (payload) {
-      const addedOverlay = addRenderableOverlay(
-        toOverlayInput(payload, {
-          pageNumber: currentPage,
-          pageSize,
-          pasteCount: 1,
-        }),
-      );
-
-      if (addedOverlay) {
-        return;
-      }
-    }
-
-    const signature = createTextClipboardSignature("text/plain", text);
-
-    if (shouldSkipExternalPaste(lastExternalPaste, signature, overlays)) {
-      return;
-    }
-
-    const input = textOverlayInputFromPlainText(text, {
-      pageNumber: currentPage,
-      pageSize,
-      textSettings,
-    });
-
-    if (input) {
-      const overlay = addRenderableOverlay(input);
-
-      if (overlay) {
-        onExternalPaste(createExternalPasteRecord(overlay, signature));
-      }
-    }
-  } catch {
-    // Clipboard reads can be blocked outside user activation.
-  }
-}
-
 function createTextClipboardSignature(type: string, text: string) {
   return `${type}:${text}`;
 }
@@ -1529,8 +1239,22 @@ function createImageClipboardSignature(
   return `image:${mimeType}:${sha256Signature}`;
 }
 
-function blobToText(blob: Blob) {
-  return blob.text();
+function createCenteredImageOverlayInput(
+  asset: Pick<ImageAsset, "height" | "id" | "sha256Signature" | "width">,
+  pageNumber: number,
+  pageSize: { height: number; width: number },
+): EditorOverlayInput {
+  return {
+    assetId: asset.id,
+    pageNumber,
+    rect: createImageOverlayRectAtPoint(
+      { x: pageSize.width / 2, y: pageSize.height / 2 },
+      pageSize,
+      asset,
+    ),
+    sha256Signature: asset.sha256Signature,
+    type: "image",
+  };
 }
 
 function getExportErrorMessage(error: unknown) {

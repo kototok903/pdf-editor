@@ -3,7 +3,10 @@ import type {
   TextFontId,
   TextOverlayDefaults,
 } from "@/features/editor/editor-types";
-import { defaultMarkSettings } from "@/features/editor/lib/mark-definitions";
+import {
+  defaultMarkSettings,
+  isSupportedMarkType,
+} from "@/features/editor/lib/mark-definitions";
 import { defaultTextOverlay } from "@/features/editor/lib/overlay-defaults";
 
 type EditorThemeName = "dark" | "light";
@@ -38,14 +41,6 @@ const supportedTextFontIds = new Set<TextFontId>([
   "courier",
   "helvetica",
   "times-roman",
-]);
-const supportedMarkTypes = new Set<MarkType>([
-  "ballot-x",
-  "check",
-  "dot",
-  "heavy-check",
-  "slash-x",
-  "x",
 ]);
 
 function readEditorPreferences(
@@ -185,8 +180,8 @@ function asTextFontId(value: unknown, fallback: TextFontId) {
 }
 
 function asMarkType(value: unknown, fallback: MarkType) {
-  return typeof value === "string" && supportedMarkTypes.has(value as MarkType)
-    ? (value as MarkType)
+  return typeof value === "string" && isSupportedMarkType(value)
+    ? value
     : fallback;
 }
 

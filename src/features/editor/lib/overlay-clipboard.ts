@@ -2,11 +2,18 @@ import type {
   EditorOverlay,
   EditorOverlayInput,
   PdfRect,
+  TextFontId,
 } from "@/features/editor/editor-types";
+import { isSupportedMarkType } from "@/features/editor/lib/mark-definitions";
 
 const APP_OVERLAY_MIME_TYPE = "web application/x-pdf-editor-overlay+json";
 const overlayPasteOffset = 12;
 const overlayClipboardVersion = 1;
+const supportedTextFontIds = new Set<TextFontId>([
+  "courier",
+  "helvetica",
+  "times-roman",
+]);
 
 type OverlayClipboardPayload = {
   overlay: EditorOverlayInput;
@@ -160,7 +167,7 @@ function isOverlayInput(value: unknown): value is EditorOverlayInput {
     return false;
   }
 
-  if (typeof value.pageNumber !== "number") {
+  if (!isFiniteNumber(value.pageNumber)) {
     return false;
   }
 
@@ -172,13 +179,16 @@ function isOverlayInput(value: unknown): value is EditorOverlayInput {
       );
     case "mark":
       return (
-        typeof value.color === "string" && typeof value.markType === "string"
+        typeof value.color === "string" &&
+        typeof value.markType === "string" &&
+        isSupportedMarkType(value.markType)
       );
     case "text":
       return (
         typeof value.color === "string" &&
         typeof value.fontId === "string" &&
-        typeof value.fontSize === "number" &&
+        supportedTextFontIds.has(value.fontId as TextFontId) &&
+        isFiniteNumber(value.fontSize) &&
         typeof value.text === "string"
       );
     case "signature":
@@ -192,10 +202,12 @@ function isOverlayInput(value: unknown): value is EditorOverlayInput {
 function isPdfRect(value: unknown): value is PdfRect {
   return (
     isRecord(value) &&
-    typeof value.height === "number" &&
-    typeof value.width === "number" &&
-    typeof value.x === "number" &&
-    typeof value.y === "number"
+    isFiniteNumber(value.height) &&
+    isFiniteNumber(value.width) &&
+    value.height > 0 &&
+    value.width > 0 &&
+    isFiniteNumber(value.x) &&
+    isFiniteNumber(value.y)
   );
 }
 
@@ -203,13 +215,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), Math.max(min, max));
+}
+
+function getOverlayClipboardPayloadKey(payload: OverlayClipboardPayload) {
+  return `${payload.sourceOverlayId}:${JSON.stringify(payload.overlay)}`;
 }
 
 export {
   APP_OVERLAY_MIME_TYPE,
   duplicateOverlayInput,
+  getOverlayClipboardPayloadKey,
   getTextFromOverlayPayload,
   isSameOverlayClipboardPayload,
   parseOverlayClipboardPayload,

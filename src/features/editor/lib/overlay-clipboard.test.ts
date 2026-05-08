@@ -4,6 +4,7 @@ import type { EditorOverlay } from "@/features/editor/editor-types";
 import {
   duplicateOverlayInput,
   isSameOverlayClipboardPayload,
+  parseOverlayClipboardPayload,
   toOverlayClipboardPayload,
   toOverlayInput,
 } from "@/features/editor/lib/overlay-clipboard";
@@ -123,5 +124,30 @@ describe("overlay clipboard helpers", () => {
         sourceOverlayId: "text-2",
       }),
     ).toBe(false);
+  });
+
+  it("rejects unsupported copied overlay payload data", () => {
+    const payload = toOverlayClipboardPayload({
+      color: "#111827",
+      fontId: "helvetica",
+      fontSize: 18,
+      id: "text-1",
+      pageNumber: 1,
+      rect: { height: 40, width: 160, x: 24, y: 32 },
+      text: "Hello",
+      type: "text",
+    });
+
+    expect(
+      parseOverlayClipboardPayload(
+        JSON.stringify({
+          ...payload,
+          overlay: {
+            ...payload.overlay,
+            fontId: "comic-sans",
+          },
+        }),
+      ),
+    ).toBeNull();
   });
 });

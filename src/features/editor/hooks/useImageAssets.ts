@@ -107,6 +107,12 @@ function useImageAssets() {
     );
   }, []);
 
+  const showImageAssetInRecents = useCallback((assetId: string) => {
+    setImageAssets((currentAssets) =>
+      moveImageAssetToTop(currentAssets, assetId),
+    );
+  }, []);
+
   const recentImageAssets = imageAssets.filter(
     (asset) => !asset.isHiddenFromRecents,
   );
@@ -119,6 +125,7 @@ function useImageAssets() {
     imageAssets,
     replaceImageAssets,
     recentImageAssets,
+    showImageAssetInRecents,
     upsertImageAssets,
   };
 }

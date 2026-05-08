@@ -9,10 +9,10 @@ type UseEditorKeyboardShortcutsOptions = {
   hasActiveTool: boolean;
   onClearActiveTool: () => void;
   onClearSelection: () => void;
-  onCopySelectedOverlay: () => void;
+  onCopySelectedOverlay: (event?: ClipboardEvent) => void;
   onDuplicateSelectedOverlay: () => void;
   onEditOverlay: (overlayId: string | null) => void;
-  onPaste: () => void;
+  onPasteEvent: (event: ClipboardEvent) => void;
   onPasteWithCurrentTextSettings: () => void;
   onRemoveOverlay: (overlayId: string) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
@@ -29,7 +29,7 @@ function useEditorKeyboardShortcuts({
   onCopySelectedOverlay,
   onDuplicateSelectedOverlay,
   onEditOverlay,
-  onPaste,
+  onPasteEvent,
   onPasteWithCurrentTextSettings,
   onRemoveOverlay,
   onUpdateOverlayRect,
@@ -59,12 +59,6 @@ function useEditorKeyboardShortcuts({
         return;
       }
 
-      if (isPasteEvent(event)) {
-        event.preventDefault();
-        onPaste();
-        return;
-      }
-
       if (event.key === "Escape") {
         if (hasActiveTool) {
           event.preventDefault();
@@ -81,12 +75,6 @@ function useEditorKeyboardShortcuts({
       }
 
       if (!selectedOverlay) {
-        return;
-      }
-
-      if (isCopyEvent(event)) {
-        event.preventDefault();
-        onCopySelectedOverlay();
         return;
       }
 
@@ -136,10 +124,31 @@ function useEditorKeyboardShortcuts({
       );
     };
 
+    const handlePaste = (event: ClipboardEvent) => {
+      if (isEditableTarget(event.target)) {
+        return;
+      }
+
+      onPasteEvent(event);
+    };
+
+    const handleCopy = (event: ClipboardEvent) => {
+      if (!selectedOverlay || isEditableTarget(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+      onCopySelectedOverlay(event);
+    };
+
     window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("copy", handleCopy);
+    window.addEventListener("paste", handlePaste);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("copy", handleCopy);
+      window.removeEventListener("paste", handlePaste);
     };
   }, [
     editingOverlayId,
@@ -149,7 +158,7 @@ function useEditorKeyboardShortcuts({
     onCopySelectedOverlay,
     onDuplicateSelectedOverlay,
     onEditOverlay,
-    onPaste,
+    onPasteEvent,
     onPasteWithCurrentTextSettings,
     onRemoveOverlay,
     onUpdateOverlayRect,
@@ -181,16 +190,8 @@ function isTextEditExitEvent(event: KeyboardEvent) {
   );
 }
 
-function isCopyEvent(event: KeyboardEvent) {
-  return isCommandOrControlEvent(event, "c") && !event.shiftKey;
-}
-
 function isDuplicateEvent(event: KeyboardEvent) {
   return isCommandOrControlEvent(event, "d") && !event.shiftKey;
-}
-
-function isPasteEvent(event: KeyboardEvent) {
-  return isCommandOrControlEvent(event, "v") && !event.shiftKey;
 }
 
 function isPasteWithCurrentTextSettingsEvent(event: KeyboardEvent) {
