@@ -94,7 +94,7 @@ function MarkToolDropdown({
                     className={cn(
                       "h-11 px-0",
                       definition.type === markType &&
-                        "border-primary bg-primary/10",
+                        "border-primary bg-primary/10 dark:border-primary dark:bg-primary/20",
                     )}
                     key={definition.type}
                     onClick={() => {
