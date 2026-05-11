@@ -81,6 +81,20 @@ function OverlayBox({
     );
   }
 
+  if (overlay.type === "whiteout") {
+    return (
+      <div
+        className={cn(
+          "h-full w-full border",
+          isSelected
+            ? "border-primary ring-2 ring-primary/25"
+            : "border-transparent hover:border-primary/50",
+        )}
+        style={{ backgroundColor: overlay.color }}
+      />
+    );
+  }
+
   return (
     <div
       className={cn(

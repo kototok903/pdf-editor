@@ -2,12 +2,16 @@ import type {
   MarkType,
   TextFontId,
   TextOverlayDefaults,
+  WhiteoutOverlayDefaults,
 } from "@/features/editor/editor-types";
 import {
   defaultMarkSettings,
   isSupportedMarkType,
 } from "@/features/editor/lib/mark-definitions";
-import { defaultTextOverlay } from "@/features/editor/lib/overlay-defaults";
+import {
+  defaultTextOverlay,
+  defaultWhiteoutOverlay,
+} from "@/features/editor/lib/overlay-defaults";
 
 type EditorThemeName = "dark" | "light";
 
@@ -19,6 +23,7 @@ type EditorPreferences = {
   };
   textDefaults: TextOverlayDefaults;
   themeName: EditorThemeName;
+  whiteoutDefaults: WhiteoutOverlayDefaults;
   zoom: number;
 };
 
@@ -34,6 +39,7 @@ const defaultEditorPreferences: EditorPreferences = {
   markDefaults: defaultMarkSettings,
   textDefaults: defaultTextOverlay,
   themeName: "light",
+  whiteoutDefaults: defaultWhiteoutOverlay,
   zoom: 1,
 };
 
@@ -89,6 +95,9 @@ function normalizeEditorPreferences(value: unknown): EditorPreferences {
 
   const textDefaults = isRecord(value.textDefaults) ? value.textDefaults : {};
   const markDefaults = isRecord(value.markDefaults) ? value.markDefaults : {};
+  const whiteoutDefaults = isRecord(value.whiteoutDefaults)
+    ? value.whiteoutDefaults
+    : {};
 
   return {
     isPagesSidebarOpen: asBoolean(
@@ -125,6 +134,12 @@ function normalizeEditorPreferences(value: unknown): EditorPreferences {
       ),
     },
     themeName: asThemeName(value.themeName, defaultEditorPreferences.themeName),
+    whiteoutDefaults: {
+      color: asColor(
+        whiteoutDefaults.color,
+        defaultEditorPreferences.whiteoutDefaults.color,
+      ),
+    },
     zoom: asNumber(value.zoom, defaultEditorPreferences.zoom, {
       max: maxEditorZoom,
       min: minEditorZoom,

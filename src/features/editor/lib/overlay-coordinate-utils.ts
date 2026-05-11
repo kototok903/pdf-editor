@@ -97,6 +97,28 @@ function createMarkOverlayRectAtPoint(
   };
 }
 
+function createRectFromDragPoints(
+  startPoint: { x: number; y: number },
+  endPoint: { x: number; y: number },
+  pageSize: { height: number; width: number },
+): ViewportRect {
+  const start = {
+    x: clamp(startPoint.x, 0, pageSize.width),
+    y: clamp(startPoint.y, 0, pageSize.height),
+  };
+  const end = {
+    x: clamp(endPoint.x, 0, pageSize.width),
+    y: clamp(endPoint.y, 0, pageSize.height),
+  };
+
+  return {
+    height: Math.abs(end.y - start.y),
+    width: Math.abs(end.x - start.x),
+    x: Math.min(start.x, end.x),
+    y: Math.min(start.y, end.y),
+  };
+}
+
 function clampMovedOverlayRect(
   rect: PdfRect,
   pageSize: { height: number; width: number },
@@ -153,6 +175,7 @@ export {
   createImageOverlayRectAtPoint,
   createMarkOverlayRectAtPoint,
   createOverlayRectAtPoint,
+  createRectFromDragPoints,
   nudgeOverlayRect,
   pdfRectToViewportRect,
   viewportRectToPdfRect,

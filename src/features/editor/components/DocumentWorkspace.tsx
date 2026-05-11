@@ -40,6 +40,8 @@ type DocumentWorkspaceProps = {
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
   isTextToolActive: boolean;
+  isWhiteoutToolActive: boolean;
+  onCancelActiveTool: () => void;
   onClearSelection: () => void;
   onCurrentPageChange: (pageNumber: number) => void;
   onDropImageFile: (file: File) => void;
@@ -50,6 +52,7 @@ type DocumentWorkspaceProps = {
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceMarkOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
+  onPlaceWhiteoutOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
@@ -57,6 +60,7 @@ type DocumentWorkspaceProps = {
   selectedOverlayId: string | null;
   status: PdfLoadStatus;
   scrollToPageRequest: ScrollToPageRequest | null;
+  whiteoutColor: string;
   zoom: number;
 };
 
@@ -75,6 +79,8 @@ function DocumentWorkspace({
   isImageToolActive,
   isMarkToolActive,
   isTextToolActive,
+  isWhiteoutToolActive,
+  onCancelActiveTool,
   onClearSelection,
   onCurrentPageChange,
   onDropImageFile,
@@ -85,6 +91,7 @@ function DocumentWorkspace({
   onPlaceImageOverlay,
   onPlaceMarkOverlay,
   onPlaceTextOverlay,
+  onPlaceWhiteoutOverlay,
   onSelectOverlay,
   onUpdateTextOverlay,
   onUpdateOverlayRect,
@@ -92,6 +99,7 @@ function DocumentWorkspace({
   selectedOverlayId,
   status,
   scrollToPageRequest,
+  whiteoutColor,
   zoom,
 }: DocumentWorkspaceProps) {
   const pageElementsRef = useRef<Map<number, HTMLElement>>(new Map());
@@ -308,6 +316,8 @@ function DocumentWorkspace({
           isImageToolActive={isImageToolActive}
           isMarkToolActive={isMarkToolActive}
           isTextToolActive={isTextToolActive}
+          isWhiteoutToolActive={isWhiteoutToolActive}
+          onCancelActiveTool={onCancelActiveTool}
           onClearSelection={onClearSelection}
           onEditOverlay={onEditOverlay}
           onPageElementChange={handlePageElementChange}
@@ -315,12 +325,14 @@ function DocumentWorkspace({
           onPlaceImageOverlay={onPlaceImageOverlay}
           onPlaceMarkOverlay={onPlaceMarkOverlay}
           onPlaceTextOverlay={onPlaceTextOverlay}
+          onPlaceWhiteoutOverlay={onPlaceWhiteoutOverlay}
           onSelectOverlay={onSelectOverlay}
           onUpdateTextOverlay={onUpdateTextOverlay}
           onUpdateOverlayRect={onUpdateOverlayRect}
           overlays={overlays}
           scale={zoom}
           selectedOverlayId={selectedOverlayId}
+          whiteoutColor={whiteoutColor}
         />
       )}
     </section>

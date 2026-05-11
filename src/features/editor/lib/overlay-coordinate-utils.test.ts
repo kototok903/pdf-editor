@@ -6,6 +6,7 @@ import {
   createImageOverlayRectAtPoint,
   createMarkOverlayRectAtPoint,
   createOverlayRectAtPoint,
+  createRectFromDragPoints,
   nudgeOverlayRect,
   pdfRectToViewportRect,
   viewportRectToPdfRect,
@@ -111,6 +112,36 @@ describe("overlay-coordinate-utils", () => {
       width: 18,
       x: 291,
       y: 391,
+    });
+  });
+
+  it("creates a normalized drag rect from opposing corners", () => {
+    expect(
+      createRectFromDragPoints(
+        { x: 180, y: 120 },
+        { x: 40, y: 300 },
+        { height: 800, width: 600 },
+      ),
+    ).toEqual({
+      height: 180,
+      width: 140,
+      x: 40,
+      y: 120,
+    });
+  });
+
+  it("clamps drag rect points to the page bounds", () => {
+    expect(
+      createRectFromDragPoints(
+        { x: -20, y: 20 },
+        { x: 700, y: 900 },
+        { height: 800, width: 600 },
+      ),
+    ).toEqual({
+      height: 780,
+      width: 600,
+      x: 0,
+      y: 20,
     });
   });
 

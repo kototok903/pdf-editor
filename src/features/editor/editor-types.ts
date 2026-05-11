@@ -49,16 +49,27 @@ type MarkOverlay = BaseOverlay & {
   type: "mark";
 };
 
-type BasicOverlay = BaseOverlay & {
-  type: Exclude<OverlayType, "text" | "image" | "mark">;
+type WhiteoutOverlay = BaseOverlay & {
+  color: string;
+  type: "whiteout";
 };
 
-type EditorOverlay = TextOverlay | ImageOverlay | MarkOverlay | BasicOverlay;
+type BasicOverlay = BaseOverlay & {
+  type: Exclude<OverlayType, "text" | "image" | "mark" | "whiteout">;
+};
+
+type EditorOverlay =
+  | TextOverlay
+  | ImageOverlay
+  | MarkOverlay
+  | WhiteoutOverlay
+  | BasicOverlay;
 
 type EditorOverlayInput =
   | Omit<TextOverlay, "id">
   | Omit<ImageOverlay, "id">
   | Omit<MarkOverlay, "id">
+  | Omit<WhiteoutOverlay, "id">
   | {
       pageNumber: number;
       rect: PdfRect;
@@ -69,12 +80,17 @@ type TextOverlayPatch = Partial<
   Pick<TextOverlay, "color" | "fontId" | "fontSize" | "text">
 >;
 type MarkOverlayPatch = Partial<Pick<MarkOverlay, "color" | "markType">>;
+type WhiteoutOverlayPatch = Partial<Pick<WhiteoutOverlay, "color">>;
 
 type TextOverlayDefaults = {
   color: string;
   fontId: TextFontId;
   fontSize: number;
   text: string;
+};
+
+type WhiteoutOverlayDefaults = {
+  color: string;
 };
 
 type ViewportRect = PdfRect;
@@ -94,4 +110,7 @@ export type {
   TextOverlayPatch,
   TextFontId,
   ViewportRect,
+  WhiteoutOverlay,
+  WhiteoutOverlayDefaults,
+  WhiteoutOverlayPatch,
 };

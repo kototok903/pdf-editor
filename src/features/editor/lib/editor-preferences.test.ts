@@ -54,6 +54,7 @@ describe("editor preferences persistence", () => {
         },
         themeName: "dark",
         version: 1,
+        whiteoutDefaults: { color: "#eeeeee" },
         zoom: 1.4,
       }),
     );
@@ -68,6 +69,7 @@ describe("editor preferences persistence", () => {
         text: "Text",
       },
       themeName: "dark",
+      whiteoutDefaults: { color: "#eeeeee" },
       zoom: 1.4,
     });
   });
@@ -103,6 +105,19 @@ describe("editor preferences persistence", () => {
     );
 
     expect(readEditorPreferences(storage).zoom).toBe(2);
+  });
+
+  it("falls back to the default whiteout color for invalid stored colors", () => {
+    const storage = createMemoryStorage(
+      JSON.stringify({
+        version: 1,
+        whiteoutDefaults: { color: "white" },
+      }),
+    );
+
+    expect(readEditorPreferences(storage).whiteoutDefaults.color).toBe(
+      "#ffffff",
+    );
   });
 
   it("falls back to the default theme for unsupported theme names", () => {

@@ -33,7 +33,6 @@ import {
   ColorPickerSelection,
 } from "@/components/ui/color-picker";
 import { Input } from "@/components/ui/input";
-import { SegmentedButton } from "@/components/ui/segmented-button";
 import {
   Select,
   SelectContent,
@@ -53,6 +52,8 @@ import type {
   TextFontId,
   TextOverlayDefaults,
   TextOverlayPatch,
+  WhiteoutOverlayDefaults,
+  WhiteoutOverlayPatch,
 } from "@/features/editor/editor-types";
 import { textFontOptions } from "@/features/editor/lib/text-fonts";
 import { TooltipButton } from "@/features/editor/components/TooltipButton";
@@ -68,6 +69,8 @@ type EditorToolbarProps = {
   isMarkToolActive: boolean;
   isTextSettingsDefault: boolean;
   isTextToolActive: boolean;
+  isWhiteoutSettingsDefault: boolean;
+  isWhiteoutToolActive: boolean;
   onImportImageFromClipboard: () => void;
   onImportImageUrl: (url: string) => Promise<void>;
   onMarkSettingsChange: (patch: MarkOverlayPatch) => void;
@@ -85,6 +88,9 @@ type EditorToolbarProps = {
   onTextToolClick: () => void;
   onToggleTheme: () => void;
   onTogglePagesSidebar: () => void;
+  onWhiteoutSettingsChange: (patch: WhiteoutOverlayPatch) => void;
+  onWhiteoutSettingsReset: () => void;
+  onWhiteoutToolClick: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   pageCount: number;
@@ -96,6 +102,7 @@ type EditorToolbarProps = {
   };
   canCloseDraft: boolean;
   textSettings: TextOverlayDefaults;
+  whiteoutSettings: WhiteoutOverlayDefaults;
   zoomPercent: number;
 };
 
@@ -110,6 +117,8 @@ function EditorToolbar({
   isMarkToolActive,
   isTextSettingsDefault,
   isTextToolActive,
+  isWhiteoutSettingsDefault,
+  isWhiteoutToolActive,
   markSettings,
   canCloseDraft,
   onCloseDraft,
@@ -129,12 +138,16 @@ function EditorToolbar({
   onTextToolClick,
   onToggleTheme,
   onTogglePagesSidebar,
+  onWhiteoutSettingsChange,
+  onWhiteoutSettingsReset,
+  onWhiteoutToolClick,
   onZoomIn,
   onZoomOut,
   pageCount,
   status,
   isExporting,
   textSettings,
+  whiteoutSettings,
   zoomPercent,
 }: EditorToolbarProps) {
   const hasPdf = pageCount > 0;
@@ -251,13 +264,15 @@ function EditorToolbar({
           onSettingsReset={onMarkSettingsReset}
         />
 
-        <SegmentedButton
-          disabled
-          mainLabel="Whiteout tool"
-          menuLabel="Whiteout color options"
-        >
-          <SquareIcon aria-hidden="true" />
-        </SegmentedButton>
+        <WhiteoutToolButton
+          disabled={!hasPdf}
+          isDefault={isWhiteoutSettingsDefault}
+          isSelected={isWhiteoutToolActive}
+          onSettingsChange={onWhiteoutSettingsChange}
+          onSettingsReset={onWhiteoutSettingsReset}
+          onWhiteoutToolClick={onWhiteoutToolClick}
+          settings={whiteoutSettings}
+        />
 
         <div className="ml-auto flex items-center gap-1">
           <TooltipButton label="Undo">
@@ -338,6 +353,90 @@ function EditorToolbar({
         open={isImageUrlDialogOpen}
       />
     </header>
+  );
+}
+
+function WhiteoutToolButton({
+  disabled,
+  isDefault,
+  isSelected,
+  onSettingsChange,
+  onSettingsReset,
+  onWhiteoutToolClick,
+  settings,
+}: {
+  disabled: boolean;
+  isDefault: boolean;
+  isSelected: boolean;
+  onSettingsChange: (patch: WhiteoutOverlayPatch) => void;
+  onSettingsReset: () => void;
+  onWhiteoutToolClick: () => void;
+  settings: WhiteoutOverlayDefaults;
+}) {
+  return (
+    <div className="inline-flex shrink-0">
+      <Button
+        aria-label="Whiteout tool"
+        className="rounded-r-none px-2"
+        disabled={disabled}
+        onClick={onWhiteoutToolClick}
+        size="sm"
+        type="button"
+        variant={isSelected ? "toolbar-active" : "toolbar"}
+      >
+        <SquareIcon aria-hidden="true" />
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            aria-label="Whiteout settings"
+            className="-ml-px w-6 rounded-l-none px-0"
+            disabled={disabled}
+            size="sm"
+            type="button"
+            variant={isSelected ? "toolbar-active" : "toolbar"}
+          >
+            <ChevronDownIcon aria-hidden="true" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          className="w-56 p-3"
+          onClick={(event) => event.stopPropagation()}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <div className="space-y-3">
+            <div className="grid gap-1.5">
+              <ColorPicker
+                className="h-auto gap-3"
+                defaultValue={settings.color}
+                onChange={(value) => {
+                  onSettingsChange({ color: rgbArrayToHex(value) });
+                }}
+                value={settings.color}
+              >
+                <ColorPickerSelection className="h-28 rounded-md" />
+                <ColorPickerHue />
+                <ColorPickerFormat />
+              </ColorPicker>
+            </div>
+
+            <div className="flex justify-end border-t pt-3">
+              <Button
+                disabled={isDefault}
+                onClick={onSettingsReset}
+                size="xs"
+                type="button"
+                variant="outline"
+              >
+                <RotateCcwIcon aria-hidden="true" />
+                Reset
+              </Button>
+            </div>
+          </div>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }
 

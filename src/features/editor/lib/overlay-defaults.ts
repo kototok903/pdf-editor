@@ -1,4 +1,7 @@
-import type { TextOverlayDefaults } from "@/features/editor/editor-types";
+import type {
+  TextOverlayDefaults,
+  WhiteoutOverlayDefaults,
+} from "@/features/editor/editor-types";
 
 const defaultTextOverlay: TextOverlayDefaults = {
   color: "#111827",
@@ -7,4 +10,8 @@ const defaultTextOverlay: TextOverlayDefaults = {
   text: "Text",
 };
 
-export { defaultTextOverlay };
+const defaultWhiteoutOverlay: WhiteoutOverlayDefaults = {
+  color: "#ffffff",
+};
+
+export { defaultTextOverlay, defaultWhiteoutOverlay };

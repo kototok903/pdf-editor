@@ -13,6 +13,7 @@ import type {
   MarkOverlay,
   TextFontId,
   TextOverlay,
+  WhiteoutOverlay,
 } from "@/features/editor/editor-types";
 import {
   hexToPdfRgb,
@@ -68,6 +69,8 @@ async function exportPdf({
       await drawImageOverlay(context, page, overlay);
     } else if (overlay.type === "mark") {
       drawMarkOverlay(page, overlay);
+    } else if (overlay.type === "whiteout") {
+      drawWhiteoutOverlay(page, overlay);
     }
   }
 
@@ -162,6 +165,15 @@ function drawMarkOverlay(page: PDFPage, overlay: MarkOverlay) {
       y2: line.y2,
     });
   }
+}
+
+function drawWhiteoutOverlay(page: PDFPage, overlay: WhiteoutOverlay) {
+  const { height: pageHeight } = page.getSize();
+
+  page.drawRectangle({
+    ...rectToPdfPageRect(overlay.rect, pageHeight),
+    color: hexToPdfRgb(overlay.color),
+  });
 }
 
 function getMarkSvgPaths(markType: MarkOverlay["markType"]) {

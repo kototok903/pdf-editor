@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { Rnd } from "react-rnd";
 
 import type {
@@ -14,6 +14,7 @@ import {
   createImageOverlayRectAtPoint,
   createMarkOverlayRectAtPoint,
   createOverlayRectAtPoint,
+  createRectFromDragPoints,
   pdfRectToViewportRect,
   viewportRectToPdfRect,
 } from "@/features/editor/lib/overlay-coordinate-utils";
@@ -25,11 +26,14 @@ type OverlayLayerProps = {
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
   isTextToolActive: boolean;
+  isWhiteoutToolActive: boolean;
+  onCancelActiveTool: () => void;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceMarkOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
+  onPlaceWhiteoutOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
@@ -37,6 +41,14 @@ type OverlayLayerProps = {
   pageNumber: number;
   scale: number;
   selectedOverlayId: string | null;
+  whiteoutColor: string;
+};
+
+type WhiteoutDraft = {
+  currentPoint: { x: number; y: number };
+  pageSize: { height: number; width: number };
+  pointerId: number;
+  startPoint: { x: number; y: number };
 };
 
 function OverlayLayer({
@@ -46,11 +58,14 @@ function OverlayLayer({
   isImageToolActive,
   isMarkToolActive,
   isTextToolActive,
+  isWhiteoutToolActive,
+  onCancelActiveTool,
   onClearSelection,
   onEditOverlay,
   onPlaceImageOverlay,
   onPlaceMarkOverlay,
   onPlaceTextOverlay,
+  onPlaceWhiteoutOverlay,
   onSelectOverlay,
   onUpdateTextOverlay,
   onUpdateOverlayRect,
@@ -58,19 +73,35 @@ function OverlayLayer({
   pageNumber,
   scale,
   selectedOverlayId,
+  whiteoutColor,
 }: OverlayLayerProps) {
+  const [whiteoutDraft, setWhiteoutDraft] = useState<WhiteoutDraft | null>(
+    null,
+  );
   const pageOverlays = overlays.filter(
     (overlay) => overlay.pageNumber === pageNumber,
   );
   const isPlacingOverlay =
-    isImageToolActive || isMarkToolActive || isTextToolActive;
+    isImageToolActive ||
+    isMarkToolActive ||
+    isTextToolActive ||
+    isWhiteoutToolActive;
+  const whiteoutDraftRect = whiteoutDraft
+    ? createRectFromDragPoints(
+        whiteoutDraft.startPoint,
+        whiteoutDraft.currentPoint,
+        whiteoutDraft.pageSize,
+      )
+    : null;
 
   return (
     <div
+      data-overlay-layer-page={pageNumber}
       className={getOverlayLayerClassName({
         isImageToolActive,
         isMarkToolActive,
         isTextToolActive,
+        isWhiteoutToolActive,
       })}
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) {
@@ -83,6 +114,22 @@ function OverlayLayer({
             x: (event.clientX - bounds.left) / scale,
             y: (event.clientY - bounds.top) / scale,
           };
+          const viewportPoint = {
+            x: event.clientX - bounds.left,
+            y: event.clientY - bounds.top,
+          };
+
+          if (isWhiteoutToolActive) {
+            event.preventDefault();
+            event.currentTarget.setPointerCapture(event.pointerId);
+            setWhiteoutDraft({
+              currentPoint: viewportPoint,
+              pageSize: getViewportPageSizeFromElement(event.currentTarget),
+              pointerId: event.pointerId,
+              startPoint: viewportPoint,
+            });
+            return;
+          }
 
           if (isImageToolActive && activeImageAsset) {
             event.preventDefault();
@@ -115,7 +162,85 @@ function OverlayLayer({
           onEditOverlay(null);
         }
       }}
+      onPointerMove={(event) => {
+        if (
+          !whiteoutDraft ||
+          event.pointerId !== whiteoutDraft.pointerId ||
+          !(event.currentTarget instanceof HTMLElement)
+        ) {
+          return;
+        }
+
+        const bounds = event.currentTarget.getBoundingClientRect();
+
+        setWhiteoutDraft({
+          ...whiteoutDraft,
+          currentPoint: {
+            x: event.clientX - bounds.left,
+            y: event.clientY - bounds.top,
+          },
+        });
+      }}
+      onPointerUp={(event) => {
+        if (
+          !whiteoutDraft ||
+          event.pointerId !== whiteoutDraft.pointerId ||
+          !(event.currentTarget instanceof HTMLElement)
+        ) {
+          return;
+        }
+
+        event.preventDefault();
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+
+        const bounds = event.currentTarget.getBoundingClientRect();
+        const draftRect = createRectFromDragPoints(
+          whiteoutDraft.startPoint,
+          {
+            x: event.clientX - bounds.left,
+            y: event.clientY - bounds.top,
+          },
+          getViewportPageSizeFromElement(event.currentTarget),
+        );
+        setWhiteoutDraft(null);
+
+        if (
+          draftRect.width >= minWhiteoutViewportSideSize &&
+          draftRect.height >= minWhiteoutViewportSideSize
+        ) {
+          onPlaceWhiteoutOverlay(
+            pageNumber,
+            viewportRectToPdfRect(draftRect, scale),
+          );
+          return;
+        }
+
+        onCancelActiveTool();
+      }}
+      onPointerCancel={(event) => {
+        if (!whiteoutDraft || event.pointerId !== whiteoutDraft.pointerId) {
+          return;
+        }
+
+        setWhiteoutDraft(null);
+        onCancelActiveTool();
+      }}
     >
+      {whiteoutDraftRect && (
+        <div
+          className="pointer-events-none absolute border border-primary ring-2 ring-primary/25"
+          style={{
+            backgroundColor: whiteoutColor,
+            height: whiteoutDraftRect.height,
+            left: whiteoutDraftRect.x,
+            opacity: 0.85,
+            top: whiteoutDraftRect.y,
+            width: whiteoutDraftRect.width,
+          }}
+        />
+      )}
       {pageOverlays.map((overlay) => {
         const viewportRect = pdfRectToViewportRect(overlay.rect, scale);
         const isSelected = overlay.id === selectedOverlayId;
@@ -223,12 +348,14 @@ function getOverlayLayerClassName({
   isImageToolActive,
   isMarkToolActive,
   isTextToolActive,
+  isWhiteoutToolActive,
 }: {
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
   isTextToolActive: boolean;
+  isWhiteoutToolActive: boolean;
 }) {
-  if (isImageToolActive || isMarkToolActive) {
+  if (isImageToolActive || isMarkToolActive || isWhiteoutToolActive) {
     return "absolute inset-0 cursor-crosshair";
   }
 
@@ -238,6 +365,21 @@ function getOverlayLayerClassName({
 
   return "absolute inset-0";
 }
+
+function getViewportPageSizeFromElement(element: Element | null) {
+  const bounds = element?.getBoundingClientRect();
+
+  if (!bounds) {
+    return { height: 0, width: 0 };
+  }
+
+  return {
+    height: bounds.height,
+    width: bounds.width,
+  };
+}
+
+const minWhiteoutViewportSideSize = 6;
 
 function getPageSizeFromEventTarget(
   element: HTMLElement | null,

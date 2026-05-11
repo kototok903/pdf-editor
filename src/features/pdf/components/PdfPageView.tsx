@@ -16,6 +16,8 @@ type PdfPageViewProps = {
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
   isTextToolActive: boolean;
+  isWhiteoutToolActive: boolean;
+  onCancelActiveTool: () => void;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
   onPageElementChange: (
@@ -26,6 +28,7 @@ type PdfPageViewProps = {
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceMarkOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
+  onPlaceWhiteoutOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
@@ -34,6 +37,7 @@ type PdfPageViewProps = {
   pdfDocument: PDFDocumentProxy;
   scale: number;
   selectedOverlayId: string | null;
+  whiteoutColor: string;
 };
 
 type PageSize = {
@@ -48,6 +52,8 @@ function PdfPageView({
   isImageToolActive,
   isMarkToolActive,
   isTextToolActive,
+  isWhiteoutToolActive,
+  onCancelActiveTool,
   onClearSelection,
   onEditOverlay,
   onPageElementChange,
@@ -55,6 +61,7 @@ function PdfPageView({
   onPlaceImageOverlay,
   onPlaceMarkOverlay,
   onPlaceTextOverlay,
+  onPlaceWhiteoutOverlay,
   onSelectOverlay,
   onUpdateTextOverlay,
   onUpdateOverlayRect,
@@ -63,6 +70,7 @@ function PdfPageView({
   pdfDocument,
   scale,
   selectedOverlayId,
+  whiteoutColor,
 }: PdfPageViewProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -182,11 +190,14 @@ function PdfPageView({
           isImageToolActive={isImageToolActive}
           isMarkToolActive={isMarkToolActive}
           isTextToolActive={isTextToolActive}
+          isWhiteoutToolActive={isWhiteoutToolActive}
+          onCancelActiveTool={onCancelActiveTool}
           onClearSelection={onClearSelection}
           onEditOverlay={onEditOverlay}
           onPlaceImageOverlay={onPlaceImageOverlay}
           onPlaceMarkOverlay={onPlaceMarkOverlay}
           onPlaceTextOverlay={onPlaceTextOverlay}
+          onPlaceWhiteoutOverlay={onPlaceWhiteoutOverlay}
           onSelectOverlay={onSelectOverlay}
           onUpdateTextOverlay={onUpdateTextOverlay}
           onUpdateOverlayRect={onUpdateOverlayRect}
@@ -194,6 +205,7 @@ function PdfPageView({
           pageNumber={pageNumber}
           scale={scale}
           selectedOverlayId={selectedOverlayId}
+          whiteoutColor={whiteoutColor}
         />
       )}
     </article>

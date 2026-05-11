@@ -16,6 +16,8 @@ type PdfDocumentViewProps = {
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
   isTextToolActive: boolean;
+  isWhiteoutToolActive: boolean;
+  onCancelActiveTool: () => void;
   onClearSelection: () => void;
   onEditOverlay: (overlayId: string | null) => void;
   onPageElementChange: (
@@ -26,12 +28,14 @@ type PdfDocumentViewProps = {
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceMarkOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
+  onPlaceWhiteoutOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
   overlays: EditorOverlay[];
   scale: number;
   selectedOverlayId: string | null;
+  whiteoutColor: string;
 };
 
 function PdfDocumentView({
@@ -42,6 +46,8 @@ function PdfDocumentView({
   isImageToolActive,
   isMarkToolActive,
   isTextToolActive,
+  isWhiteoutToolActive,
+  onCancelActiveTool,
   onClearSelection,
   onEditOverlay,
   onPageElementChange,
@@ -49,12 +55,14 @@ function PdfDocumentView({
   onPlaceImageOverlay,
   onPlaceMarkOverlay,
   onPlaceTextOverlay,
+  onPlaceWhiteoutOverlay,
   onSelectOverlay,
   onUpdateTextOverlay,
   onUpdateOverlayRect,
   overlays,
   scale,
   selectedOverlayId,
+  whiteoutColor,
 }: PdfDocumentViewProps) {
   return (
     <div className="space-y-7">
@@ -66,7 +74,9 @@ function PdfDocumentView({
           isImageToolActive={isImageToolActive}
           isMarkToolActive={isMarkToolActive}
           isTextToolActive={isTextToolActive}
+          isWhiteoutToolActive={isWhiteoutToolActive}
           key={index + 1}
+          onCancelActiveTool={onCancelActiveTool}
           onClearSelection={onClearSelection}
           onEditOverlay={onEditOverlay}
           onPageElementChange={onPageElementChange}
@@ -74,6 +84,7 @@ function PdfDocumentView({
           onPlaceImageOverlay={onPlaceImageOverlay}
           onPlaceMarkOverlay={onPlaceMarkOverlay}
           onPlaceTextOverlay={onPlaceTextOverlay}
+          onPlaceWhiteoutOverlay={onPlaceWhiteoutOverlay}
           onSelectOverlay={onSelectOverlay}
           onUpdateTextOverlay={onUpdateTextOverlay}
           onUpdateOverlayRect={onUpdateOverlayRect}
@@ -82,6 +93,7 @@ function PdfDocumentView({
           pdfDocument={document.pdfDocument}
           scale={scale}
           selectedOverlayId={selectedOverlayId}
+          whiteoutColor={whiteoutColor}
         />
       ))}
     </div>

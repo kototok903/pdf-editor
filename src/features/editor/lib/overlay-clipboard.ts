@@ -125,8 +125,14 @@ function overlayToInput(overlay: EditorOverlay): EditorOverlayInput {
         type: overlay.type,
       };
     case "signature":
+      return {
+        pageNumber: overlay.pageNumber,
+        rect: overlay.rect,
+        type: overlay.type,
+      };
     case "whiteout":
       return {
+        color: overlay.color,
         pageNumber: overlay.pageNumber,
         rect: overlay.rect,
         type: overlay.type,
@@ -192,8 +198,9 @@ function isOverlayInput(value: unknown): value is EditorOverlayInput {
         typeof value.text === "string"
       );
     case "signature":
-    case "whiteout":
       return true;
+    case "whiteout":
+      return typeof value.color === "string";
     default:
       return false;
   }

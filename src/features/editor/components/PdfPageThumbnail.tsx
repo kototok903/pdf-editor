@@ -237,7 +237,12 @@ function ThumbnailOverlay({
   }
 
   if (overlay.type === "whiteout") {
-    return <div className="h-full w-full bg-page" />;
+    return (
+      <div
+        className="h-full w-full"
+        style={{ backgroundColor: overlay.color }}
+      />
+    );
   }
 
   return <div className="h-full w-full bg-primary/10" />;

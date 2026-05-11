@@ -6,6 +6,7 @@ import type {
   MarkOverlayPatch,
   PdfRect,
   TextOverlayPatch,
+  WhiteoutOverlayPatch,
 } from "@/features/editor/editor-types";
 
 function createOverlayId() {
@@ -91,6 +92,19 @@ function useEditorOverlays() {
     [],
   );
 
+  const updateWhiteoutOverlay = useCallback(
+    (overlayId: string, patch: WhiteoutOverlayPatch) => {
+      setOverlays((currentOverlays) =>
+        currentOverlays.map((overlay) =>
+          overlay.id === overlayId && overlay.type === "whiteout"
+            ? { ...overlay, ...patch }
+            : overlay,
+        ),
+      );
+    },
+    [],
+  );
+
   return {
     addOverlay,
     clearOverlays,
@@ -103,6 +117,7 @@ function useEditorOverlays() {
     updateMarkOverlay,
     updateOverlayRect,
     updateTextOverlay,
+    updateWhiteoutOverlay,
   };
 }
 

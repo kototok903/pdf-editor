@@ -31,6 +31,8 @@ import type {
   TextOverlay,
   TextOverlayDefaults,
   TextOverlayPatch,
+  WhiteoutOverlay,
+  WhiteoutOverlayPatch,
 } from "@/features/editor/editor-types";
 import { useEditorClipboardActions } from "@/features/editor/hooks/useEditorClipboardActions";
 import { useEditorOverlays } from "@/features/editor/hooks/useEditorOverlays";
@@ -45,7 +47,10 @@ import {
 import { createImageOverlayRectAtPoint } from "@/features/editor/lib/overlay-coordinate-utils";
 import { readPasteIntentFromAsyncClipboard } from "@/features/editor/lib/editor-clipboard";
 import { defaultMarkSettings } from "@/features/editor/lib/mark-definitions";
-import { defaultTextOverlay } from "@/features/editor/lib/overlay-defaults";
+import {
+  defaultTextOverlay,
+  defaultWhiteoutOverlay,
+} from "@/features/editor/lib/overlay-defaults";
 import {
   maxEditorZoom,
   minEditorZoom,
@@ -61,6 +66,7 @@ type ActiveTool =
   | { type: "image"; assetId: string }
   | { type: "mark" }
   | { type: "text" }
+  | { type: "whiteout" }
   | null;
 
 function AppShell() {
@@ -81,8 +87,14 @@ function AppShell() {
     requestId: number;
   } | null>(null);
   const [editorPreferences, setEditorPreferences] = useEditorPreferences();
-  const { isPagesSidebarOpen, markDefaults, textDefaults, themeName, zoom } =
-    editorPreferences;
+  const {
+    isPagesSidebarOpen,
+    markDefaults,
+    textDefaults,
+    themeName,
+    whiteoutDefaults,
+    zoom,
+  } = editorPreferences;
   const isDark = themeName === "dark";
   const {
     addOverlay,
@@ -96,6 +108,7 @@ function AppShell() {
     updateMarkOverlay,
     updateOverlayRect,
     updateTextOverlay,
+    updateWhiteoutOverlay,
   } = useEditorOverlays();
   const {
     clearFile,
@@ -139,6 +152,14 @@ function AppShell() {
       ) ?? null,
     [overlays, selectedOverlayId],
   );
+  const selectedWhiteoutOverlay = useMemo(
+    () =>
+      overlays.find(
+        (overlay): overlay is WhiteoutOverlay =>
+          overlay.id === selectedOverlayId && overlay.type === "whiteout",
+      ) ?? null,
+    [overlays, selectedOverlayId],
+  );
   const selectedOverlay = useMemo(
     () => overlays.find((overlay) => overlay.id === selectedOverlayId) ?? null,
     [overlays, selectedOverlayId],
@@ -146,6 +167,7 @@ function AppShell() {
 
   const currentTextSettings = selectedTextOverlay ?? textDefaults;
   const currentMarkSettings = selectedMarkOverlay ?? markDefaults;
+  const currentWhiteoutSettings = selectedWhiteoutOverlay ?? whiteoutDefaults;
   const isMarkSettingsDefault =
     currentMarkSettings.color === defaultMarkSettings.color &&
     currentMarkSettings.markType === defaultMarkSettings.markType;
@@ -153,6 +175,8 @@ function AppShell() {
     currentTextSettings.color === defaultTextOverlay.color &&
     currentTextSettings.fontId === defaultTextOverlay.fontId &&
     currentTextSettings.fontSize === defaultTextOverlay.fontSize;
+  const isWhiteoutSettingsDefault =
+    currentWhiteoutSettings.color === defaultWhiteoutOverlay.color;
 
   const updateEditorPreferences = useCallback(
     (patch: Partial<EditorPreferences>) => {
@@ -578,6 +602,13 @@ function AppShell() {
     setEditingOverlayId(null);
   };
 
+  const handleWhiteoutToolClick = () => {
+    setActiveTool((currentTool) =>
+      currentTool?.type === "whiteout" ? null : { type: "whiteout" },
+    );
+    setEditingOverlayId(null);
+  };
+
   const handlePlaceTextOverlay = (pageNumber: number, rect: PdfRect) => {
     setCurrentPage(pageNumber);
     const overlay = addOverlay({
@@ -614,6 +645,18 @@ function AppShell() {
       rect,
       sha256Signature: activeImageAsset.sha256Signature,
       type: "image",
+    });
+    setActiveTool(null);
+    setEditingOverlayId(null);
+  };
+
+  const handlePlaceWhiteoutOverlay = (pageNumber: number, rect: PdfRect) => {
+    setCurrentPage(pageNumber);
+    addOverlay({
+      color: currentWhiteoutSettings.color,
+      pageNumber,
+      rect,
+      type: "whiteout",
     });
     setActiveTool(null);
     setEditingOverlayId(null);
@@ -672,6 +715,28 @@ function AppShell() {
 
     if (selectedTextOverlay) {
       updateTextOverlay(selectedTextOverlay.id, defaultTextPatch);
+    }
+  };
+
+  const handleWhiteoutSettingsChange = (patch: WhiteoutOverlayPatch) => {
+    setEditorPreferences((currentPreferences) => ({
+      ...currentPreferences,
+      whiteoutDefaults: {
+        ...currentPreferences.whiteoutDefaults,
+        ...patch,
+      },
+    }));
+
+    if (selectedWhiteoutOverlay) {
+      updateWhiteoutOverlay(selectedWhiteoutOverlay.id, patch);
+    }
+  };
+
+  const handleWhiteoutSettingsReset = () => {
+    updateEditorPreferences({ whiteoutDefaults: defaultWhiteoutOverlay });
+
+    if (selectedWhiteoutOverlay) {
+      updateWhiteoutOverlay(selectedWhiteoutOverlay.id, defaultWhiteoutOverlay);
     }
   };
 
@@ -740,6 +805,8 @@ function AppShell() {
           isMarkToolActive={activeTool?.type === "mark"}
           isTextSettingsDefault={isTextSettingsDefault}
           isTextToolActive={activeTool?.type === "text"}
+          isWhiteoutSettingsDefault={isWhiteoutSettingsDefault}
+          isWhiteoutToolActive={activeTool?.type === "whiteout"}
           markSettings={currentMarkSettings}
           onCloseDraft={() => setIsCloseDraftDialogOpen(true)}
           onExportPdf={handleExportPdf}
@@ -774,6 +841,10 @@ function AppShell() {
           pageCount={loadedDocument?.pageCount ?? 0}
           status={displayStatus}
           textSettings={currentTextSettings}
+          whiteoutSettings={currentWhiteoutSettings}
+          onWhiteoutSettingsChange={handleWhiteoutSettingsChange}
+          onWhiteoutSettingsReset={handleWhiteoutSettingsReset}
+          onWhiteoutToolClick={handleWhiteoutToolClick}
           zoomPercent={Math.round(zoom * 100)}
         />
         <div className="flex min-h-0 flex-1 bg-workspace text-workspace-foreground">
@@ -797,6 +868,8 @@ function AppShell() {
             isImageToolActive={activeTool?.type === "image"}
             isMarkToolActive={activeTool?.type === "mark"}
             isTextToolActive={activeTool?.type === "text"}
+            isWhiteoutToolActive={activeTool?.type === "whiteout"}
+            onCancelActiveTool={handleClearActiveTool}
             onClearSelection={handleClearSelection}
             onCurrentPageChange={setCurrentPage}
             onDropImageFile={handleDropImageFile}
@@ -807,6 +880,7 @@ function AppShell() {
             onPlaceImageOverlay={handlePlaceImageOverlay}
             onPlaceMarkOverlay={handlePlaceMarkOverlay}
             onPlaceTextOverlay={handlePlaceTextOverlay}
+            onPlaceWhiteoutOverlay={handlePlaceWhiteoutOverlay}
             onSelectOverlay={handleSelectOverlay}
             onUpdateTextOverlay={updateTextOverlay}
             onUpdateOverlayRect={updateOverlayRect}
@@ -814,6 +888,7 @@ function AppShell() {
             selectedOverlayId={selectedOverlayId}
             status={displayStatus}
             scrollToPageRequest={scrollToPageRequest}
+            whiteoutColor={currentWhiteoutSettings.color}
             zoom={zoom}
           />
         </div>

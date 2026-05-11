@@ -38,6 +38,13 @@ describe("overlay clipboard helpers", () => {
         rect: { height: 18, width: 18, x: 60, y: 72 },
         type: "mark",
       },
+      {
+        color: "#ffffff",
+        id: "whiteout-1",
+        pageNumber: 1,
+        rect: { height: 44, width: 120, x: 70, y: 82 },
+        type: "whiteout",
+      },
     ];
 
     for (const overlay of overlays) {
@@ -146,6 +153,22 @@ describe("overlay clipboard helpers", () => {
             ...payload.overlay,
             fontId: "comic-sans",
           },
+        }),
+      ),
+    ).toBeNull();
+  });
+
+  it("rejects copied whiteout payloads without a color", () => {
+    expect(
+      parseOverlayClipboardPayload(
+        JSON.stringify({
+          overlay: {
+            pageNumber: 1,
+            rect: { height: 44, width: 120, x: 70, y: 82 },
+            type: "whiteout",
+          },
+          sourceOverlayId: "whiteout-1",
+          version: 1,
         }),
       ),
     ).toBeNull();
