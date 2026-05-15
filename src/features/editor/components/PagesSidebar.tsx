@@ -124,10 +124,10 @@ function SidebarPageButton({
       />
       <span
         className={cn(
-          "absolute right-0 bottom-0 min-w-5 rounded-tl-lg px-1 py-0.5 -mr-px -mb-px text-center text-xs font-semibold leading-none",
+          "absolute right-0 bottom-0 min-w-5 rounded-tl-lg px-1 py-0.5 -mr-px -mb-px ring-2 text-center text-xs font-semibold leading-none",
           isActive
-            ? "bg-primary text-primary-foreground"
-            : "bg-toolbar-button text-toolbar-foreground ring-2 ring-border",
+            ? "bg-primary text-primary-foreground ring-primary"
+            : "bg-toolbar-button text-toolbar-foreground ring-border",
         )}
       >
         {pageNumber}

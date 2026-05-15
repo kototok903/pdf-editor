@@ -44,6 +44,7 @@ describe("editor preferences persistence", () => {
   it("reads a valid stored preference object", () => {
     const storage = createMemoryStorage(
       JSON.stringify({
+        isLayersSidebarOpen: true,
         isPagesSidebarOpen: false,
         markDefaults: { color: "#ff0000", markType: "x" },
         textDefaults: {
@@ -60,6 +61,7 @@ describe("editor preferences persistence", () => {
     );
 
     expect(readEditorPreferences(storage)).toEqual({
+      isLayersSidebarOpen: true,
       isPagesSidebarOpen: false,
       markDefaults: { color: "#ff0000", markType: "x" },
       textDefaults: {
@@ -72,6 +74,18 @@ describe("editor preferences persistence", () => {
       whiteoutDefaults: { color: "#eeeeee" },
       zoom: 1.4,
     });
+  });
+
+  it("defaults the layers sidebar to closed for older stored preferences", () => {
+    const storage = createMemoryStorage(
+      JSON.stringify({
+        isPagesSidebarOpen: true,
+        themeName: "dark",
+        version: 1,
+      }),
+    );
+
+    expect(readEditorPreferences(storage).isLayersSidebarOpen).toBe(false);
   });
 
   it("falls back to defaults for malformed JSON", () => {

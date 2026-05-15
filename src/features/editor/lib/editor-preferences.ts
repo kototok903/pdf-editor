@@ -16,6 +16,7 @@ import {
 type EditorThemeName = "dark" | "light";
 
 type EditorPreferences = {
+  isLayersSidebarOpen: boolean;
   isPagesSidebarOpen: boolean;
   markDefaults: {
     color: string;
@@ -35,6 +36,7 @@ const editorPreferencesStorageKey = "pdf-editor:editor-preferences:v1";
 const minEditorZoom = 0.5;
 const maxEditorZoom = 2;
 const defaultEditorPreferences: EditorPreferences = {
+  isLayersSidebarOpen: false,
   isPagesSidebarOpen: true,
   markDefaults: defaultMarkSettings,
   textDefaults: defaultTextOverlay,
@@ -100,6 +102,10 @@ function normalizeEditorPreferences(value: unknown): EditorPreferences {
     : {};
 
   return {
+    isLayersSidebarOpen: asBoolean(
+      value.isLayersSidebarOpen,
+      defaultEditorPreferences.isLayersSidebarOpen,
+    ),
     isPagesSidebarOpen: asBoolean(
       value.isPagesSidebarOpen,
       defaultEditorPreferences.isPagesSidebarOpen,

@@ -195,57 +195,56 @@ function ThumbnailOverlay({
   overlay: EditorOverlay;
   scale: number;
 }) {
-  if (overlay.type === "text") {
-    return (
-      <div
-        className="h-full w-full overflow-hidden whitespace-pre-wrap bg-transparent p-0 leading-tight"
-        style={{
-          color: overlay.color,
-          fontFamily: getTextFontFamily(overlay.fontId),
-          fontSize: overlay.fontSize * scale,
-          fontSynthesisWeight: "none",
-        }}
-      >
-        {overlay.text}
-      </div>
-    );
+  switch (overlay.type) {
+    case "text": {
+      return (
+        <div
+          className="h-full w-full overflow-hidden whitespace-pre-wrap bg-transparent p-0 leading-tight"
+          style={{
+            color: overlay.color,
+            fontFamily: getTextFontFamily(overlay.fontId),
+            fontSize: overlay.fontSize * scale,
+            fontSynthesisWeight: "none",
+          }}
+        >
+          {overlay.text}
+        </div>
+      );
+    }
+    case "image": {
+      const asset = imageAssets.find(
+        (imageAsset) => imageAsset.id === overlay.assetId,
+      );
+      return asset ? (
+        <img
+          alt=""
+          className="h-full w-full object-fill"
+          draggable={false}
+          src={asset.objectUrl}
+        />
+      ) : null;
+    }
+    case "mark": {
+      return (
+        <MarkGlyph
+          className="h-full w-full"
+          color={overlay.color}
+          markType={overlay.markType}
+        />
+      );
+    }
+    case "whiteout": {
+      return (
+        <div
+          className="h-full w-full"
+          style={{ backgroundColor: overlay.color }}
+        />
+      );
+    }
+    default: {
+      return <div className="h-full w-full bg-primary/10" />;
+    }
   }
-
-  if (overlay.type === "image") {
-    const asset = imageAssets.find(
-      (imageAsset) => imageAsset.id === overlay.assetId,
-    );
-
-    return asset ? (
-      <img
-        alt=""
-        className="h-full w-full object-fill"
-        draggable={false}
-        src={asset.objectUrl}
-      />
-    ) : null;
-  }
-
-  if (overlay.type === "mark") {
-    return (
-      <MarkGlyph
-        className="h-full w-full"
-        color={overlay.color}
-        markType={overlay.markType}
-      />
-    );
-  }
-
-  if (overlay.type === "whiteout") {
-    return (
-      <div
-        className="h-full w-full"
-        style={{ backgroundColor: overlay.color }}
-      />
-    );
-  }
-
-  return <div className="h-full w-full bg-primary/10" />;
 }
 
 const thumbnailWidth = 60;

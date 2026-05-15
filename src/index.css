@@ -19,6 +19,8 @@ body {
   --font-heading: var(--font-sans);
   --font-sans: "Geist Variable", sans-serif;
   --shadow-page: var(--page-shadow);
+  --shadow-glow: var(--glow-shadow);
+  --color-page-shadow: var(--page-shadow-color);
   --color-toolbar-button-hover: var(--toolbar-button-hover);
   --color-toolbar-button: var(--toolbar-button);
   --color-toolbar-foreground: var(--toolbar-foreground);
@@ -97,7 +99,9 @@ body {
   --workspace-foreground: #111827;
   --page: #ffffff;
   --page-foreground: #0f172a;
-  --page-shadow: 0 18px 48px rgb(15 23 42 / 0.16);
+  --page-shadow-color: rgb(15 23 42 / 0.16);
+  --page-shadow: 0 18px 48px var(--page-shadow-color);
+  --glow-shadow: 0 0 10px 2px var(--page-shadow-color);
   --toolbar: #ffffff;
   --toolbar-foreground: #111827;
   --toolbar-button: #ffffff;
@@ -156,7 +160,9 @@ body {
   --workspace-foreground: #f3f6fb;
   --page: #f8fafc;
   --page-foreground: #0f172a;
-  --page-shadow: 0 18px 48px rgb(0 0 0 / 0.42);
+  --page-shadow-color: rgb(0 0 0 / 0.42);
+  --page-shadow: 0 18px 48px var(--page-shadow-color);
+  --glow-shadow: 0 0 10px 2px var(--page-shadow-color);
   --toolbar: #141922;
   --toolbar-foreground: #f3f6fb;
   --toolbar-button: #171d28;

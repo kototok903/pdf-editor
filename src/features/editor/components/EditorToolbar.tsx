@@ -4,9 +4,8 @@ import {
   FileDownIcon,
   FileIcon,
   FileTextIcon,
+  Layers2Icon,
   MoonIcon,
-  PanelLeftCloseIcon,
-  PanelLeftOpenIcon,
   Redo2Icon,
   RotateCcwIcon,
   SignatureIcon,
@@ -57,6 +56,10 @@ import type {
 } from "@/features/editor/editor-types";
 import { textFontOptions } from "@/features/editor/lib/text-fonts";
 import { TooltipButton } from "@/features/editor/components/TooltipButton";
+import {
+  FileTextDashedIcon,
+  Layers2DashedIcon,
+} from "@/components/ui/custom-icons";
 
 type EditorToolbarProps = {
   activeImageAssetId: string | null;
@@ -64,6 +67,7 @@ type EditorToolbarProps = {
   imageAssets: ImageAsset[];
   isDark: boolean;
   isImageToolActive: boolean;
+  isLayersSidebarOpen: boolean;
   isPagesSidebarOpen: boolean;
   isMarkSettingsDefault: boolean;
   isMarkToolActive: boolean;
@@ -87,6 +91,7 @@ type EditorToolbarProps = {
   onTextSettingsReset: () => void;
   onTextToolClick: () => void;
   onToggleTheme: () => void;
+  onToggleLayersSidebar: () => void;
   onTogglePagesSidebar: () => void;
   onWhiteoutSettingsChange: (patch: WhiteoutOverlayPatch) => void;
   onWhiteoutSettingsReset: () => void;
@@ -112,6 +117,7 @@ function EditorToolbar({
   imageAssets,
   isDark,
   isImageToolActive,
+  isLayersSidebarOpen,
   isPagesSidebarOpen,
   isMarkSettingsDefault,
   isMarkToolActive,
@@ -137,6 +143,7 @@ function EditorToolbar({
   onTextSettingsReset,
   onTextToolClick,
   onToggleTheme,
+  onToggleLayersSidebar,
   onTogglePagesSidebar,
   onWhiteoutSettingsChange,
   onWhiteoutSettingsReset,
@@ -157,22 +164,42 @@ function EditorToolbar({
   return (
     <header className="sticky top-0 z-20 border-b bg-toolbar text-toolbar-foreground">
       <div className="flex h-12 items-center gap-1.5 px-2.5">
-        <TooltipButton label="Toggle pages">
-          <Button
-            aria-pressed={isPagesSidebarOpen}
-            className="w-[30px] px-0"
-            onClick={onTogglePagesSidebar}
-            size="sm"
-            type="button"
-            variant="toolbar"
-          >
-            {isPagesSidebarOpen ? (
-              <PanelLeftCloseIcon aria-hidden="true" />
-            ) : (
-              <PanelLeftOpenIcon aria-hidden="true" />
-            )}
-          </Button>
-        </TooltipButton>
+        <div className="inline-flex shrink-0">
+          <TooltipButton label="Toggle pages">
+            <Button
+              aria-label="Toggle pages sidebar"
+              aria-pressed={isPagesSidebarOpen}
+              className="w-7.5 rounded-r-none px-0"
+              onClick={onTogglePagesSidebar}
+              size="sm"
+              type="button"
+              variant="toolbar"
+            >
+              {isPagesSidebarOpen ? (
+                <FileTextDashedIcon aria-hidden="true" />
+              ) : (
+                <FileTextIcon aria-hidden="true" />
+              )}
+            </Button>
+          </TooltipButton>
+          <TooltipButton label="Toggle layers">
+            <Button
+              aria-label="Toggle layers sidebar"
+              aria-pressed={isLayersSidebarOpen}
+              className="-ml-px w-7.5 rounded-l-none px-0"
+              onClick={onToggleLayersSidebar}
+              size="sm"
+              type="button"
+              variant="toolbar"
+            >
+              {isLayersSidebarOpen ? (
+                <Layers2DashedIcon aria-hidden="true" />
+              ) : (
+                <Layers2Icon aria-hidden="true" />
+              )}
+            </Button>
+          </TooltipButton>
+        </div>
 
         <div className="mr-1 min-w-24">
           {isLoading ? (

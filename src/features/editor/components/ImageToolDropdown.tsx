@@ -104,8 +104,8 @@ function ImageToolDropdown({
               >
                 <span className="grid size-10 place-items-center overflow-hidden rounded-md border bg-background">
                   <img
-                    alt=""
-                    className="max-h-full max-w-full object-contain"
+                    alt={asset.name}
+                    className="size-full min-h-0 min-w-0 object-contain"
                     src={asset.objectUrl}
                   />
                 </span>

@@ -22,6 +22,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DocumentWorkspace } from "@/features/editor/components/DocumentWorkspace";
 import { EditorToolbar } from "@/features/editor/components/EditorToolbar";
+import { LayersSidebar } from "@/features/editor/components/LayersSidebar";
 import { PagesSidebar } from "@/features/editor/components/PagesSidebar";
 import type {
   EditorOverlayInput,
@@ -800,6 +801,7 @@ function AppShell() {
           isDark={isDark}
           isExporting={isExporting}
           isImageToolActive={activeTool?.type === "image"}
+          isLayersSidebarOpen={editorPreferences.isLayersSidebarOpen}
           isPagesSidebarOpen={isPagesSidebarOpen}
           isMarkSettingsDefault={isMarkSettingsDefault}
           isMarkToolActive={activeTool?.type === "mark"}
@@ -827,6 +829,12 @@ function AppShell() {
           onTextSettingsChange={handleTextSettingsChange}
           onTextSettingsReset={handleTextSettingsReset}
           onTextToolClick={handleTextToolClick}
+          onToggleLayersSidebar={() =>
+            setEditorPreferences((currentPreferences) => ({
+              ...currentPreferences,
+              isLayersSidebarOpen: !currentPreferences.isLayersSidebarOpen,
+            }))
+          }
           onTogglePagesSidebar={() =>
             setEditorPreferences((currentPreferences) => ({
               ...currentPreferences,
@@ -856,6 +864,15 @@ function AppShell() {
               onSelectPage={handleSelectSidebarPage}
               overlays={overlays}
               pageCount={loadedDocument?.pageCount ?? 0}
+            />
+          )}
+          {editorPreferences.isLayersSidebarOpen && (
+            <LayersSidebar
+              currentPage={currentPage}
+              imageAssets={imageAssets}
+              onSelectOverlay={handleSelectOverlay}
+              overlays={overlays}
+              selectedOverlayId={selectedOverlayId}
             />
           )}
           <DocumentWorkspace
