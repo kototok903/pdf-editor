@@ -101,6 +101,7 @@ function AppShell() {
     addOverlay,
     clearOverlays,
     clearSelection,
+    moveOverlayLayer,
     overlays,
     removeOverlay,
     replaceOverlays,
@@ -870,6 +871,7 @@ function AppShell() {
             <LayersSidebar
               currentPage={currentPage}
               imageAssets={imageAssets}
+              onMoveOverlayLayer={moveOverlayLayer}
               onSelectOverlay={handleSelectOverlay}
               overlays={overlays}
               selectedOverlayId={selectedOverlayId}

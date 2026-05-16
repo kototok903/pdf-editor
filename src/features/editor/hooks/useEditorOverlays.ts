@@ -8,6 +8,7 @@ import type {
   TextOverlayPatch,
   WhiteoutOverlayPatch,
 } from "@/features/editor/editor-types";
+import { moveOverlayToPageLayer } from "@/features/editor/lib/layer-sidebar-utils";
 
 function createOverlayId() {
   return crypto.randomUUID();
@@ -53,6 +54,28 @@ function useEditorOverlays() {
       currentSelectedId === overlayId ? null : currentSelectedId,
     );
   }, []);
+
+  const moveOverlayLayer = useCallback(
+    ({
+      insertBelowOverlayId,
+      overlayId,
+      pageNumber,
+    }: {
+      insertBelowOverlayId?: string | null;
+      overlayId: string;
+      pageNumber: number;
+    }) => {
+      setOverlays((currentOverlays) =>
+        moveOverlayToPageLayer(currentOverlays, {
+          insertBelowOverlayId,
+          overlayId,
+          pageNumber,
+        }),
+      );
+      setSelectedOverlayId(overlayId);
+    },
+    [],
+  );
 
   const selectOverlay = useCallback((overlayId: string) => {
     setSelectedOverlayId(overlayId);
@@ -109,6 +132,7 @@ function useEditorOverlays() {
     addOverlay,
     clearOverlays,
     clearSelection,
+    moveOverlayLayer,
     overlays,
     removeOverlay,
     replaceOverlays,

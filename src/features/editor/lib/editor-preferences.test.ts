@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, type Mock } from "vitest";
 
 import {
   defaultEditorPreferences,
@@ -165,7 +165,7 @@ describe("editor preferences persistence", () => {
 
   it("ignores storage write errors", () => {
     const storage = createMemoryStorage();
-    vi.mocked(storage.setItem).mockImplementation(() => {
+    (storage.setItem as Mock).mockImplementation(() => {
       throw new Error("quota exceeded");
     });
 

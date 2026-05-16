@@ -1,3 +1,4 @@
+import { forwardRef, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import {
@@ -12,44 +13,65 @@ import { getTextFontFamily } from "@/features/editor/lib/text-fonts";
 
 const TYPE_ICON_STROKE_WIDTH = 2.5;
 
-function LayerTile({
-  imageAssets,
-  isSelected,
-  onClick,
-  overlay,
-}: {
+type LayerTileProps = {
+  className?: string;
   imageAssets: ImageAsset[];
   isSelected: boolean;
   onClick: () => void;
   overlay: EditorOverlay;
-}) {
-  return (
-    <button
-      aria-label={getLayerTileLabel(overlay)}
-      aria-pressed={isSelected}
-      className={cn(
-        "relative block size-16 overflow-hidden rounded-md border-2 border-border bg-page/70 text-page-foreground shadow-sm transition-colors",
-        isSelected && "border-primary",
-      )}
-      onClick={onClick}
-      type="button"
-    >
-      <div className="grid size-full place-items-center">
-        <OverlayPreview imageAssets={imageAssets} overlay={overlay} side={64} />
-      </div>
-      <span
+  sortableProps?: Record<string, unknown>;
+  style?: CSSProperties;
+};
+
+const LayerTile = forwardRef<HTMLButtonElement, LayerTileProps>(
+  function LayerTile(
+    {
+      className,
+      imageAssets,
+      isSelected,
+      onClick,
+      overlay,
+      sortableProps,
+      style,
+    },
+    ref,
+  ) {
+    return (
+      <button
+        {...sortableProps}
+        aria-label={getLayerTileLabel(overlay)}
+        aria-pressed={isSelected}
         className={cn(
-          "absolute right-0 bottom-0 grid size-5 place-items-center rounded-tl-lg -mr-px -mb-px ring-2 text-[10px] font-semibold leading-none",
-          isSelected
-            ? "bg-primary text-primary-foreground ring-primary"
-            : "bg-toolbar-button text-toolbar-foreground ring-border",
+          "relative block size-16 overflow-hidden rounded-md border-2 border-border bg-page/70 text-page-foreground shadow-sm transition-colors",
+          isSelected && "border-primary",
+          className,
         )}
+        onClick={onClick}
+        ref={ref}
+        style={style}
+        type="button"
       >
-        <LayerTypeIcon overlay={overlay} />
-      </span>
-    </button>
-  );
-}
+        <div className="grid size-full place-items-center">
+          <OverlayPreview
+            imageAssets={imageAssets}
+            overlay={overlay}
+            side={64}
+          />
+        </div>
+        <span
+          className={cn(
+            "absolute right-0 bottom-0 grid size-5 place-items-center rounded-tl-lg -mr-px -mb-px ring-2 text-[10px] font-semibold leading-none",
+            isSelected
+              ? "bg-primary text-primary-foreground ring-primary"
+              : "bg-toolbar-button text-toolbar-foreground ring-border",
+          )}
+        >
+          <LayerTypeIcon overlay={overlay} />
+        </span>
+      </button>
+    );
+  },
+);
 
 function getLayerTileLabel(overlay: EditorOverlay) {
   return `Select ${overlay.type} overlay`;
