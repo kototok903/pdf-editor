@@ -208,16 +208,18 @@ function EditorToolbar({
               <Skeleton className="mt-1.5 h-2.5 w-14" />
             </>
           ) : (
-            <>
-              <div className="max-w-36 truncate text-xs font-semibold">
-                {fileName ?? "No PDF open"}
+            <TooltipButton label={fileName} disabled={!fileName}>
+              <div>
+                <div className="max-w-36 truncate text-xs font-semibold">
+                  {fileName || "No PDF open"}
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {pageCount > 0
+                    ? `${pageCount} page${pageCount === 1 ? "" : "s"}`
+                    : "Choose a file"}
+                </div>
               </div>
-              <div className="text-[11px] text-muted-foreground">
-                {pageCount > 0
-                  ? `${pageCount} page${pageCount === 1 ? "" : "s"}`
-                  : "Choose a file"}
-              </div>
-            </>
+            </TooltipButton>
           )}
         </div>
 

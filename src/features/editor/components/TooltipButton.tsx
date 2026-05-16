@@ -9,12 +9,15 @@ import {
 type TooltipButtonProps = {
   children: ReactNode;
   label: string;
+  disabled?: boolean;
 };
 
-function TooltipButton({ children, label }: TooltipButtonProps) {
+function TooltipButton({ children, label, disabled }: TooltipButtonProps) {
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipTrigger disabled={disabled} asChild>
+        {children}
+      </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
   );
