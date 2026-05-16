@@ -24,6 +24,7 @@ import { DocumentWorkspace } from "@/features/editor/components/DocumentWorkspac
 import { EditorToolbar } from "@/features/editor/components/EditorToolbar";
 import { LayersSidebar } from "@/features/editor/components/LayersSidebar";
 import { PagesSidebar } from "@/features/editor/components/PagesSidebar";
+import { SidebarDragDropProvider } from "@/features/editor/components/SidebarDragDropProvider";
 import type {
   EditorOverlayInput,
   MarkOverlay,
@@ -749,6 +750,10 @@ function AppShell() {
     );
   };
 
+  const handleStopEditingOverlay = useCallback(() => {
+    setEditingOverlayId(null);
+  }, []);
+
   const handleZoomIn = () => {
     setEditorPreferences((currentPreferences) => ({
       ...currentPreferences,
@@ -769,12 +774,16 @@ function AppShell() {
     }));
   };
 
-  const handleSelectSidebarPage = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
+  const handleRequestWorkspacePageScroll = useCallback((pageNumber: number) => {
     setScrollToPageRequest((currentRequest) => ({
       pageNumber,
       requestId: (currentRequest?.requestId ?? 0) + 1,
     }));
+  }, []);
+
+  const handleSelectSidebarPage = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    handleRequestWorkspacePageScroll(pageNumber);
   };
 
   return (
@@ -857,26 +866,36 @@ function AppShell() {
           zoomPercent={Math.round(zoom * 100)}
         />
         <div className="flex min-h-0 flex-1 bg-workspace text-workspace-foreground">
-          {isPagesSidebarOpen && (
-            <PagesSidebar
-              currentPage={currentPage}
-              document={loadedDocument}
-              imageAssets={imageAssets}
-              onSelectPage={handleSelectSidebarPage}
-              overlays={overlays}
-              pageCount={loadedDocument?.pageCount ?? 0}
-            />
-          )}
-          {editorPreferences.isLayersSidebarOpen && (
-            <LayersSidebar
-              currentPage={currentPage}
-              imageAssets={imageAssets}
-              onMoveOverlayLayer={moveOverlayLayer}
-              onSelectOverlay={handleSelectOverlay}
-              overlays={overlays}
-              selectedOverlayId={selectedOverlayId}
-            />
-          )}
+          <SidebarDragDropProvider
+            currentPage={currentPage}
+            moveOverlayLayer={moveOverlayLayer}
+            onCurrentPageChange={setCurrentPage}
+            onRequestWorkspacePageScroll={handleRequestWorkspacePageScroll}
+            onStopEditingOverlay={handleStopEditingOverlay}
+            overlays={overlays}
+            replaceOverlays={replaceOverlays}
+            selectedOverlayId={selectedOverlayId}
+          >
+            {isPagesSidebarOpen && (
+              <PagesSidebar
+                currentPage={currentPage}
+                document={loadedDocument}
+                imageAssets={imageAssets}
+                onSelectPage={handleSelectSidebarPage}
+                overlays={overlays}
+                pageCount={loadedDocument?.pageCount ?? 0}
+              />
+            )}
+            {editorPreferences.isLayersSidebarOpen && (
+              <LayersSidebar
+                currentPage={currentPage}
+                imageAssets={imageAssets}
+                onSelectOverlay={handleSelectOverlay}
+                overlays={overlays}
+                selectedOverlayId={selectedOverlayId}
+              />
+            )}
+          </SidebarDragDropProvider>
           <DocumentWorkspace
             currentPage={currentPage}
             document={loadedDocument}

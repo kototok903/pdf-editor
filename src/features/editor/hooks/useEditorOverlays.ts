@@ -41,10 +41,13 @@ function useEditorOverlays() {
     setSelectedOverlayId(null);
   }, []);
 
-  const replaceOverlays = useCallback((nextOverlays: EditorOverlay[]) => {
-    setOverlays(nextOverlays);
-    setSelectedOverlayId(null);
-  }, []);
+  const replaceOverlays = useCallback(
+    (nextOverlays: EditorOverlay[], nextSelectedOverlayId: string | null = null) => {
+      setOverlays(nextOverlays);
+      setSelectedOverlayId(nextSelectedOverlayId);
+    },
+    [],
+  );
 
   const removeOverlay = useCallback((overlayId: string) => {
     setOverlays((currentOverlays) =>

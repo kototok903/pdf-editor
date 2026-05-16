@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef } from "react";
+import { useDroppable } from "@dnd-kit/react";
 
 import { PdfPageThumbnail } from "@/features/editor/components/PdfPageThumbnail";
+import {
+  getPageDropId,
+  overlayLayerDragType,
+  pageDropType,
+} from "@/features/editor/components/sidebar-dnd";
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 import { cn } from "@/lib/utils";
@@ -94,26 +100,31 @@ function SidebarPageButton({
     element: HTMLButtonElement | null,
   ) => void;
 }) {
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
-
-  useEffect(() => {
-    const button = buttonRef.current;
-
-    registerPageButton(pageNumber, button);
-
-    return () => {
-      registerPageButton(pageNumber, null);
-    };
-  }, [pageNumber, registerPageButton]);
+  const { isDropTarget, ref } = useDroppable({
+    accept: overlayLayerDragType,
+    data: { pageNumber },
+    id: getPageDropId(pageNumber),
+    type: pageDropType,
+  });
+  const setButtonRef = useCallback(
+    (element: HTMLButtonElement | null) => {
+      registerPageButton(pageNumber, element);
+      ref(element);
+    },
+    [pageNumber, ref, registerPageButton],
+  );
 
   return (
     <button
       aria-current={isActive ? "page" : undefined}
       aria-label={`Go to page ${pageNumber}`}
-      className="relative mx-auto block overflow-hidden rounded-md border-2 border-border bg-page text-page-foreground shadow-sm transition-colors data-[active=true]:border-primary"
+      className={cn(
+        "relative mx-auto block overflow-hidden rounded-md border-2 border-border bg-page text-page-foreground shadow-sm transition-colors data-[active=true]:border-primary",
+        isDropTarget && "border-primary ring-2 ring-primary/35",
+      )}
       data-active={isActive}
       onClick={onClick}
-      ref={buttonRef}
+      ref={setButtonRef}
       type="button"
     >
       <PdfPageThumbnail
