@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDroppable } from "@dnd-kit/react";
 
 import { PdfPageThumbnail } from "@/features/editor/components/PdfPageThumbnail";
@@ -29,6 +29,19 @@ function PagesSidebar({
   pageCount,
 }: PagesSidebarProps) {
   const pageButtonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const sidebarScrollerRef = useRef<HTMLDivElement | null>(null);
+  const pdfDocument = document?.pdfDocument;
+  const [thumbnailPageState, setThumbnailPageState] = useState<{
+    pages: Set<number>;
+    pdfDocument: LoadedPdfDocument["pdfDocument"] | undefined;
+  }>({
+    pages: new Set([currentPage]),
+    pdfDocument,
+  });
+  const renderableThumbnailPages =
+    thumbnailPageState.pdfDocument === pdfDocument
+      ? thumbnailPageState.pages
+      : emptyPageSet;
   const pages = Array.from({ length: pageCount }, (_, index) => index + 1);
   const registerPageButton = useCallback(
     (pageNumber: number, element: HTMLButtonElement | null) => {
@@ -41,6 +54,62 @@ function PagesSidebar({
     },
     [],
   );
+
+  useEffect(() => {
+    const sidebarScroller = sidebarScrollerRef.current;
+
+    if (!sidebarScroller) {
+      return;
+    }
+
+    if (typeof IntersectionObserver === "undefined") {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const intersectingPageNumbers = entries
+          .filter((entry) => entry.isIntersecting)
+          .map((entry) =>
+            Number((entry.target as HTMLElement).dataset.pageNumber),
+          )
+          .filter(Number.isInteger);
+
+        if (intersectingPageNumbers.length === 0) {
+          return;
+        }
+
+        setThumbnailPageState((currentState) => {
+          const nextPages = new Set(
+            currentState.pdfDocument === pdfDocument
+              ? currentState.pages
+              : [currentPage],
+          );
+
+          for (const pageNumber of intersectingPageNumbers) {
+            nextPages.add(pageNumber);
+          }
+
+          return {
+            pages: nextPages,
+            pdfDocument,
+          };
+        });
+      },
+      {
+        root: sidebarScroller,
+        rootMargin: "720px 0px",
+      },
+    );
+
+    for (const element of pageButtonRefs.current.values()) {
+      observer.observe(element);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [currentPage, pageCount, pdfDocument]);
 
   useEffect(() => {
     pageButtonRefs.current.get(currentPage)?.scrollIntoView({
@@ -58,7 +127,10 @@ function PagesSidebar({
           </span>
         </div>
       </div>
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden p-2">
+      <div
+        className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden p-2"
+        ref={sidebarScrollerRef}
+      >
         {pages.length > 0 && document ? (
           pages.map((page) => (
             <SidebarPageButton
@@ -70,6 +142,9 @@ function PagesSidebar({
               pageNumber={page}
               pdfDocument={document.pdfDocument}
               registerPageButton={registerPageButton}
+              shouldRenderThumbnail={
+                page === currentPage || renderableThumbnailPages.has(page)
+              }
             />
           ))
         ) : (
@@ -88,6 +163,7 @@ function SidebarPageButton({
   pageNumber,
   pdfDocument,
   registerPageButton,
+  shouldRenderThumbnail,
 }: {
   imageAssets: ImageAsset[];
   isActive: boolean;
@@ -99,6 +175,7 @@ function SidebarPageButton({
     pageNumber: number,
     element: HTMLButtonElement | null,
   ) => void;
+  shouldRenderThumbnail: boolean;
 }) {
   const { isDropTarget, ref } = useDroppable({
     accept: overlayLayerDragType,
@@ -123,6 +200,7 @@ function SidebarPageButton({
         isDropTarget && "border-primary ring-2 ring-primary/35",
       )}
       data-active={isActive}
+      data-page-number={pageNumber}
       onClick={onClick}
       ref={setButtonRef}
       type="button"
@@ -132,6 +210,7 @@ function SidebarPageButton({
         overlays={overlays}
         pageNumber={pageNumber}
         pdfDocument={pdfDocument}
+        shouldRender={shouldRenderThumbnail}
       />
       <span
         className={cn(
@@ -146,5 +225,7 @@ function SidebarPageButton({
     </button>
   );
 }
+
+const emptyPageSet = new Set<number>();
 
 export { PagesSidebar };

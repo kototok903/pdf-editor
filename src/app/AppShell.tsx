@@ -61,8 +61,10 @@ import {
 import type { EditorHistoryEntry } from "@/features/editor/lib/editor-history";
 import { createExportFileName } from "@/features/pdf-export/lib/export-file-name";
 import { exportPdf } from "@/features/pdf-export/lib/export-pdf";
-import type { PageSize } from "@/features/pdf/components/PdfPageView";
 import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
+import { usePdfPageSizes } from "@/features/pdf/hooks/usePdfPageSizes";
+import { scalePageSizes } from "@/features/pdf/lib/pdf-page-size-utils";
+import type { PageSize } from "@/features/pdf/pdf-types";
 
 const zoomStep = 0.1;
 type ActiveTool =
@@ -86,7 +88,9 @@ function AppShell() {
   const [isLocalDraftReady, setIsLocalDraftReady] = useState(false);
   const [pendingReplacementPdfFile, setPendingReplacementPdfFile] =
     useState<File | null>(null);
-  const [pageSizes, setPageSizes] = useState<Record<number, PageSize>>({});
+  const [renderedBasePageSizes, setRenderedBasePageSizes] = useState<
+    Record<number, PageSize>
+  >({});
   const [scrollToPageRequest, setScrollToPageRequest] = useState<{
     pageNumber: number;
     requestId: number;
@@ -133,6 +137,18 @@ function AppShell() {
     openFile,
     status,
   } = usePdfDocument();
+  const scannedBasePageSizes = usePdfPageSizes(loadedDocument);
+  const pageSizes = useMemo(
+    () =>
+      scalePageSizes(
+        {
+          ...scannedBasePageSizes,
+          ...renderedBasePageSizes,
+        },
+        zoom,
+      ),
+    [renderedBasePageSizes, scannedBasePageSizes, zoom],
+  );
   const {
     addImageBlob,
     addImageFile,
@@ -449,7 +465,7 @@ function AppShell() {
       editingOverlayIdRef.current = null;
       setEditingOverlayId(null);
       setActiveTool(null);
-      setPageSizes({});
+      setRenderedBasePageSizes({});
       exportedFileNamesRef.current = new Set();
       void openFile(file);
     },
@@ -467,7 +483,7 @@ function AppShell() {
     editingOverlayIdRef.current = null;
     setEditingOverlayId(null);
     setActiveTool(null);
-    setPageSizes({});
+    setRenderedBasePageSizes({});
     setScrollToPageRequest(null);
     exportedFileNamesRef.current = new Set();
     void clearStoredDraft().catch(() => {
@@ -650,12 +666,15 @@ function AppShell() {
 
   const handlePageSizeChange = useCallback(
     (pageNumber: number, pageSize: PageSize) => {
-      setPageSizes((currentPageSizes) => ({
+      setRenderedBasePageSizes((currentPageSizes) => ({
         ...currentPageSizes,
-        [pageNumber]: pageSize,
+        [pageNumber]: {
+          height: pageSize.height / zoom,
+          width: pageSize.width / zoom,
+        },
       }));
     },
-    [],
+    [zoom],
   );
 
   const handleTextToolClick = () => {
@@ -1007,6 +1026,7 @@ function AppShell() {
             onUpdateTextOverlay={updateTextOverlayDraft}
             onUpdateOverlayRect={updateOverlayRect}
             overlays={overlays}
+            pageSizes={pageSizes}
             selectedOverlayId={selectedOverlayId}
             status={displayStatus}
             scrollToPageRequest={scrollToPageRequest}

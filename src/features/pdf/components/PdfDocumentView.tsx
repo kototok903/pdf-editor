@@ -1,15 +1,16 @@
 import { PdfPageView } from "@/features/pdf/components/PdfPageView";
-import type { PageSize } from "@/features/pdf/components/PdfPageView";
 import type {
   EditorOverlay,
   ImageAsset,
   PdfRect,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
-import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
+import { isPageInRenderWindow } from "@/features/pdf/lib/pdf-page-size-utils";
+import type { LoadedPdfDocument, PageSize } from "@/features/pdf/pdf-types";
 
 type PdfDocumentViewProps = {
   activeImageAsset: ImageAsset | null;
+  currentPage: number;
   document: LoadedPdfDocument;
   editingOverlayId: string | null;
   imageAssets: ImageAsset[];
@@ -33,6 +34,7 @@ type PdfDocumentViewProps = {
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
   overlays: EditorOverlay[];
+  pageSizes: Record<number, PageSize>;
   scale: number;
   selectedOverlayId: string | null;
   whiteoutColor: string;
@@ -40,6 +42,7 @@ type PdfDocumentViewProps = {
 
 function PdfDocumentView({
   activeImageAsset,
+  currentPage,
   document,
   editingOverlayId,
   imageAssets,
@@ -60,6 +63,7 @@ function PdfDocumentView({
   onUpdateTextOverlay,
   onUpdateOverlayRect,
   overlays,
+  pageSizes,
   scale,
   selectedOverlayId,
   whiteoutColor,
@@ -89,15 +93,32 @@ function PdfDocumentView({
           onUpdateTextOverlay={onUpdateTextOverlay}
           onUpdateOverlayRect={onUpdateOverlayRect}
           overlays={overlays}
+          pageSize={pageSizes[index + 1] ?? getDefaultPageSize(scale)}
           pageNumber={index + 1}
           pdfDocument={document.pdfDocument}
           scale={scale}
           selectedOverlayId={selectedOverlayId}
+          shouldRender={isPageInRenderWindow({
+            currentPage,
+            overscan: workspacePageRenderOverscan,
+            pageNumber: index + 1,
+          })}
           whiteoutColor={whiteoutColor}
         />
       ))}
     </div>
   );
+}
+
+const workspacePageRenderOverscan = 5;
+const defaultPageWidth = 612;
+const defaultPageHeight = 792;
+
+function getDefaultPageSize(scale: number): PageSize {
+  return {
+    height: defaultPageHeight * scale,
+    width: defaultPageWidth * scale,
+  };
 }
 
 export { PdfDocumentView };

@@ -34,7 +34,7 @@ import {
   toOverlayInput,
   type OverlayClipboardPayload,
 } from "@/features/editor/lib/overlay-clipboard";
-import type { PageSize } from "@/features/pdf/components/PdfPageView";
+import type { PageSize } from "@/features/pdf/pdf-types";
 
 type LastOverlayPaste = {
   pasteCount: number;

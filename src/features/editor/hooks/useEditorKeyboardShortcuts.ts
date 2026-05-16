@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 import type { EditorOverlay, PdfRect } from "@/features/editor/editor-types";
 import { nudgeOverlayRect } from "@/features/editor/lib/overlay-coordinate-utils";
-import type { PageSize } from "@/features/pdf/components/PdfPageView";
+import type { PageSize } from "@/features/pdf/pdf-types";
 
 type UseEditorKeyboardShortcutsOptions = {
   editingOverlayId: string | null;

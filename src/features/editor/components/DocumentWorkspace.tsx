@@ -24,10 +24,10 @@ import {
   type WorkspaceDragIntent,
 } from "@/features/editor/lib/workspace-drop-utils";
 import { PdfDocumentView } from "@/features/pdf/components/PdfDocumentView";
-import type { PageSize } from "@/features/pdf/components/PdfPageView";
 import { PdfUploadEmptyState } from "@/features/pdf/components/PdfUploadEmptyState";
 import type {
   LoadedPdfDocument,
+  PageSize,
   PdfLoadStatus,
 } from "@/features/pdf/pdf-types";
 
@@ -58,6 +58,7 @@ type DocumentWorkspaceProps = {
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
   overlays: EditorOverlay[];
+  pageSizes: Record<number, PageSize>;
   selectedOverlayId: string | null;
   status: PdfLoadStatus;
   scrollToPageRequest: ScrollToPageRequest | null;
@@ -97,6 +98,7 @@ function DocumentWorkspace({
   onUpdateTextOverlay,
   onUpdateOverlayRect,
   overlays,
+  pageSizes,
   selectedOverlayId,
   status,
   scrollToPageRequest,
@@ -401,6 +403,7 @@ function DocumentWorkspace({
       {status === "loaded" && document && (
         <PdfDocumentView
           activeImageAsset={activeImageAsset}
+          currentPage={currentPage}
           document={document}
           editingOverlayId={editingOverlayId}
           imageAssets={imageAssets}
@@ -421,6 +424,7 @@ function DocumentWorkspace({
           onUpdateTextOverlay={onUpdateTextOverlay}
           onUpdateOverlayRect={onUpdateOverlayRect}
           overlays={overlays}
+          pageSizes={pageSizes}
           scale={zoom}
           selectedOverlayId={selectedOverlayId}
           whiteoutColor={whiteoutColor}

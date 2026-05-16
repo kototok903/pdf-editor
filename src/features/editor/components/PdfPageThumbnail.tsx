@@ -11,6 +11,7 @@ type PdfPageThumbnailProps = {
   overlays: EditorOverlay[];
   pageNumber: number;
   pdfDocument: PDFDocumentProxy;
+  shouldRender: boolean;
 };
 
 type ThumbnailState = {
@@ -19,18 +20,32 @@ type ThumbnailState = {
   width: number;
 };
 
+type RenderState = {
+  pageNumber: number;
+  pdfDocument: PDFDocumentProxy;
+  status: "error" | "rendered";
+};
+
 function PdfPageThumbnail({
   imageAssets,
   overlays,
   pageNumber,
   pdfDocument,
+  shouldRender,
 }: PdfPageThumbnailProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isRendering, setIsRendering] = useState(true);
+  const [renderState, setRenderState] = useState<RenderState | null>(null);
   const [thumbnailState, setThumbnailState] = useState<ThumbnailState | null>(
     null,
   );
+  const isCurrentRenderState =
+    renderState?.pageNumber === pageNumber &&
+    renderState.pdfDocument === pdfDocument;
+  const error =
+    isCurrentRenderState && renderState.status === "error"
+      ? "Unable to render preview."
+      : null;
+  const isRendering = shouldRender && !isCurrentRenderState;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -42,9 +57,11 @@ function PdfPageThumbnail({
       return;
     }
 
+    if (!shouldRender) {
+      return;
+    }
+
     const canvasElement = canvas;
-    setError(null);
-    setIsRendering(true);
 
     async function renderThumbnail() {
       try {
@@ -87,7 +104,11 @@ function PdfPageThumbnail({
         await renderTask.promise;
 
         if (!isCancelled) {
-          setIsRendering(false);
+          setRenderState({
+            pageNumber,
+            pdfDocument,
+            status: "rendered",
+          });
         }
       } catch (error) {
         if (isCancelled) {
@@ -101,8 +122,11 @@ function PdfPageThumbnail({
           return;
         }
 
-        setError("Unable to render preview.");
-        setIsRendering(false);
+        setRenderState({
+          pageNumber,
+          pdfDocument,
+          status: "error",
+        });
       }
     }
 
@@ -112,7 +136,7 @@ function PdfPageThumbnail({
       isCancelled = true;
       renderTask?.cancel();
     };
-  }, [pageNumber, pdfDocument]);
+  }, [pageNumber, pdfDocument, shouldRender]);
 
   return (
     <div

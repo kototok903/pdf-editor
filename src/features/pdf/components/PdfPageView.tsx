@@ -7,7 +7,7 @@ import type {
   PdfRect,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
-import type { PDFDocumentProxy } from "@/features/pdf/pdf-types";
+import type { PageSize, PDFDocumentProxy } from "@/features/pdf/pdf-types";
 
 type PdfPageViewProps = {
   activeImageAsset: ImageAsset | null;
@@ -33,16 +33,13 @@ type PdfPageViewProps = {
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
   overlays: EditorOverlay[];
+  pageSize: PageSize;
   pageNumber: number;
   pdfDocument: PDFDocumentProxy;
   scale: number;
   selectedOverlayId: string | null;
+  shouldRender: boolean;
   whiteoutColor: string;
-};
-
-type PageSize = {
-  height: number;
-  width: number;
 };
 
 function PdfPageView({
@@ -66,16 +63,26 @@ function PdfPageView({
   onUpdateTextOverlay,
   onUpdateOverlayRect,
   overlays,
+  pageSize,
   pageNumber,
   pdfDocument,
   scale,
   selectedOverlayId,
+  shouldRender,
   whiteoutColor,
 }: PdfPageViewProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isRendering, setIsRendering] = useState(true);
-  const [pageSize, setPageSize] = useState<PageSize | null>(null);
+  const [renderState, setRenderState] = useState<RenderState | null>(null);
+  const displayPageSize = pageSize;
+  const isCurrentRenderState =
+    renderState?.pageNumber === pageNumber &&
+    renderState.pdfDocument === pdfDocument &&
+    renderState.scale === scale;
+  const error =
+    isCurrentRenderState && renderState.status === "error"
+      ? "Unable to render this page."
+      : null;
+  const isRendering = shouldRender && !isCurrentRenderState;
   const articleRef = useCallback(
     (element: HTMLElement | null) => {
       onPageElementChange(pageNumber, element);
@@ -93,10 +100,11 @@ function PdfPageView({
       return;
     }
 
-    const canvasElement = canvas;
+    if (!shouldRender) {
+      return;
+    }
 
-    setError(null);
-    setIsRendering(true);
+    const canvasElement = canvas;
 
     async function renderPage() {
       try {
@@ -119,7 +127,6 @@ function PdfPageView({
         canvasElement.style.width = `${viewport.width}px`;
         canvasElement.style.height = `${viewport.height}px`;
         const nextPageSize = { height: viewport.height, width: viewport.width };
-        setPageSize(nextPageSize);
         onPageSizeChange(pageNumber, nextPageSize);
 
         renderTask = page.render({
@@ -135,7 +142,12 @@ function PdfPageView({
         await renderTask.promise;
 
         if (!isCancelled) {
-          setIsRendering(false);
+          setRenderState({
+            pageNumber,
+            pdfDocument,
+            scale,
+            status: "rendered",
+          });
         }
       } catch (error) {
         if (isCancelled) {
@@ -149,8 +161,12 @@ function PdfPageView({
           return;
         }
 
-        setError("Unable to render this page.");
-        setIsRendering(false);
+        setRenderState({
+          pageNumber,
+          pdfDocument,
+          scale,
+          status: "error",
+        });
       }
     }
 
@@ -160,15 +176,15 @@ function PdfPageView({
       isCancelled = true;
       renderTask?.cancel();
     };
-  }, [onPageSizeChange, pageNumber, pdfDocument, scale]);
+  }, [onPageSizeChange, pageNumber, pdfDocument, scale, shouldRender]);
 
   return (
     <article
       className="relative mx-auto overflow-hidden border bg-page text-page-foreground shadow-page"
       ref={articleRef}
       style={{
-        minHeight: pageSize?.height,
-        width: pageSize?.width ?? 430,
+        minHeight: displayPageSize.height,
+        width: displayPageSize.width,
       }}
     >
       {isRendering && (
@@ -182,7 +198,7 @@ function PdfPageView({
         </div>
       )}
       <canvas ref={canvasRef} />
-      {pageSize && (
+      {displayPageSize && (
         <OverlayLayer
           activeImageAsset={activeImageAsset}
           editingOverlayId={editingOverlayId}
@@ -212,5 +228,11 @@ function PdfPageView({
   );
 }
 
+type RenderState = {
+  pageNumber: number;
+  pdfDocument: PDFDocumentProxy;
+  scale: number;
+  status: "error" | "rendered";
+};
+
 export { PdfPageView };
-export type { PageSize };
