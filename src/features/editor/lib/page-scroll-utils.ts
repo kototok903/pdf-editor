@@ -50,5 +50,21 @@ function getScrollTopForPage({
   return Math.max(0, containerScrollTop + pageTop - containerTop - topSpacing);
 }
 
-export { findCenteredPageNumber, getScrollTopForPage };
+function shouldApplyCenteredPageFromScroll({
+  centeredPage,
+  currentPage,
+  programmaticScrollTargetPage,
+}: {
+  centeredPage: number;
+  currentPage: number;
+  programmaticScrollTargetPage: number | null;
+}) {
+  return programmaticScrollTargetPage === null && centeredPage !== currentPage;
+}
+
+export {
+  findCenteredPageNumber,
+  getScrollTopForPage,
+  shouldApplyCenteredPageFromScroll,
+};
 export type { PageViewportBounds };

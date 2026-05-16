@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   findCenteredPageNumber,
   getScrollTopForPage,
+  shouldApplyCenteredPageFromScroll,
 } from "@/features/editor/lib/page-scroll-utils";
 
 describe("page-scroll-utils", () => {
@@ -65,5 +66,35 @@ describe("page-scroll-utils", () => {
         topSpacing: 24,
       }),
     ).toBe(0);
+  });
+
+  it("applies centered page updates during manual scrolling", () => {
+    expect(
+      shouldApplyCenteredPageFromScroll({
+        centeredPage: 4,
+        currentPage: 2,
+        programmaticScrollTargetPage: null,
+      }),
+    ).toBe(true);
+  });
+
+  it("keeps the current page during programmatic page scrolling", () => {
+    expect(
+      shouldApplyCenteredPageFromScroll({
+        centeredPage: 4,
+        currentPage: 8,
+        programmaticScrollTargetPage: 8,
+      }),
+    ).toBe(false);
+  });
+
+  it("skips redundant centered page updates", () => {
+    expect(
+      shouldApplyCenteredPageFromScroll({
+        centeredPage: 3,
+        currentPage: 3,
+        programmaticScrollTargetPage: null,
+      }),
+    ).toBe(false);
   });
 });

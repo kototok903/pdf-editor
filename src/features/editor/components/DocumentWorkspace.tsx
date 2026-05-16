@@ -16,6 +16,7 @@ import type {
 import {
   findCenteredPageNumber,
   getScrollTopForPage,
+  shouldApplyCenteredPageFromScroll,
 } from "@/features/editor/lib/page-scroll-utils";
 import {
   getWorkspaceDragIntent,
@@ -105,6 +106,11 @@ function DocumentWorkspace({
   const pageElementsRef = useRef<Map<number, HTMLElement>>(new Map());
   const dragDepthRef = useRef(0);
   const scrollFrameRef = useRef<number | null>(null);
+  const programmaticScrollTargetPageRef = useRef<number | null>(null);
+  const programmaticScrollEndTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const handledScrollToPageRequestIdRef = useRef<number | null>(null);
   const workspaceRef = useRef<HTMLElement | null>(null);
   const [dragIntent, setDragIntent] = useState<WorkspaceDragIntent>(null);
   const hasDocument = status === "loaded" && Boolean(document);
@@ -134,18 +140,63 @@ function DocumentWorkspace({
       viewportTop: workspaceBounds.top,
     });
 
-    if (centeredPage !== currentPage) {
+    if (
+      shouldApplyCenteredPageFromScroll({
+        centeredPage,
+        currentPage,
+        programmaticScrollTargetPage: programmaticScrollTargetPageRef.current,
+      })
+    ) {
       onCurrentPageChange(centeredPage);
     }
   }, [currentPage, onCurrentPageChange]);
 
-  const handleScroll = useCallback(() => {
+  const queueCenteredPageReport = useCallback(() => {
     if (scrollFrameRef.current !== null) {
       return;
     }
 
     scrollFrameRef.current = requestAnimationFrame(reportCenteredPage);
   }, [reportCenteredPage]);
+
+  const clearProgrammaticScrollEndTimeout = useCallback(() => {
+    if (programmaticScrollEndTimeoutRef.current !== null) {
+      clearTimeout(programmaticScrollEndTimeoutRef.current);
+      programmaticScrollEndTimeoutRef.current = null;
+    }
+  }, []);
+
+  const endProgrammaticPageScroll = useCallback(() => {
+    clearProgrammaticScrollEndTimeout();
+
+    if (programmaticScrollTargetPageRef.current === null) {
+      return;
+    }
+
+    programmaticScrollTargetPageRef.current = null;
+    queueCenteredPageReport();
+  }, [clearProgrammaticScrollEndTimeout, queueCenteredPageReport]);
+
+  const scheduleProgrammaticScrollEnd = useCallback(() => {
+    clearProgrammaticScrollEndTimeout();
+    programmaticScrollEndTimeoutRef.current = setTimeout(
+      endProgrammaticPageScroll,
+      programmaticScrollEndDelayMs,
+    );
+  }, [clearProgrammaticScrollEndTimeout, endProgrammaticPageScroll]);
+
+  const handleManualScrollInterruption = useCallback(() => {
+    endProgrammaticPageScroll();
+  }, [endProgrammaticPageScroll]);
+
+  const handleScroll = useCallback(() => {
+    if (programmaticScrollTargetPageRef.current !== null) {
+      scheduleProgrammaticScrollEnd();
+      return;
+    }
+
+    queueCenteredPageReport();
+  }, [queueCenteredPageReport, scheduleProgrammaticScrollEnd]);
 
   const handlePageElementChange = useCallback(
     (pageNumber: number, element: HTMLElement | null) => {
@@ -164,13 +215,37 @@ function DocumentWorkspace({
       if (scrollFrameRef.current !== null) {
         cancelAnimationFrame(scrollFrameRef.current);
       }
+
+      clearProgrammaticScrollEndTimeout();
     };
-  }, []);
+  }, [clearProgrammaticScrollEndTimeout]);
+
+  useEffect(() => {
+    const workspace = workspaceRef.current;
+
+    if (!workspace) {
+      return;
+    }
+
+    workspace.addEventListener("scrollend", endProgrammaticPageScroll);
+
+    return () => {
+      workspace.removeEventListener("scrollend", endProgrammaticPageScroll);
+    };
+  }, [endProgrammaticPageScroll]);
 
   useEffect(() => {
     if (!scrollToPageRequest) {
       return;
     }
+
+    if (
+      handledScrollToPageRequestIdRef.current === scrollToPageRequest.requestId
+    ) {
+      return;
+    }
+
+    handledScrollToPageRequestIdRef.current = scrollToPageRequest.requestId;
 
     const workspace = workspaceRef.current;
     const pageElement = pageElementsRef.current.get(
@@ -183,17 +258,31 @@ function DocumentWorkspace({
 
     const workspaceBounds = workspace.getBoundingClientRect();
     const pageBounds = pageElement.getBoundingClientRect();
+    const targetScrollTop = getScrollTopForPage({
+      containerScrollTop: workspace.scrollTop,
+      containerTop: workspaceBounds.top,
+      pageTop: pageBounds.top,
+      topSpacing: pageScrollTopSpacing,
+    });
+
+    programmaticScrollTargetPageRef.current = scrollToPageRequest.pageNumber;
 
     workspace.scrollTo({
       behavior: "smooth",
-      top: getScrollTopForPage({
-        containerScrollTop: workspace.scrollTop,
-        containerTop: workspaceBounds.top,
-        pageTop: pageBounds.top,
-        topSpacing: pageScrollTopSpacing,
-      }),
+      top: targetScrollTop,
     });
-  }, [scrollToPageRequest]);
+
+    if (Math.abs(workspace.scrollTop - targetScrollTop) < 1) {
+      endProgrammaticPageScroll();
+      return;
+    }
+
+    scheduleProgrammaticScrollEnd();
+  }, [
+    endProgrammaticPageScroll,
+    scheduleProgrammaticScrollEnd,
+    scrollToPageRequest,
+  ]);
 
   const resetDragState = useCallback(() => {
     dragDepthRef.current = 0;
@@ -286,7 +375,9 @@ function DocumentWorkspace({
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
+      onPointerDown={handleManualScrollInterruption}
       onScroll={handleScroll}
+      onWheel={handleManualScrollInterruption}
       ref={workspaceRef}
     >
       {status === "empty" && (
@@ -340,6 +431,7 @@ function DocumentWorkspace({
 }
 
 const pageScrollTopSpacing = 24;
+const programmaticScrollEndDelayMs = 120;
 
 function PdfPageSkeleton() {
   return (
