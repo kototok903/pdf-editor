@@ -1,4 +1,5 @@
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
+import type { EditorHistoryState } from "@/features/editor/lib/editor-history";
 
 type PersistedImageAssetRecord = {
   bytes: ArrayBuffer;
@@ -18,6 +19,7 @@ type PersistedImageAssetRecord = {
 type PersistedEditorDraftRecord = {
   currentPage: number;
   fileName: string;
+  history?: EditorHistoryState;
   id: typeof activeDraftKey;
   imageAssetIds: string[];
   overlays: EditorOverlay[];

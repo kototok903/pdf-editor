@@ -14,7 +14,9 @@ type UseEditorKeyboardShortcutsOptions = {
   onEditOverlay: (overlayId: string | null) => void;
   onPasteEvent: (event: ClipboardEvent) => void;
   onPasteWithCurrentTextSettings: () => void;
+  onRedo: () => void;
   onRemoveOverlay: (overlayId: string) => void;
+  onUndo: () => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
   pageSizes: Record<number, PageSize>;
   scale: number;
@@ -31,7 +33,9 @@ function useEditorKeyboardShortcuts({
   onEditOverlay,
   onPasteEvent,
   onPasteWithCurrentTextSettings,
+  onRedo,
   onRemoveOverlay,
+  onUndo,
   onUpdateOverlayRect,
   pageSizes,
   scale,
@@ -50,6 +54,18 @@ function useEditorKeyboardShortcuts({
       }
 
       if (isEditableTarget(event.target)) {
+        return;
+      }
+
+      if (isUndoEvent(event)) {
+        event.preventDefault();
+        onUndo();
+        return;
+      }
+
+      if (isRedoEvent(event)) {
+        event.preventDefault();
+        onRedo();
         return;
       }
 
@@ -160,7 +176,9 @@ function useEditorKeyboardShortcuts({
     onEditOverlay,
     onPasteEvent,
     onPasteWithCurrentTextSettings,
+    onRedo,
     onRemoveOverlay,
+    onUndo,
     onUpdateOverlayRect,
     pageSizes,
     scale,
@@ -196,6 +214,17 @@ function isDuplicateEvent(event: KeyboardEvent) {
 
 function isPasteWithCurrentTextSettingsEvent(event: KeyboardEvent) {
   return isCommandOrControlEvent(event, "v") && event.shiftKey;
+}
+
+function isUndoEvent(event: KeyboardEvent) {
+  return isCommandOrControlEvent(event, "z") && !event.shiftKey;
+}
+
+function isRedoEvent(event: KeyboardEvent) {
+  return (
+    (isCommandOrControlEvent(event, "z") && event.shiftKey) ||
+    isCommandOrControlEvent(event, "y")
+  );
 }
 
 function isCommandOrControlEvent(event: KeyboardEvent, key: string) {

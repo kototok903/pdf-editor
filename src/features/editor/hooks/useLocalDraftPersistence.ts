@@ -11,6 +11,10 @@ import {
   type PersistedEditorDraftRecord,
 } from "@/features/editor/lib/editor-draft-db";
 import {
+  getHistoryImageAssetIds,
+  type EditorHistoryState,
+} from "@/features/editor/lib/editor-history";
+import {
   imageAssetFromPersistedRecord,
   toPersistedImageAssetRecord,
 } from "@/features/editor/lib/persisted-image-assets";
@@ -26,6 +30,7 @@ type LocalDraftHydrationResult = {
 type UseLocalDraftPersistenceOptions = {
   currentPage: number;
   document: LoadedPdfDocument | null;
+  history: EditorHistoryState;
   imageAssets: ImageAsset[];
   isReadyToPersist: boolean;
   overlays: EditorOverlay[];
@@ -34,6 +39,7 @@ type UseLocalDraftPersistenceOptions = {
 function useLocalDraftPersistence({
   currentPage,
   document,
+  history,
   imageAssets,
   isReadyToPersist,
   overlays,
@@ -105,6 +111,7 @@ function useLocalDraftPersistence({
       void persistActiveDraft({
         currentPage,
         document,
+        history,
         imageAssets,
         overlays,
       }).catch(() => {
@@ -113,7 +120,7 @@ function useLocalDraftPersistence({
     }, 500);
 
     return () => window.clearTimeout(timeoutId);
-  }, [currentPage, document, imageAssets, isReadyToPersist, overlays]);
+  }, [currentPage, document, history, imageAssets, isReadyToPersist, overlays]);
 
   return {
     clearStoredDraft,
@@ -131,11 +138,13 @@ async function persistRecentImages(imageAssets: ImageAsset[]) {
 async function persistActiveDraft({
   currentPage,
   document,
+  history,
   imageAssets,
   overlays,
 }: {
   currentPage: number;
   document: LoadedPdfDocument | null;
+  history: EditorHistoryState;
   imageAssets: ImageAsset[];
   overlays: EditorOverlay[];
 }) {
@@ -144,11 +153,16 @@ async function persistActiveDraft({
     return;
   }
 
-  const imageAssetIds = getPersistedDraftImageAssetIds(imageAssets, overlays);
+  const imageAssetIds = getPersistedDraftImageAssetIds(
+    imageAssets,
+    overlays,
+    history,
+  );
 
   await writeActiveDraft({
     currentPage,
     fileName: document.fileName,
+    history,
     id: activeDraftKey,
     imageAssetIds,
     overlays,
@@ -160,12 +174,19 @@ async function persistActiveDraft({
 function getPersistedDraftImageAssetIds(
   imageAssets: ImageAsset[],
   overlays: EditorOverlay[],
+  history?: EditorHistoryState,
 ) {
   const referencedImageAssetIds = new Set(
     overlays
       .filter((overlay) => overlay.type === "image")
       .map((overlay) => overlay.assetId),
   );
+
+  if (history) {
+    for (const assetId of getHistoryImageAssetIds(history)) {
+      referencedImageAssetIds.add(assetId);
+    }
+  }
 
   return imageAssets
     .filter(
@@ -175,5 +196,5 @@ function getPersistedDraftImageAssetIds(
     .map((asset) => asset.id);
 }
 
-export { useLocalDraftPersistence };
+export { getPersistedDraftImageAssetIds, useLocalDraftPersistence };
 export type { LocalDraftHydrationState };

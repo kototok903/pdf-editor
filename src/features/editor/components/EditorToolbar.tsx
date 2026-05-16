@@ -85,6 +85,7 @@ type EditorToolbarProps = {
   onExportPdf: () => void;
   onOpenFile: () => void;
   onOpenImageDialog: () => void;
+  onRedo: () => void;
   onRemoveImageAssetFromRecents: (assetId: string) => void;
   onSelectImageAsset: (assetId: string) => void;
   onTextSettingsChange: (patch: TextOverlayPatch) => void;
@@ -93,6 +94,7 @@ type EditorToolbarProps = {
   onToggleTheme: () => void;
   onToggleLayersSidebar: () => void;
   onTogglePagesSidebar: () => void;
+  onUndo: () => void;
   onWhiteoutSettingsChange: (patch: WhiteoutOverlayPatch) => void;
   onWhiteoutSettingsReset: () => void;
   onWhiteoutToolClick: () => void;
@@ -100,6 +102,8 @@ type EditorToolbarProps = {
   onZoomOut: () => void;
   pageCount: number;
   status: "empty" | "loading" | "loaded" | "error";
+  canRedo: boolean;
+  canUndo: boolean;
   isExporting: boolean;
   markSettings: {
     color: string;
@@ -126,7 +130,9 @@ function EditorToolbar({
   isWhiteoutSettingsDefault,
   isWhiteoutToolActive,
   markSettings,
+  canRedo,
   canCloseDraft,
+  canUndo,
   onCloseDraft,
   onExportPdf,
   onImportImageFromClipboard,
@@ -137,6 +143,7 @@ function EditorToolbar({
   onMarkToolClick,
   onOpenFile,
   onOpenImageDialog,
+  onRedo,
   onRemoveImageAssetFromRecents,
   onSelectImageAsset,
   onTextSettingsChange,
@@ -145,6 +152,7 @@ function EditorToolbar({
   onToggleTheme,
   onToggleLayersSidebar,
   onTogglePagesSidebar,
+  onUndo,
   onWhiteoutSettingsChange,
   onWhiteoutSettingsReset,
   onWhiteoutToolClick,
@@ -307,7 +315,8 @@ function EditorToolbar({
           <TooltipButton label="Undo">
             <Button
               className="w-[30px] px-0"
-              disabled
+              disabled={!canUndo}
+              onClick={onUndo}
               size="sm"
               type="button"
               variant="toolbar"
@@ -318,7 +327,8 @@ function EditorToolbar({
           <TooltipButton label="Redo">
             <Button
               className="w-[30px] px-0"
-              disabled
+              disabled={!canRedo}
+              onClick={onRedo}
               size="sm"
               type="button"
               variant="toolbar"

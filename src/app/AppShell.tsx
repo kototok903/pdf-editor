@@ -58,6 +58,7 @@ import {
   minEditorZoom,
   type EditorPreferences,
 } from "@/features/editor/lib/editor-preferences";
+import type { EditorHistoryEntry } from "@/features/editor/lib/editor-history";
 import { createExportFileName } from "@/features/pdf-export/lib/export-file-name";
 import { exportPdf } from "@/features/pdf-export/lib/export-pdf";
 import type { PageSize } from "@/features/pdf/components/PdfPageView";
@@ -73,8 +74,10 @@ type ActiveTool =
 
 function AppShell() {
   const exportedFileNamesRef = useRef<Set<string>>(new Set());
+  const editingOverlayIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const textEditHistoryEntryRef = useRef<EditorHistoryEntry | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -100,17 +103,26 @@ function AppShell() {
   const isDark = themeName === "dark";
   const {
     addOverlay,
+    canRedo,
+    canUndo,
     clearOverlays,
     clearSelection,
+    commitHistoryFromBase,
+    getHistoryEntrySnapshot,
+    history,
     moveOverlayLayer,
     overlays,
+    redo,
     removeOverlay,
     replaceOverlays,
+    resetHistory,
     selectOverlay,
     selectedOverlayId,
+    undo,
     updateMarkOverlay,
     updateOverlayRect,
     updateTextOverlay,
+    updateTextOverlayDraft,
     updateWhiteoutOverlay,
   } = useEditorOverlays();
   const {
@@ -134,6 +146,7 @@ function AppShell() {
   const { clearStoredDraft, hydrateLocalDraft } = useLocalDraftPersistence({
     currentPage,
     document: loadedDocument,
+    history,
     imageAssets,
     isReadyToPersist: isLocalDraftReady,
     overlays,
@@ -224,7 +237,11 @@ function AppShell() {
         }
 
         if (restoredDocument) {
-          replaceOverlays(restoredDraft.draft.overlays);
+          resetHistory(
+            restoredDraft.draft.overlays,
+            null,
+            restoredDraft.draft.history,
+          );
           setCurrentPage(
             Math.min(
               restoredDocument.pageCount,
@@ -259,7 +276,7 @@ function AppShell() {
     hydrateLocalDraft,
     openBytes,
     replaceImageAssets,
-    replaceOverlays,
+    resetHistory,
   ]);
 
   const activeImageAsset =
@@ -269,18 +286,49 @@ function AppShell() {
   const displayStatus =
     !isLocalDraftReady && status === "empty" ? "loading" : status;
 
-  const handleClearSelection = useCallback(() => {
-    clearSelection();
-    setEditingOverlayId(null);
-  }, [clearSelection]);
-
   const handleClearActiveTool = useCallback(() => {
     setActiveTool(null);
   }, []);
 
-  const handleEditOverlay = useCallback((overlayId: string | null) => {
-    setEditingOverlayId(overlayId);
-  }, []);
+  useEffect(() => {
+    editingOverlayIdRef.current = editingOverlayId;
+
+    if (editingOverlayId && !textEditHistoryEntryRef.current) {
+      textEditHistoryEntryRef.current = getHistoryEntrySnapshot();
+    }
+  }, [editingOverlayId, getHistoryEntrySnapshot]);
+
+  const commitPendingTextEdit = useCallback(() => {
+    const baseEntry = textEditHistoryEntryRef.current;
+
+    if (!baseEntry) {
+      return;
+    }
+
+    textEditHistoryEntryRef.current = null;
+    commitHistoryFromBase(baseEntry);
+  }, [commitHistoryFromBase]);
+
+  const handleEditOverlay = useCallback(
+    (overlayId: string | null) => {
+      const currentEditingOverlayId = editingOverlayIdRef.current;
+
+      if (currentEditingOverlayId && currentEditingOverlayId !== overlayId) {
+        commitPendingTextEdit();
+      }
+
+      editingOverlayIdRef.current = overlayId;
+      setEditingOverlayId(overlayId);
+    },
+    [commitPendingTextEdit],
+  );
+
+  const handleClearSelection = useCallback(() => {
+    commitPendingTextEdit();
+    clearSelection();
+    editingOverlayIdRef.current = null;
+    setEditingOverlayId(null);
+  }, [clearSelection, commitPendingTextEdit]);
 
   const getCurrentPageSize = useCallback(() => {
     const pageSize = pageSizes[currentPage];
@@ -323,7 +371,7 @@ function AppShell() {
       }
 
       setActiveTool(null);
-      setEditingOverlayId(null);
+      handleEditOverlay(null);
 
       if (input.type === "image") {
         showImageAssetInRecents(input.assetId);
@@ -331,7 +379,7 @@ function AppShell() {
 
       return addOverlay(input);
     },
-    [addOverlay, imageAssets, showImageAssetInRecents],
+    [addOverlay, handleEditOverlay, imageAssets, showImageAssetInRecents],
   );
 
   const {
@@ -353,6 +401,22 @@ function AppShell() {
     zoom,
   });
 
+  const handleUndo = useCallback(() => {
+    commitPendingTextEdit();
+    undo();
+    editingOverlayIdRef.current = null;
+    setEditingOverlayId(null);
+    setActiveTool(null);
+  }, [commitPendingTextEdit, undo]);
+
+  const handleRedo = useCallback(() => {
+    commitPendingTextEdit();
+    redo();
+    editingOverlayIdRef.current = null;
+    setEditingOverlayId(null);
+    setActiveTool(null);
+  }, [commitPendingTextEdit, redo]);
+
   useEditorKeyboardShortcuts({
     editingOverlayId,
     hasActiveTool: activeTool !== null,
@@ -363,7 +427,9 @@ function AppShell() {
     onEditOverlay: handleEditOverlay,
     onPasteEvent: handlePasteEvent,
     onPasteWithCurrentTextSettings: handlePasteWithCurrentTextSettings,
+    onRedo: handleRedo,
     onRemoveOverlay: removeOverlay,
+    onUndo: handleUndo,
     onUpdateOverlayRect: updateOverlayRect,
     pageSizes,
     scale: zoom,
@@ -379,6 +445,8 @@ function AppShell() {
       setCurrentPage(1);
       clearOverlays();
       clearClipboardHistory();
+      textEditHistoryEntryRef.current = null;
+      editingOverlayIdRef.current = null;
       setEditingOverlayId(null);
       setActiveTool(null);
       setPageSizes({});
@@ -395,6 +463,8 @@ function AppShell() {
     clearFile();
     clearOverlays();
     clearClipboardHistory();
+    textEditHistoryEntryRef.current = null;
+    editingOverlayIdRef.current = null;
     setEditingOverlayId(null);
     setActiveTool(null);
     setPageSizes({});
@@ -421,7 +491,9 @@ function AppShell() {
       return;
     }
 
+    commitPendingTextEdit();
     setIsExporting(true);
+    editingOverlayIdRef.current = null;
     setEditingOverlayId(null);
 
     try {
@@ -463,7 +535,7 @@ function AppShell() {
 
     void addImageFile(file).then((asset) => {
       setActiveTool({ assetId: asset.id, type: "image" });
-      setEditingOverlayId(null);
+      handleEditOverlay(null);
     });
   };
 
@@ -471,7 +543,7 @@ function AppShell() {
     const asset = await addImageUrl(url);
 
     setActiveTool({ assetId: asset.id, type: "image" });
-    setEditingOverlayId(null);
+    handleEditOverlay(null);
   };
 
   const handleImportImageFromClipboard = () => {
@@ -495,7 +567,7 @@ function AppShell() {
         const asset = await addImageBlob(blob);
 
         setActiveTool({ assetId: asset.id, type: "image" });
-        setEditingOverlayId(null);
+        handleEditOverlay(null);
       } catch (error) {
         toast.error("Unable to read clipboard", {
           description:
@@ -590,26 +662,26 @@ function AppShell() {
     setActiveTool((currentTool) =>
       currentTool?.type === "text" ? null : { type: "text" },
     );
-    setEditingOverlayId(null);
+    handleEditOverlay(null);
   };
 
   const handleMarkToolClick = () => {
     setActiveTool((currentTool) =>
       currentTool?.type === "mark" ? null : { type: "mark" },
     );
-    setEditingOverlayId(null);
+    handleEditOverlay(null);
   };
 
   const handleMarkToolActivate = () => {
     setActiveTool({ type: "mark" });
-    setEditingOverlayId(null);
+    handleEditOverlay(null);
   };
 
   const handleWhiteoutToolClick = () => {
     setActiveTool((currentTool) =>
       currentTool?.type === "whiteout" ? null : { type: "whiteout" },
     );
-    setEditingOverlayId(null);
+    handleEditOverlay(null);
   };
 
   const handlePlaceTextOverlay = (pageNumber: number, rect: PdfRect) => {
@@ -621,7 +693,7 @@ function AppShell() {
       type: "text",
     });
     setActiveTool(null);
-    setEditingOverlayId(overlay.id);
+    handleEditOverlay(overlay.id);
   };
 
   const handlePlaceMarkOverlay = (pageNumber: number, rect: PdfRect) => {
@@ -633,7 +705,7 @@ function AppShell() {
       type: "mark",
     });
     setActiveTool(null);
-    setEditingOverlayId(null);
+    handleEditOverlay(null);
   };
 
   const handlePlaceImageOverlay = (pageNumber: number, rect: PdfRect) => {
@@ -650,7 +722,7 @@ function AppShell() {
       type: "image",
     });
     setActiveTool(null);
-    setEditingOverlayId(null);
+    handleEditOverlay(null);
   };
 
   const handlePlaceWhiteoutOverlay = (pageNumber: number, rect: PdfRect) => {
@@ -662,7 +734,7 @@ function AppShell() {
       type: "whiteout",
     });
     setActiveTool(null);
-    setEditingOverlayId(null);
+    handleEditOverlay(null);
   };
 
   const handleMarkSettingsChange = (patch: MarkOverlayPatch) => {
@@ -697,6 +769,7 @@ function AppShell() {
     }));
 
     if (selectedTextOverlay) {
+      commitPendingTextEdit();
       updateTextOverlay(selectedTextOverlay.id, patch);
     }
   };
@@ -717,6 +790,7 @@ function AppShell() {
     }));
 
     if (selectedTextOverlay) {
+      commitPendingTextEdit();
       updateTextOverlay(selectedTextOverlay.id, defaultTextPatch);
     }
   };
@@ -745,14 +819,18 @@ function AppShell() {
 
   const handleSelectOverlay = (overlayId: string) => {
     selectOverlay(overlayId);
-    setEditingOverlayId((currentEditingId) =>
-      currentEditingId === overlayId ? currentEditingId : null,
-    );
+
+    if (
+      editingOverlayIdRef.current &&
+      editingOverlayIdRef.current !== overlayId
+    ) {
+      handleEditOverlay(null);
+    }
   };
 
   const handleStopEditingOverlay = useCallback(() => {
-    setEditingOverlayId(null);
-  }, []);
+    handleEditOverlay(null);
+  }, [handleEditOverlay]);
 
   const handleZoomIn = () => {
     setEditorPreferences((currentPreferences) => ({
@@ -806,6 +884,8 @@ function AppShell() {
         <EditorToolbar
           activeImageAssetId={activeImageAsset?.id ?? null}
           canCloseDraft={Boolean(loadedDocument) || overlays.length > 0}
+          canRedo={canRedo}
+          canUndo={canUndo}
           fileName={loadedDocument?.fileName ?? null}
           imageAssets={recentImageAssets}
           isDark={isDark}
@@ -830,6 +910,7 @@ function AppShell() {
           onImportImageFromClipboard={handleImportImageFromClipboard}
           onOpenFile={handleOpenFileDialog}
           onOpenImageDialog={handleOpenImageDialog}
+          onRedo={handleRedo}
           onRemoveImageAssetFromRecents={hideImageAssetFromRecents}
           onSelectImageAsset={(assetId) => {
             showImageAssetInRecents(assetId);
@@ -854,6 +935,7 @@ function AppShell() {
           onToggleTheme={() =>
             updateEditorPreferences({ themeName: isDark ? "light" : "dark" })
           }
+          onUndo={handleUndo}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           pageCount={loadedDocument?.pageCount ?? 0}
@@ -867,9 +949,11 @@ function AppShell() {
         />
         <div className="flex min-h-0 flex-1 bg-workspace text-workspace-foreground">
           <SidebarDragDropProvider
+            onCommitHistoryFromBase={commitHistoryFromBase}
             currentPage={currentPage}
             moveOverlayLayer={moveOverlayLayer}
             onCurrentPageChange={setCurrentPage}
+            onGetHistoryEntrySnapshot={getHistoryEntrySnapshot}
             onRequestWorkspacePageScroll={handleRequestWorkspacePageScroll}
             onStopEditingOverlay={handleStopEditingOverlay}
             overlays={overlays}
@@ -920,7 +1004,7 @@ function AppShell() {
             onPlaceTextOverlay={handlePlaceTextOverlay}
             onPlaceWhiteoutOverlay={handlePlaceWhiteoutOverlay}
             onSelectOverlay={handleSelectOverlay}
-            onUpdateTextOverlay={updateTextOverlay}
+            onUpdateTextOverlay={updateTextOverlayDraft}
             onUpdateOverlayRect={updateOverlayRect}
             overlays={overlays}
             selectedOverlayId={selectedOverlayId}

@@ -1,9 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import {
   DragDropProvider,
   type DragEndEvent,
@@ -13,6 +8,7 @@ import {
 import { isSortableOperation } from "@dnd-kit/react/sortable";
 
 import type { EditorOverlay } from "@/features/editor/editor-types";
+import type { EditorHistoryEntry } from "@/features/editor/lib/editor-history";
 import {
   getPageNumberFromPageDropId,
   overlayLayerDragType,
@@ -24,6 +20,7 @@ import { getPageLayerOverlays } from "@/features/editor/lib/layer-sidebar-utils"
 
 type LayerDragSnapshot = {
   currentPage: number;
+  historyEntry: EditorHistoryEntry;
   overlays: EditorOverlay[];
   selectedOverlayId: string | null;
 };
@@ -35,12 +32,16 @@ type SidebarDragDropProviderProps = {
     insertBelowOverlayId,
     overlayId,
     pageNumber,
+    trackHistory,
   }: {
     insertBelowOverlayId?: string | null;
     overlayId: string;
     pageNumber: number;
+    trackHistory?: boolean;
   }) => void;
+  onCommitHistoryFromBase: (baseEntry: EditorHistoryEntry) => void;
   onCurrentPageChange: (pageNumber: number) => void;
+  onGetHistoryEntrySnapshot: () => EditorHistoryEntry;
   onRequestWorkspacePageScroll: (pageNumber: number) => void;
   onStopEditingOverlay: () => void;
   overlays: EditorOverlay[];
@@ -55,7 +56,9 @@ function SidebarDragDropProvider({
   children,
   currentPage,
   moveOverlayLayer,
+  onCommitHistoryFromBase,
   onCurrentPageChange,
+  onGetHistoryEntrySnapshot,
   onRequestWorkspacePageScroll,
   onStopEditingOverlay,
   overlays,
@@ -85,7 +88,7 @@ function SidebarDragDropProvider({
 
   const moveDraggedOverlayToPage = useCallback(
     (overlayId: string, pageNumber: number) => {
-      moveOverlayLayer({ overlayId, pageNumber });
+      moveOverlayLayer({ overlayId, pageNumber, trackHistory: false });
       currentPageRef.current = pageNumber;
       onCurrentPageChange(pageNumber);
       onStopEditingOverlay();
@@ -132,12 +135,19 @@ function SidebarDragDropProvider({
 
       layerDragSnapshotRef.current = {
         currentPage,
+        historyEntry: onGetHistoryEntrySnapshot(),
         overlays,
         selectedOverlayId,
       };
       onStopEditingOverlay();
     },
-    [currentPage, onStopEditingOverlay, overlays, selectedOverlayId],
+    [
+      currentPage,
+      onGetHistoryEntrySnapshot,
+      onStopEditingOverlay,
+      overlays,
+      selectedOverlayId,
+    ],
   );
 
   const handleDragOver = useCallback(
@@ -219,10 +229,9 @@ function SidebarDragDropProvider({
             typeof sortableSource.group === "number"
               ? sortableSource.group
               : currentPage;
-          const pageOverlayIds = getPageLayerOverlays(
-            overlays,
-            pageNumber,
-          ).map((overlay) => overlay.id);
+          const pageOverlayIds = getPageLayerOverlays(overlays, pageNumber).map(
+            (overlay) => overlay.id,
+          );
           const pageOverlayIdsWithoutActive = pageOverlayIds.filter(
             (overlayId) => overlayId !== activeOverlayId,
           );
@@ -235,8 +244,13 @@ function SidebarDragDropProvider({
             insertBelowOverlayId,
             overlayId: activeOverlayId,
             pageNumber,
+            trackHistory: false,
           });
         }
+      }
+
+      if (snapshot) {
+        onCommitHistoryFromBase(snapshot.historyEntry);
       }
 
       const pendingScrollPage = pendingWorkspaceScrollPageRef.current;
@@ -251,6 +265,7 @@ function SidebarDragDropProvider({
       currentPage,
       moveDraggedOverlayToPage,
       moveOverlayLayer,
+      onCommitHistoryFromBase,
       onCurrentPageChange,
       onRequestWorkspacePageScroll,
       overlays,
