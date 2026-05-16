@@ -19,26 +19,16 @@ type LayerTileProps = {
   isSelected: boolean;
   onClick: () => void;
   overlay: EditorOverlay;
-  sortableProps?: Record<string, unknown>;
   style?: CSSProperties;
 };
 
 const LayerTile = forwardRef<HTMLButtonElement, LayerTileProps>(
   function LayerTile(
-    {
-      className,
-      imageAssets,
-      isSelected,
-      onClick,
-      overlay,
-      sortableProps,
-      style,
-    },
+    { className, imageAssets, isSelected, onClick, overlay, style },
     ref,
   ) {
     return (
       <button
-        {...sortableProps}
         aria-label={getLayerTileLabel(overlay)}
         aria-pressed={isSelected}
         className={cn(

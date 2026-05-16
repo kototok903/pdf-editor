@@ -1,24 +1,25 @@
+import { useCallback } from "react";
+import { DragDropProvider, type DragEndEvent } from "@dnd-kit/react";
 import {
-  closestCenter,
-  DndContext,
   KeyboardSensor,
+  PointerActivationConstraints,
   PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { restrictToFirstScrollableAncestor } from "@dnd-kit/modifiers";
+} from "@dnd-kit/dom";
+import { isSortableOperation, useSortable } from "@dnd-kit/react/sortable";
 
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import { getPageLayerOverlays } from "@/features/editor/lib/layer-sidebar-utils";
 import { LayerTile } from "@/features/editor/components/LayerTile";
+
+const layerDragType = "overlay-layer";
+const layerSidebarSensors = [
+  PointerSensor.configure({
+    activationConstraints: [
+      new PointerActivationConstraints.Distance({ value: 4 }),
+    ],
+  }),
+  KeyboardSensor,
+];
 
 type LayersSidebarProps = {
   currentPage: number;
@@ -47,24 +48,24 @@ function LayersSidebar({
 }: LayersSidebarProps) {
   const pageOverlays = getPageLayerOverlays(overlays, currentPage);
   const pageOverlayIds = pageOverlays.map((overlay) => overlay.id);
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 4 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const activeOverlayId = String(event.active.id);
-    const overOverlayId = event.over ? String(event.over.id) : null;
-
-    if (!overOverlayId || activeOverlayId === overOverlayId) {
+    if (
+      event.canceled ||
+      !isSortableOperation(event.operation) ||
+      !event.operation.source
+    ) {
       return;
     }
 
-    const destinationIndex = pageOverlayIds.indexOf(overOverlayId);
+    const { source } = event.operation;
+    const activeOverlayId = String(source.id);
+
+    if (source.initialIndex === source.index) {
+      return;
+    }
+
+    const destinationIndex = source.index;
 
     if (destinationIndex === -1) {
       return;
@@ -95,28 +96,21 @@ function LayersSidebar({
       </div>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden p-2">
         {pageOverlays.length > 0 ? (
-          <DndContext
-            autoScroll={{ threshold: { x: 0, y: 0.2 } }}
-            collisionDetection={closestCenter}
-            modifiers={[restrictToFirstScrollableAncestor]}
+          <DragDropProvider
             onDragEnd={handleDragEnd}
-            sensors={sensors}
+            sensors={layerSidebarSensors}
           >
-            <SortableContext
-              items={pageOverlayIds}
-              strategy={verticalListSortingStrategy}
-            >
-              {pageOverlays.map((overlay) => (
-                <SortableLayerTile
-                  imageAssets={imageAssets}
-                  isSelected={overlay.id === selectedOverlayId}
-                  key={overlay.id}
-                  onSelectOverlay={onSelectOverlay}
-                  overlay={overlay}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
+            {pageOverlays.map((overlay, index) => (
+              <SortableLayerTile
+                imageAssets={imageAssets}
+                index={index}
+                isSelected={overlay.id === selectedOverlayId}
+                key={overlay.id}
+                onSelectOverlay={onSelectOverlay}
+                overlay={overlay}
+              />
+            ))}
+          </DragDropProvider>
         ) : (
           <div className="size-16 rounded-md border border-dashed border-sidebar-border bg-page/70 text-center text-[11px] text-muted-foreground" />
         )}
@@ -127,28 +121,31 @@ function LayersSidebar({
 
 function SortableLayerTile({
   imageAssets,
+  index,
   isSelected,
   onSelectOverlay,
   overlay,
 }: {
   imageAssets: ImageAsset[];
+  index: number;
   isSelected: boolean;
   onSelectOverlay: (overlayId: string) => void;
   overlay: EditorOverlay;
 }) {
-  const {
-    attributes,
-    isDragging,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id: overlay.id });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 1 : undefined,
-  };
+  const { handleRef, isDragging, ref } = useSortable({
+    accept: layerDragType,
+    group: overlay.pageNumber,
+    id: overlay.id,
+    index,
+    type: layerDragType,
+  });
+  const setTileRef = useCallback(
+    (element: HTMLButtonElement | null) => {
+      ref(element);
+      handleRef(element);
+    },
+    [handleRef, ref],
+  );
 
   return (
     <LayerTile
@@ -157,9 +154,7 @@ function SortableLayerTile({
       isSelected={isSelected}
       onClick={() => onSelectOverlay(overlay.id)}
       overlay={overlay}
-      ref={setNodeRef}
-      sortableProps={{ ...attributes, ...listeners }}
-      style={style}
+      ref={setTileRef}
     />
   );
 }
