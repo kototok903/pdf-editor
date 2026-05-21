@@ -12,6 +12,7 @@ import {
   defaultTextOverlay,
   defaultWhiteoutOverlay,
 } from "@/features/editor/lib/overlay-defaults";
+import { isStandardTextFontId } from "@/features/editor/lib/text-font-id-utils";
 
 type EditorThemeName = "dark" | "light";
 
@@ -44,12 +45,6 @@ const defaultEditorPreferences: EditorPreferences = {
   whiteoutDefaults: defaultWhiteoutOverlay,
   zoom: 1,
 };
-
-const supportedTextFontIds = new Set<TextFontId>([
-  "courier",
-  "helvetica",
-  "times-roman",
-]);
 
 function readEditorPreferences(
   storage: Storage | undefined = getBrowserStorage(),
@@ -194,9 +189,8 @@ function asNumber(
 }
 
 function asTextFontId(value: unknown, fallback: TextFontId) {
-  return typeof value === "string" &&
-    supportedTextFontIds.has(value as TextFontId)
-    ? (value as TextFontId)
+  return typeof value === "string" && isStandardTextFontId(value)
+    ? value
     : fallback;
 }
 

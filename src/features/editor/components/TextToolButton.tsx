@@ -1,4 +1,10 @@
-import { ChevronDownIcon, RotateCcwIcon, TypeIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  RotateCcwIcon,
+  SearchAlertIcon,
+  TriangleAlertIcon,
+  TypeIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   ColorPicker,
@@ -15,20 +21,32 @@ import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { rgbArrayToHex } from "@/features/editor/lib/editor-utils";
 import type {
   TextFontId,
   TextOverlayDefaults,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
-import { textFontOptions } from "@/features/editor/lib/text-fonts";
+import {
+  textFontOptions,
+  type DocumentTextFontMenuOption,
+} from "@/features/editor/lib/text-fonts";
 
 function TextToolButton({
   disabled,
+  documentFontOptions,
   isDefault,
   isSelected,
   onSettingsChange,
@@ -37,6 +55,7 @@ function TextToolButton({
   settings,
 }: {
   disabled: boolean;
+  documentFontOptions: DocumentTextFontMenuOption[];
   isDefault: boolean;
   isSelected: boolean;
   onSettingsChange: (patch: TextOverlayPatch) => void;
@@ -89,15 +108,51 @@ function TextToolButton({
                   <SelectValue placeholder="Font" />
                 </SelectTrigger>
                 <SelectContent>
-                  {textFontOptions.map((fontOption) => (
-                    <SelectItem
-                      key={fontOption.id}
-                      style={{ fontFamily: fontOption.cssFontFamily }}
-                      value={fontOption.id}
-                    >
-                      {fontOption.label}
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    {textFontOptions.map((fontOption) => (
+                      <SelectItem
+                        key={fontOption.id}
+                        style={{ fontFamily: fontOption.cssFontFamily }}
+                        value={fontOption.id}
+                      >
+                        {fontOption.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                  {documentFontOptions.length > 0 && (
+                    <>
+                      <SelectSeparator />
+                      <SelectGroup>
+                        <SelectLabel>Document fonts</SelectLabel>
+                        {documentFontOptions.map((fontOption) =>
+                          fontOption.isAvailable ? (
+                            <SelectItem
+                              key={fontOption.id}
+                              style={{
+                                fontFamily: fontOption.cssFontFamily,
+                              }}
+                              value={fontOption.id}
+                            >
+                              <span className="min-w-0 truncate">
+                                {fontOption.label}
+                              </span>
+                              {!fontOption.isComplete && fontOption.reason && (
+                                <DocumentFontReasonTooltip
+                                  icon="search"
+                                  reason={fontOption.reason}
+                                />
+                              )}
+                            </SelectItem>
+                          ) : (
+                            <UnavailableDocumentFontItem
+                              fontOption={fontOption}
+                              key={fontOption.id}
+                            />
+                          ),
+                        )}
+                      </SelectGroup>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -148,6 +203,59 @@ function TextToolButton({
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
+  );
+}
+
+function DocumentFontReasonTooltip({
+  icon,
+  reason,
+}: {
+  icon: "search" | "triangle";
+  reason: string;
+}) {
+  const Icon = icon === "search" ? SearchAlertIcon : TriangleAlertIcon;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          aria-label={reason}
+          className="ml-auto inline-flex shrink-0 items-center text-foreground"
+        >
+          <Icon aria-hidden="true" className="size-4" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        {reason}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function UnavailableDocumentFontItem({
+  fontOption,
+}: {
+  fontOption: Extract<DocumentTextFontMenuOption, { isAvailable: false }>;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div
+          aria-disabled="true"
+          className="relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 pr-2 pl-1.5 text-sm opacity-50 outline-hidden select-none"
+          role="option"
+        >
+          <span className="min-w-0 truncate">{fontOption.label}</span>
+          <TriangleAlertIcon
+            aria-hidden="true"
+            className="ml-auto size-4 shrink-0 text-destructive"
+          />
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        {fontOption.reason}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

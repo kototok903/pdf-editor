@@ -1,6 +1,8 @@
 type OverlayType = "text" | "image" | "mark" | "signature" | "whiteout";
 type MarkType = "ballot-x" | "check" | "dot" | "heavy-check" | "slash-x" | "x";
-type TextFontId = "courier" | "helvetica" | "times-roman";
+type StandardTextFontId = "courier" | "helvetica" | "times-roman";
+type DocumentTextFontId = `document:${string}`;
+type TextFontId = DocumentTextFontId | StandardTextFontId;
 
 type PdfRect = {
   height: number;
@@ -117,9 +119,11 @@ export type {
   OverlayType,
   PdfRect,
   SignatureOverlay,
+  StandardTextFontId,
   TextOverlay,
   TextOverlayDefaults,
   TextOverlayPatch,
+  DocumentTextFontId,
   TextFontId,
   ViewportRect,
   WhiteoutOverlay,

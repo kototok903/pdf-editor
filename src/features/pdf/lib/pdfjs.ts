@@ -1,5 +1,8 @@
-import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
+import {
+  GlobalWorkerOptions,
+  getDocument,
+} from "pdfjs-dist/legacy/build/pdf.mjs";
+import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.mjs?url";
 import type { PDFDocumentProxy } from "pdfjs-dist/types/src/pdf";
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
@@ -15,6 +18,7 @@ async function loadPdfDocument(bytes: ArrayBuffer): Promise<PDFDocumentProxy> {
     cMapPacked: true,
     cMapUrl: `${pdfjsAssetBaseUrl}cmaps/`,
     data,
+    fontExtraProperties: true,
     iccUrl: `${pdfjsAssetBaseUrl}iccs/`,
     standardFontDataUrl: `${pdfjsAssetBaseUrl}standard_fonts/`,
     wasmUrl: `${pdfjsAssetBaseUrl}wasm/`,

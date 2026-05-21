@@ -44,10 +44,12 @@ import type {
 } from "@/features/editor/editor-types";
 import { TooltipButton } from "@/features/editor/components/TooltipButton";
 import { WhiteoutToolButton } from "@/features/editor/components/WhiteoutToolButton";
+import type { DocumentTextFontMenuOption } from "@/features/editor/lib/text-fonts";
 
 type EditorToolbarProps = {
   activeImageAssetId: string | null;
   activeSignatureAssetId: string | null;
+  documentFontOptions: DocumentTextFontMenuOption[];
   fileName: string | null;
   imageAssets: ImageAsset[];
   isDark: boolean;
@@ -108,6 +110,7 @@ type EditorToolbarProps = {
 function EditorToolbar({
   activeImageAssetId,
   activeSignatureAssetId,
+  documentFontOptions,
   fileName,
   imageAssets,
   isDark,
@@ -262,6 +265,7 @@ function EditorToolbar({
           <div>
             <TextToolButton
               disabled={!hasPdf}
+              documentFontOptions={documentFontOptions}
               isDefault={isTextSettingsDefault}
               isSelected={isTextToolActive}
               onSettingsChange={onTextSettingsChange}

@@ -61,11 +61,24 @@ import {
   minEditorZoom,
   type EditorPreferences,
 } from "@/features/editor/lib/editor-preferences";
+import { isDocumentTextFontId } from "@/features/editor/lib/text-font-id-utils";
+import {
+  clearDocumentTextFonts,
+  createUnavailableDocumentTextFontOptions,
+  registerDocumentTextFonts,
+  type DocumentTextFontMenuOption,
+  type DocumentTextFontOption,
+} from "@/features/editor/lib/text-fonts";
 import type { EditorHistoryEntry } from "@/features/editor/lib/editor-history";
 import { createExportFileName } from "@/features/pdf-export/lib/export-file-name";
 import { exportPdf } from "@/features/pdf-export/lib/export-pdf";
 import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
 import { usePdfPageSizes } from "@/features/pdf/hooks/usePdfPageSizes";
+import {
+  extractPdfFonts,
+  getAvailablePdfFonts,
+  getUnavailablePdfFonts,
+} from "@/features/pdf/lib/pdf-font-extraction";
 import { scalePageSizes } from "@/features/pdf/lib/pdf-page-size-utils";
 import type { PageSize } from "@/features/pdf/pdf-types";
 
@@ -100,6 +113,9 @@ function AppShell() {
     requestId: number;
   } | null>(null);
   const [editorPreferences, setEditorPreferences] = useEditorPreferences();
+  const [documentFontOptions, setDocumentFontOptions] = useState<
+    DocumentTextFontMenuOption[]
+  >([]);
   const {
     isPagesSidebarOpen,
     markDefaults,
@@ -229,6 +245,60 @@ function AppShell() {
   useEffect(() => {
     globalThis.document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
+
+  useEffect(() => {
+    clearDocumentTextFonts();
+
+    if (!loadedDocument) {
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    const loadDocumentFonts = async () => {
+      const extractedFonts = await extractPdfFonts({
+        pageCount: loadedDocument.pageCount,
+        pdfDocument: loadedDocument.pdfDocument,
+        signal: abortController.signal,
+      });
+
+      if (abortController.signal.aborted) {
+        return;
+      }
+
+      const registeredFonts = await registerDocumentTextFonts(
+        getAvailablePdfFonts(extractedFonts).map((font) => ({
+          bytes: font.bytes,
+          displayName: font.displayName,
+          fontName: font.fontName,
+          mimetype: font.mimetype,
+          supportedCodePoints: font.supportedCodePoints,
+        })),
+      );
+      const unavailableFonts = createUnavailableDocumentTextFontOptions(
+        getUnavailablePdfFonts(extractedFonts),
+      );
+
+      if (abortController.signal.aborted) {
+        clearDocumentTextFonts();
+        return;
+      }
+
+      setDocumentFontOptions([...registeredFonts, ...unavailableFonts]);
+    };
+
+    void loadDocumentFonts().catch(() => {
+      if (!abortController.signal.aborted) {
+        clearDocumentTextFonts();
+        setDocumentFontOptions([]);
+      }
+    });
+
+    return () => {
+      abortController.abort();
+      clearDocumentTextFonts();
+    };
+  }, [loadedDocument]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -477,10 +547,23 @@ function AppShell() {
       setEditingOverlayId(null);
       setActiveTool(null);
       setRenderedBasePageSizes({});
+      clearDocumentTextFonts();
+      setDocumentFontOptions([]);
+      setEditorPreferences((currentPreferences) =>
+        isDocumentTextFontId(currentPreferences.textDefaults.fontId)
+          ? {
+              ...currentPreferences,
+              textDefaults: {
+                ...currentPreferences.textDefaults,
+                fontId: defaultTextOverlay.fontId,
+              },
+            }
+          : currentPreferences,
+      );
       exportedFileNamesRef.current = new Set();
       void openFile(file);
     },
-    [clearClipboardHistory, clearOverlays, openFile],
+    [clearClipboardHistory, clearOverlays, openFile, setEditorPreferences],
   );
 
   const handleConfirmCloseDraft = useCallback(() => {
@@ -496,11 +579,30 @@ function AppShell() {
     setActiveTool(null);
     setRenderedBasePageSizes({});
     setScrollToPageRequest(null);
+    clearDocumentTextFonts();
+    setDocumentFontOptions([]);
+    setEditorPreferences((currentPreferences) =>
+      isDocumentTextFontId(currentPreferences.textDefaults.fontId)
+        ? {
+            ...currentPreferences,
+            textDefaults: {
+              ...currentPreferences.textDefaults,
+              fontId: defaultTextOverlay.fontId,
+            },
+          }
+        : currentPreferences,
+    );
     exportedFileNamesRef.current = new Set();
     void clearStoredDraft().catch(() => {
       // Closing the visible draft should not be blocked by storage errors.
     });
-  }, [clearClipboardHistory, clearFile, clearOverlays, clearStoredDraft]);
+  }, [
+    clearClipboardHistory,
+    clearFile,
+    clearOverlays,
+    clearStoredDraft,
+    setEditorPreferences,
+  ]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -529,6 +631,10 @@ function AppShell() {
         exportedFileNamesRef.current,
       );
       const exportedBytes = await exportPdf({
+        documentFonts: documentFontOptions.filter(
+          (fontOption): fontOption is DocumentTextFontOption =>
+            fontOption.isAvailable,
+        ),
         imageAssets,
         originalPdfBytes: loadedDocument.bytes,
         overlays,
@@ -967,6 +1073,7 @@ function AppShell() {
           canCloseDraft={Boolean(loadedDocument) || overlays.length > 0}
           canRedo={canRedo}
           canUndo={canUndo}
+          documentFontOptions={documentFontOptions}
           fileName={loadedDocument?.fileName ?? null}
           imageAssets={recentImageAssets}
           isDark={isDark}

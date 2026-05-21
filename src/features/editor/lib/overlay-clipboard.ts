@@ -2,19 +2,13 @@ import type {
   EditorOverlay,
   EditorOverlayInput,
   PdfRect,
-  TextFontId,
 } from "@/features/editor/editor-types";
 import { isSupportedMarkType } from "@/features/editor/lib/mark-definitions";
+import { isSupportedTextFontId } from "@/features/editor/lib/text-font-id-utils";
 
 const APP_OVERLAY_MIME_TYPE = "web application/x-pdf-editor-overlay+json";
 const overlayPasteOffset = 12;
 const overlayClipboardVersion = 1;
-const supportedTextFontIds = new Set<TextFontId>([
-  "courier",
-  "helvetica",
-  "times-roman",
-]);
-
 type OverlayClipboardPayload = {
   overlay: EditorOverlayInput;
   sourceOverlayId: string;
@@ -189,7 +183,7 @@ function isOverlayInput(value: unknown): value is EditorOverlayInput {
       return (
         typeof value.color === "string" &&
         typeof value.fontId === "string" &&
-        supportedTextFontIds.has(value.fontId as TextFontId) &&
+        isSupportedTextFontId(value.fontId) &&
         isFiniteNumber(value.fontSize) &&
         typeof value.text === "string"
       );

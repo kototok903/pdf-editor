@@ -11,7 +11,11 @@ import type {
   TextOverlay,
   WhiteoutOverlay,
 } from "@/features/editor/editor-types";
-import { getTextFontOption } from "@/features/editor/lib/text-fonts";
+import {
+  getStandardTextFontOption,
+  type DocumentTextFontOption,
+  type DocumentTextFontSource,
+} from "@/features/editor/lib/text-fonts";
 import {
   hexToPdfRgb,
   rectToPdfPageRect,
@@ -24,13 +28,15 @@ import {
 } from "@/features/pdf-export/lib/export-text-utils";
 
 type ExportPdfOptions = {
+  documentFonts?: DocumentTextFontOption[];
   imageAssets: ImageAsset[];
   originalPdfBytes: ArrayBuffer;
   overlays: EditorOverlay[];
 };
 
 type ExportContext = {
-  fontCache: Map<TextFontId, PDFFont>;
+  documentFontsById: Map<TextFontId, DocumentTextFontOption>;
+  fontCache: Map<string, PDFFont>;
   fontkitRegistered: boolean;
   imageAssetsById: Map<string, ImageAsset>;
   imageCache: Map<string, Awaited<ReturnType<PDFDocument["embedPng"]>>>;
@@ -38,12 +44,16 @@ type ExportContext = {
 };
 
 async function exportPdf({
+  documentFonts = [],
   imageAssets,
   originalPdfBytes,
   overlays,
 }: ExportPdfOptions) {
   const pdfDocument = await PDFDocument.load(originalPdfBytes);
   const context: ExportContext = {
+    documentFontsById: new Map(
+      documentFonts.map((fontOption) => [fontOption.id, fontOption]),
+    ),
     fontCache: new Map(),
     fontkitRegistered: false,
     imageAssetsById: new Map(
@@ -81,6 +91,13 @@ async function drawTextOverlay(
   page: PDFPage,
   overlay: TextOverlay,
 ) {
+  const documentFontOption = context.documentFontsById.get(overlay.fontId);
+
+  if (documentFontOption) {
+    await drawDocumentTextOverlay(context, page, overlay, documentFontOption);
+    return;
+  }
+
   const { height: pageHeight } = page.getSize();
   const font = await getPdfFont(context, overlay.fontId);
   const baselineOffset = getTextBaselineOffset({
@@ -109,6 +126,61 @@ async function drawTextOverlay(
       x: position.x,
       y: position.y - index * lineHeight,
     });
+  }
+}
+
+async function drawDocumentTextOverlay(
+  context: ExportContext,
+  page: PDFPage,
+  overlay: TextOverlay,
+  fontOption: DocumentTextFontOption,
+) {
+  const { height: pageHeight } = page.getSize();
+  const primaryFont = await getPdfDocumentFontSource(
+    context,
+    fontOption,
+    fontOption.sources[0],
+  );
+  const fallbackFont = await getPdfFont(context, "helvetica");
+  const baselineOffset = getTextBaselineOffset({
+    fontAscent: primaryFont.heightAtSize(overlay.fontSize, {
+      descender: false,
+    }),
+    fontHeight: primaryFont.heightAtSize(overlay.fontSize),
+    fontSize: overlay.fontSize,
+  });
+  const position = textRectToPdfPosition(
+    overlay.rect,
+    pageHeight,
+    baselineOffset,
+  );
+  const lineHeight = getTextLineHeight(overlay.fontSize);
+  const lines = splitTextOverlayLines(overlay.text);
+
+  for (const [lineIndex, line] of lines.entries()) {
+    if (!line) {
+      continue;
+    }
+
+    let x = position.x;
+    const y = position.y - lineIndex * lineHeight;
+
+    for (const run of splitDocumentFontTextRuns(line, fontOption)) {
+      const font = run.source
+        ? await getPdfDocumentFontSource(context, fontOption, run.source)
+        : fallbackFont;
+
+      page.drawText(run.text, {
+        color: hexToPdfRgb(overlay.color),
+        font,
+        lineHeight,
+        size: overlay.fontSize,
+        x,
+        y,
+      });
+
+      x += font.widthOfTextAtSize(run.text, overlay.fontSize);
+    }
   }
 }
 
@@ -292,7 +364,7 @@ async function getPdfFont(context: ExportContext, fontId: TextFontId) {
     context.fontkitRegistered = true;
   }
 
-  const fontOption = getTextFontOption(fontId);
+  const fontOption = getStandardTextFontOption(fontId);
   const fontBytes = await fetch(fontOption.assetUrl).then((response) => {
     if (!response.ok) {
       throw new Error(`Unable to load ${fontOption.label} for export.`);
@@ -307,6 +379,79 @@ async function getPdfFont(context: ExportContext, fontId: TextFontId) {
   context.fontCache.set(fontId, font);
 
   return font;
+}
+
+async function getPdfDocumentFontSource(
+  context: ExportContext,
+  fontOption: DocumentTextFontOption,
+  source: DocumentTextFontSource,
+) {
+  const cacheKey = `${fontOption.id}:${source.fontName}`;
+  const cachedFont = context.fontCache.get(cacheKey);
+
+  if (cachedFont) {
+    return cachedFont;
+  }
+
+  if (!context.fontkitRegistered) {
+    context.pdfDocument.registerFontkit(fontkit);
+    context.fontkitRegistered = true;
+  }
+
+  const font = await context.pdfDocument.embedFont(source.bytes.slice(0), {
+    subset: false,
+  });
+
+  context.fontCache.set(cacheKey, font);
+
+  return font;
+}
+
+function splitDocumentFontTextRuns(
+  text: string,
+  fontOption: DocumentTextFontOption,
+) {
+  const runs: { source: DocumentTextFontSource | null; text: string }[] = [];
+  let currentSource: DocumentTextFontSource | null | undefined;
+  let currentText = "";
+
+  for (const character of text) {
+    const source = getDocumentFontSourceForCharacter(fontOption, character);
+
+    if (source !== currentSource) {
+      if (currentText) {
+        runs.push({ source: currentSource ?? null, text: currentText });
+      }
+
+      currentSource = source;
+      currentText = character;
+    } else {
+      currentText += character;
+    }
+  }
+
+  if (currentText) {
+    runs.push({ source: currentSource ?? null, text: currentText });
+  }
+
+  return runs;
+}
+
+function getDocumentFontSourceForCharacter(
+  fontOption: DocumentTextFontOption,
+  character: string,
+) {
+  const codePoint = character.codePointAt(0);
+
+  if (codePoint === undefined) {
+    return null;
+  }
+
+  return (
+    fontOption.sources.find((source) =>
+      source.supportedCodePoints.includes(codePoint),
+    ) ?? null
+  );
 }
 
 async function getPdfImage(context: ExportContext, asset: ImageAsset) {
