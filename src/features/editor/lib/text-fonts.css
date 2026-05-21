@@ -1,0 +1,26 @@
+@font-face {
+  font-family: "PdfEditorHelvetica";
+  font-display: block;
+  font-style: normal;
+  font-weight: 400;
+  src: url("../../../assets/fonts/pdf-standard/texgyreheros-regular.otf")
+    format("opentype");
+}
+
+@font-face {
+  font-family: "PdfEditorTimesRoman";
+  font-display: block;
+  font-style: normal;
+  font-weight: 400;
+  src: url("../../../assets/fonts/pdf-standard/texgyretermes-regular.otf")
+    format("opentype");
+}
+
+@font-face {
+  font-family: "PdfEditorCourier";
+  font-display: block;
+  font-style: normal;
+  font-weight: 400;
+  src: url("../../../assets/fonts/pdf-standard/texgyrecursor-regular.otf")
+    format("opentype");
+}

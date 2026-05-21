@@ -1,34 +1,50 @@
 import type { TextFontId } from "@/features/editor/editor-types";
+import helveticaFontUrl from "@/assets/fonts/pdf-standard/texgyreheros-regular.otf?url";
+import timesRomanFontUrl from "@/assets/fonts/pdf-standard/texgyretermes-regular.otf?url";
+import courierFontUrl from "@/assets/fonts/pdf-standard/texgyrecursor-regular.otf?url";
+import "@/features/editor/lib/text-fonts.css";
 
 type TextFontOption = {
+  assetUrl: string;
   cssFontFamily: string;
   id: TextFontId;
   label: string;
+  pdfFontName: string;
 };
 
 const textFontOptions: TextFontOption[] = [
   {
-    cssFontFamily: "Helvetica, Arial, sans-serif",
+    assetUrl: helveticaFontUrl,
+    cssFontFamily: "PdfEditorHelvetica, sans-serif",
     id: "helvetica",
     label: "Helvetica",
+    pdfFontName: "Helvetica",
   },
   {
-    cssFontFamily: "'Times New Roman', Times, serif",
+    assetUrl: timesRomanFontUrl,
+    cssFontFamily: "PdfEditorTimesRoman, serif",
     id: "times-roman",
     label: "Times Roman",
+    pdfFontName: "Times-Roman",
   },
   {
-    cssFontFamily: "'Courier New', Courier, monospace",
+    assetUrl: courierFontUrl,
+    cssFontFamily: "PdfEditorCourier, monospace",
     id: "courier",
     label: "Courier",
+    pdfFontName: "Courier",
   },
 ];
 
-function getTextFontFamily(fontId: TextFontId) {
+function getTextFontOption(fontId: TextFontId) {
   return (
-    textFontOptions.find((fontOption) => fontOption.id === fontId)
-      ?.cssFontFamily ?? textFontOptions[0].cssFontFamily
+    textFontOptions.find((fontOption) => fontOption.id === fontId) ??
+    textFontOptions[0]
   );
 }
 
-export { getTextFontFamily, textFontOptions };
+function getTextFontFamily(fontId: TextFontId) {
+  return getTextFontOption(fontId).cssFontFamily;
+}
+
+export { getTextFontFamily, getTextFontOption, textFontOptions };

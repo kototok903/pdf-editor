@@ -1,10 +1,5 @@
-import {
-  LineCapStyle,
-  PDFDocument,
-  StandardFonts,
-  type PDFFont,
-  type PDFPage,
-} from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
+import { LineCapStyle, PDFDocument, type PDFFont, type PDFPage } from "pdf-lib";
 
 import type {
   EditorOverlay,
@@ -16,6 +11,7 @@ import type {
   TextOverlay,
   WhiteoutOverlay,
 } from "@/features/editor/editor-types";
+import { getTextFontOption } from "@/features/editor/lib/text-fonts";
 import {
   hexToPdfRgb,
   rectToPdfPageRect,
@@ -35,6 +31,7 @@ type ExportPdfOptions = {
 
 type ExportContext = {
   fontCache: Map<TextFontId, PDFFont>;
+  fontkitRegistered: boolean;
   imageAssetsById: Map<string, ImageAsset>;
   imageCache: Map<string, Awaited<ReturnType<PDFDocument["embedPng"]>>>;
   pdfDocument: PDFDocument;
@@ -48,6 +45,7 @@ async function exportPdf({
   const pdfDocument = await PDFDocument.load(originalPdfBytes);
   const context: ExportContext = {
     fontCache: new Map(),
+    fontkitRegistered: false,
     imageAssetsById: new Map(
       imageAssets.map((imageAsset) => [imageAsset.id, imageAsset]),
     ),
@@ -289,21 +287,26 @@ async function getPdfFont(context: ExportContext, fontId: TextFontId) {
     return cachedFont;
   }
 
-  const font = await context.pdfDocument.embedFont(getStandardFont(fontId));
+  if (!context.fontkitRegistered) {
+    context.pdfDocument.registerFontkit(fontkit);
+    context.fontkitRegistered = true;
+  }
+
+  const fontOption = getTextFontOption(fontId);
+  const fontBytes = await fetch(fontOption.assetUrl).then((response) => {
+    if (!response.ok) {
+      throw new Error(`Unable to load ${fontOption.label} for export.`);
+    }
+
+    return response.arrayBuffer();
+  });
+  const font = await context.pdfDocument.embedFont(fontBytes, {
+    customName: fontOption.pdfFontName,
+    subset: false,
+  });
   context.fontCache.set(fontId, font);
 
   return font;
-}
-
-function getStandardFont(fontId: TextFontId) {
-  switch (fontId) {
-    case "courier":
-      return StandardFonts.Courier;
-    case "helvetica":
-      return StandardFonts.Helvetica;
-    case "times-roman":
-      return StandardFonts.TimesRoman;
-  }
 }
 
 async function getPdfImage(context: ExportContext, asset: ImageAsset) {
