@@ -15,10 +15,8 @@ type TooltipButtonProps = {
 function TooltipButton({ children, label, disabled }: TooltipButtonProps) {
   return (
     <Tooltip>
-      <TooltipTrigger disabled={disabled} asChild>
-        {children}
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent disabled={disabled}>{label}</TooltipContent>
     </Tooltip>
   );
 }

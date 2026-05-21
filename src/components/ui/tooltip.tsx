@@ -31,11 +31,16 @@ function TooltipTrigger({
 }
 
 function TooltipContent({
+  disabled,
   className,
   sideOffset = 0,
   children,
   ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+}: React.ComponentProps<typeof TooltipPrimitive.Content> & {
+  disabled?: boolean;
+}) {
+  if (disabled) return undefined;
+
   return (
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Content
