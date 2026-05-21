@@ -17,11 +17,7 @@ import type {
   MarkOverlayPatch,
   MarkType,
 } from "@/features/editor/editor-types";
-import {
-  getMarkLabel,
-  markDefinitions,
-} from "@/features/editor/lib/mark-definitions";
-import { cn } from "@/lib/utils";
+import { markDefinitions } from "@/features/editor/lib/mark-definitions";
 import { rgbArrayToHex } from "@/features/editor/lib/editor-utils";
 
 type MarkToolDropdownProps = {
@@ -92,20 +88,16 @@ function MarkToolDropdown({
                 {markDefinitions.map((definition) => (
                   <Button
                     aria-label={definition.label}
-                    className={cn(
-                      "h-11 px-0",
-                      definition.type === markType &&
-                        "border-primary bg-primary/10 dark:border-primary dark:bg-primary/20",
-                    )}
+                    className="h-11 p-0"
                     key={definition.type}
                     onClick={() => {
                       onSettingsChange({ markType: definition.type });
                       onMarkToolActivate();
                     }}
-                    size="sm"
-                    title={getMarkLabel(definition.type)}
                     type="button"
-                    variant="outline"
+                    variant={
+                      definition.type === markType ? "page-active" : "page"
+                    }
                   >
                     <MarkGlyph
                       className="size-6"

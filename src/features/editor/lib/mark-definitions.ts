@@ -23,13 +23,6 @@ const defaultMarkSettings = {
   markType: "check" as MarkType,
 };
 
-function getMarkLabel(markType: MarkType) {
-  return (
-    markDefinitions.find((definition) => definition.type === markType)?.label ??
-    "Mark"
-  );
-}
-
 function isSupportedMarkType(value: string): value is MarkType {
   return supportedMarkTypes.has(value as MarkType);
 }
@@ -85,7 +78,6 @@ export {
   createMarkSvgBlob,
   createMarkSvgMarkup,
   defaultMarkSettings,
-  getMarkLabel,
   isSupportedMarkType,
   markDefinitions,
 };

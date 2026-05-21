@@ -4,6 +4,7 @@ import type { ImageAsset } from "@/features/editor/editor-types";
 import {
   createImageAssetFromClipboardBlob,
   createImageAssetFromFile,
+  createImageAssetFromSignatureBlob,
   createImageAssetFromUrl,
   createImageSha256Signature,
 } from "@/features/editor/lib/image-asset-utils";
@@ -99,6 +100,36 @@ function useImageAssets() {
     return asset;
   }, []);
 
+  const addSignatureBlob = useCallback(
+    async (blob: Blob, name = "Signature.png") => {
+      const sha256Signature = await createImageSha256Signature(blob);
+      const existingAsset = imageAssetsRef.current.find(
+        (asset) =>
+          asset.source === "signature" &&
+          asset.sha256Signature === sha256Signature,
+      );
+
+      if (existingAsset) {
+        setImageAssets((currentAssets) =>
+          moveImageAssetToTop(currentAssets, existingAsset.id),
+        );
+
+        return existingAsset;
+      }
+
+      const asset = await createImageAssetFromSignatureBlob({
+        blob,
+        name,
+        sha256Signature,
+      });
+
+      setImageAssets((currentAssets) => [asset, ...currentAssets]);
+
+      return asset;
+    },
+    [],
+  );
+
   const hideImageAssetFromRecents = useCallback((assetId: string) => {
     setImageAssets((currentAssets) =>
       currentAssets.map((asset) =>
@@ -114,17 +145,22 @@ function useImageAssets() {
   }, []);
 
   const recentImageAssets = imageAssets.filter(
-    (asset) => !asset.isHiddenFromRecents,
+    (asset) => asset.source !== "signature" && !asset.isHiddenFromRecents,
+  );
+  const recentSignatureAssets = imageAssets.filter(
+    (asset) => asset.source === "signature" && !asset.isHiddenFromRecents,
   );
 
   return {
     addImageBlob,
     addImageFile,
     addImageUrl,
+    addSignatureBlob,
     hideImageAssetFromRecents,
     imageAssets,
     replaceImageAssets,
     recentImageAssets,
+    recentSignatureAssets,
     showImageAssetInRecents,
     upsertImageAssets,
   };
@@ -148,12 +184,17 @@ function dedupeImageAssets(imageAssets: ImageAsset[]) {
   const dedupedAssets: ImageAsset[] = [];
 
   for (const asset of imageAssets) {
-    if (seenSignatures.has(asset.sha256Signature)) {
+    const dedupeKey =
+      asset.source === "signature"
+        ? `signature:${asset.sha256Signature}`
+        : `image:${asset.sha256Signature}`;
+
+    if (seenSignatures.has(dedupeKey)) {
       URL.revokeObjectURL(asset.objectUrl);
       continue;
     }
 
-    seenSignatures.add(asset.sha256Signature);
+    seenSignatures.add(dedupeKey);
     dedupedAssets.push(asset);
   }
 

@@ -62,7 +62,7 @@ function buildOverlayClipboardWritePlan(
     eventItems.strings["text/plain"] = overlay.text;
   }
 
-  if (overlay.type === "image") {
+  if (overlay.type === "image" || overlay.type === "signature") {
     const asset = imageAssets.find(
       (imageAsset) => imageAsset.id === overlay.assetId,
     );

@@ -33,7 +33,7 @@ type ImageAsset = {
   name: string;
   objectUrl: string;
   sha256Signature: string;
-  source: "clipboard" | "upload" | "url";
+  source: "clipboard" | "signature" | "upload" | "url";
   width: number;
 };
 
@@ -41,6 +41,12 @@ type ImageOverlay = BaseOverlay & {
   assetId: string;
   sha256Signature: string;
   type: "image";
+};
+
+type SignatureOverlay = BaseOverlay & {
+  assetId: string;
+  sha256Signature: string;
+  type: "signature";
 };
 
 type MarkOverlay = BaseOverlay & {
@@ -55,12 +61,16 @@ type WhiteoutOverlay = BaseOverlay & {
 };
 
 type BasicOverlay = BaseOverlay & {
-  type: Exclude<OverlayType, "text" | "image" | "mark" | "whiteout">;
+  type: Exclude<
+    OverlayType,
+    "text" | "image" | "mark" | "signature" | "whiteout"
+  >;
 };
 
 type EditorOverlay =
   | TextOverlay
   | ImageOverlay
+  | SignatureOverlay
   | MarkOverlay
   | WhiteoutOverlay
   | BasicOverlay;
@@ -68,6 +78,7 @@ type EditorOverlay =
 type EditorOverlayInput =
   | Omit<TextOverlay, "id">
   | Omit<ImageOverlay, "id">
+  | Omit<SignatureOverlay, "id">
   | Omit<MarkOverlay, "id">
   | Omit<WhiteoutOverlay, "id">
   | {
@@ -105,6 +116,7 @@ export type {
   MarkType,
   OverlayType,
   PdfRect,
+  SignatureOverlay,
   TextOverlay,
   TextOverlayDefaults,
   TextOverlayPatch,

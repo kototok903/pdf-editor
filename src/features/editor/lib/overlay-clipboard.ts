@@ -99,6 +99,7 @@ function isSameOverlayClipboardPayload(
 function overlayToInput(overlay: EditorOverlay): EditorOverlayInput {
   switch (overlay.type) {
     case "image":
+    case "signature":
       return {
         assetId: overlay.assetId,
         pageNumber: overlay.pageNumber,
@@ -122,12 +123,6 @@ function overlayToInput(overlay: EditorOverlay): EditorOverlayInput {
         pageNumber: overlay.pageNumber,
         rect: overlay.rect,
         text: overlay.text,
-        type: overlay.type,
-      };
-    case "signature":
-      return {
-        pageNumber: overlay.pageNumber,
-        rect: overlay.rect,
         type: overlay.type,
       };
     case "whiteout":
@@ -179,6 +174,7 @@ function isOverlayInput(value: unknown): value is EditorOverlayInput {
 
   switch (value.type) {
     case "image":
+    case "signature":
       return (
         typeof value.assetId === "string" &&
         typeof value.sha256Signature === "string"
@@ -197,8 +193,6 @@ function isOverlayInput(value: unknown): value is EditorOverlayInput {
         isFiniteNumber(value.fontSize) &&
         typeof value.text === "string"
       );
-    case "signature":
-      return true;
     case "whiteout":
       return typeof value.color === "string";
     default:

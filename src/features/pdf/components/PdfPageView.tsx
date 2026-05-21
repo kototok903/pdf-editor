@@ -11,10 +11,12 @@ import type { PageSize, PDFDocumentProxy } from "@/features/pdf/pdf-types";
 
 type PdfPageViewProps = {
   activeImageAsset: ImageAsset | null;
+  activeSignatureAsset: ImageAsset | null;
   editingOverlayId: string | null;
   imageAssets: ImageAsset[];
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
+  isSignatureToolActive: boolean;
   isTextToolActive: boolean;
   isWhiteoutToolActive: boolean;
   onCancelActiveTool: () => void;
@@ -27,6 +29,7 @@ type PdfPageViewProps = {
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceMarkOverlay: (pageNumber: number, rect: PdfRect) => void;
+  onPlaceSignatureOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceWhiteoutOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
@@ -44,10 +47,12 @@ type PdfPageViewProps = {
 
 function PdfPageView({
   activeImageAsset,
+  activeSignatureAsset,
   editingOverlayId,
   imageAssets,
   isImageToolActive,
   isMarkToolActive,
+  isSignatureToolActive,
   isTextToolActive,
   isWhiteoutToolActive,
   onCancelActiveTool,
@@ -57,6 +62,7 @@ function PdfPageView({
   onPageSizeChange,
   onPlaceImageOverlay,
   onPlaceMarkOverlay,
+  onPlaceSignatureOverlay,
   onPlaceTextOverlay,
   onPlaceWhiteoutOverlay,
   onSelectOverlay,
@@ -201,10 +207,12 @@ function PdfPageView({
       {displayPageSize && (
         <OverlayLayer
           activeImageAsset={activeImageAsset}
+          activeSignatureAsset={activeSignatureAsset}
           editingOverlayId={editingOverlayId}
           imageAssets={imageAssets}
           isImageToolActive={isImageToolActive}
           isMarkToolActive={isMarkToolActive}
+          isSignatureToolActive={isSignatureToolActive}
           isTextToolActive={isTextToolActive}
           isWhiteoutToolActive={isWhiteoutToolActive}
           onCancelActiveTool={onCancelActiveTool}
@@ -212,6 +220,7 @@ function PdfPageView({
           onEditOverlay={onEditOverlay}
           onPlaceImageOverlay={onPlaceImageOverlay}
           onPlaceMarkOverlay={onPlaceMarkOverlay}
+          onPlaceSignatureOverlay={onPlaceSignatureOverlay}
           onPlaceTextOverlay={onPlaceTextOverlay}
           onPlaceWhiteoutOverlay={onPlaceWhiteoutOverlay}
           onSelectOverlay={onSelectOverlay}

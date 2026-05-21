@@ -49,6 +49,7 @@ type AddRenderableOverlay = (
 
 type UseEditorClipboardActionsOptions = {
   addImageBlob: (blob: Blob, sha256Signature?: string) => Promise<ImageAsset>;
+  addSignatureBlob: (blob: Blob, name?: string) => Promise<ImageAsset>;
   addRenderableOverlay: AddRenderableOverlay;
   currentPage: number;
   getCurrentPageSize: () => PageBounds | null;
@@ -62,6 +63,7 @@ type UseEditorClipboardActionsOptions = {
 
 function useEditorClipboardActions({
   addImageBlob,
+  addSignatureBlob,
   addRenderableOverlay,
   currentPage,
   getCurrentPageSize,
@@ -184,20 +186,23 @@ function useEditorClipboardActions({
       let renderableInput = input;
       let additionalRenderableImageAssetIds: string[] | undefined;
 
-      if (input.type === "image") {
+      if (input.type === "image" || input.type === "signature") {
         const existingAsset = imageAssets.find(
           (asset) => asset.id === input.assetId,
         );
 
         if (!existingAsset) {
           if (!intent.imageBlob) {
-            toast.error("Unable to paste image overlay", {
-              description: "The copied image data is not available.",
+            toast.error(`Unable to paste ${input.type} overlay`, {
+              description: `The copied ${input.type} data is not available.`,
             });
             return;
           }
 
-          const asset = await addImageBlob(intent.imageBlob);
+          const asset =
+            input.type === "signature"
+              ? await addSignatureBlob(intent.imageBlob)
+              : await addImageBlob(intent.imageBlob);
 
           renderableInput = {
             ...input,
@@ -221,6 +226,7 @@ function useEditorClipboardActions({
     },
     [
       addImageBlob,
+      addSignatureBlob,
       addRenderableOverlay,
       currentPage,
       getNextOverlayPaste,

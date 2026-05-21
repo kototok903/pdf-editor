@@ -10,12 +10,14 @@ import type { LoadedPdfDocument, PageSize } from "@/features/pdf/pdf-types";
 
 type PdfDocumentViewProps = {
   activeImageAsset: ImageAsset | null;
+  activeSignatureAsset: ImageAsset | null;
   currentPage: number;
   document: LoadedPdfDocument;
   editingOverlayId: string | null;
   imageAssets: ImageAsset[];
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
+  isSignatureToolActive: boolean;
   isTextToolActive: boolean;
   isWhiteoutToolActive: boolean;
   onCancelActiveTool: () => void;
@@ -28,6 +30,7 @@ type PdfDocumentViewProps = {
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceMarkOverlay: (pageNumber: number, rect: PdfRect) => void;
+  onPlaceSignatureOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceWhiteoutOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
@@ -42,12 +45,14 @@ type PdfDocumentViewProps = {
 
 function PdfDocumentView({
   activeImageAsset,
+  activeSignatureAsset,
   currentPage,
   document,
   editingOverlayId,
   imageAssets,
   isImageToolActive,
   isMarkToolActive,
+  isSignatureToolActive,
   isTextToolActive,
   isWhiteoutToolActive,
   onCancelActiveTool,
@@ -57,6 +62,7 @@ function PdfDocumentView({
   onPageSizeChange,
   onPlaceImageOverlay,
   onPlaceMarkOverlay,
+  onPlaceSignatureOverlay,
   onPlaceTextOverlay,
   onPlaceWhiteoutOverlay,
   onSelectOverlay,
@@ -73,10 +79,12 @@ function PdfDocumentView({
       {Array.from({ length: document.pageCount }, (_, index) => (
         <PdfPageView
           activeImageAsset={activeImageAsset}
+          activeSignatureAsset={activeSignatureAsset}
           editingOverlayId={editingOverlayId}
           imageAssets={imageAssets}
           isImageToolActive={isImageToolActive}
           isMarkToolActive={isMarkToolActive}
+          isSignatureToolActive={isSignatureToolActive}
           isTextToolActive={isTextToolActive}
           isWhiteoutToolActive={isWhiteoutToolActive}
           key={index + 1}
@@ -87,6 +95,7 @@ function PdfDocumentView({
           onPageSizeChange={onPageSizeChange}
           onPlaceImageOverlay={onPlaceImageOverlay}
           onPlaceMarkOverlay={onPlaceMarkOverlay}
+          onPlaceSignatureOverlay={onPlaceSignatureOverlay}
           onPlaceTextOverlay={onPlaceTextOverlay}
           onPlaceWhiteoutOverlay={onPlaceWhiteoutOverlay}
           onSelectOverlay={onSelectOverlay}

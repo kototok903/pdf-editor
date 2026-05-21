@@ -54,6 +54,23 @@ async function createImageAssetFromClipboardBlob(
   });
 }
 
+async function createImageAssetFromSignatureBlob({
+  blob,
+  name,
+  sha256Signature,
+}: {
+  blob: Blob;
+  name: string;
+  sha256Signature?: string;
+}): Promise<ImageAsset> {
+  return createImageAssetFromBlob({
+    blob,
+    name,
+    sha256Signature,
+    source: "signature",
+  });
+}
+
 async function createImageAssetFromUrl(url: string): Promise<ImageAsset> {
   const response = await fetch(url);
 
@@ -204,6 +221,7 @@ function loadImageDimensions(objectUrl: string) {
 export {
   createImageAssetFromClipboardBlob,
   createImageAssetFromFile,
+  createImageAssetFromSignatureBlob,
   createImageAssetFromUrl,
   createImageSha256Signature,
   findSupportedImageMimeType,

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import {
   ChevronDownIcon,
   FileDownIcon,
@@ -7,7 +7,6 @@ import {
   Layers2Icon,
   MoonIcon,
   Redo2Icon,
-  SignatureIcon,
   SunIcon,
   Undo2Icon,
   XIcon,
@@ -32,6 +31,8 @@ import { TextToolButton } from "@/features/editor/components/TextToolButton";
 import { ImageToolDropdown } from "@/features/editor/components/ImageToolDropdown";
 import { ImageUrlDialog } from "@/features/editor/components/ImageUrlDialog";
 import { MarkToolDropdown } from "@/features/editor/components/MarkToolDropdown";
+import { SignatureToolDropdown } from "@/features/editor/components/SignatureToolDropdown";
+import type { SignatureCreateInput } from "@/features/editor/components/SignatureCreateDialog";
 import type {
   ImageAsset,
   MarkOverlayPatch,
@@ -46,6 +47,7 @@ import { WhiteoutToolButton } from "@/features/editor/components/WhiteoutToolBut
 
 type EditorToolbarProps = {
   activeImageAssetId: string | null;
+  activeSignatureAssetId: string | null;
   fileName: string | null;
   imageAssets: ImageAsset[];
   isDark: boolean;
@@ -54,6 +56,7 @@ type EditorToolbarProps = {
   isPagesSidebarOpen: boolean;
   isMarkSettingsDefault: boolean;
   isMarkToolActive: boolean;
+  isSignatureToolActive: boolean;
   isTextSettingsDefault: boolean;
   isTextToolActive: boolean;
   isWhiteoutSettingsDefault: boolean;
@@ -65,12 +68,15 @@ type EditorToolbarProps = {
   onMarkToolActivate: () => void;
   onMarkToolClick: () => void;
   onCloseDraft: () => void;
+  onCreateSignature: (input: SignatureCreateInput) => Promise<boolean>;
   onExportPdf: () => void;
   onOpenFile: () => void;
   onOpenImageDialog: () => void;
   onRedo: () => void;
   onRemoveImageAssetFromRecents: (assetId: string) => void;
+  onRemoveSignatureAssetFromRecents: (assetId: string) => void;
   onSelectImageAsset: (assetId: string) => void;
+  onSelectSignatureAsset: (assetId: string) => void;
   onTextSettingsChange: (patch: TextOverlayPatch) => void;
   onTextSettingsReset: () => void;
   onTextToolClick: () => void;
@@ -84,6 +90,7 @@ type EditorToolbarProps = {
   onZoomIn: () => void;
   onZoomOut: () => void;
   pageCount: number;
+  signatureAssets: ImageAsset[];
   status: "empty" | "loading" | "loaded" | "error";
   canRedo: boolean;
   canUndo: boolean;
@@ -100,6 +107,7 @@ type EditorToolbarProps = {
 
 function EditorToolbar({
   activeImageAssetId,
+  activeSignatureAssetId,
   fileName,
   imageAssets,
   isDark,
@@ -108,6 +116,7 @@ function EditorToolbar({
   isPagesSidebarOpen,
   isMarkSettingsDefault,
   isMarkToolActive,
+  isSignatureToolActive,
   isTextSettingsDefault,
   isTextToolActive,
   isWhiteoutSettingsDefault,
@@ -117,6 +126,7 @@ function EditorToolbar({
   canCloseDraft,
   canUndo,
   onCloseDraft,
+  onCreateSignature,
   onExportPdf,
   onImportImageFromClipboard,
   onImportImageUrl,
@@ -128,7 +138,9 @@ function EditorToolbar({
   onOpenImageDialog,
   onRedo,
   onRemoveImageAssetFromRecents,
+  onRemoveSignatureAssetFromRecents,
   onSelectImageAsset,
+  onSelectSignatureAsset,
   onTextSettingsChange,
   onTextSettingsReset,
   onTextToolClick,
@@ -142,6 +154,7 @@ function EditorToolbar({
   onZoomIn,
   onZoomOut,
   pageCount,
+  signatureAssets,
   status,
   isExporting,
   textSettings,
@@ -270,10 +283,14 @@ function EditorToolbar({
           onSelectImageAsset={onSelectImageAsset}
           onUploadImage={onOpenImageDialog}
         />
-        <DropdownTool
-          disabled
-          label="Sign"
-          icon={<SignatureIcon aria-hidden="true" />}
+        <SignatureToolDropdown
+          activeSignatureAssetId={activeSignatureAssetId}
+          disabled={!hasPdf}
+          isSelected={isSignatureToolActive}
+          onCreateSignature={onCreateSignature}
+          onRemoveSignatureAssetFromRecents={onRemoveSignatureAssetFromRecents}
+          onSelectSignatureAsset={onSelectSignatureAsset}
+          signatureAssets={signatureAssets}
         />
 
         <TooltipButton label="Mark" disabled={!hasPdf}>
@@ -387,32 +404,6 @@ function EditorToolbar({
         open={isImageUrlDialogOpen}
       />
     </header>
-  );
-}
-
-function DropdownTool({
-  disabled,
-  icon,
-  label,
-}: {
-  disabled?: boolean;
-  icon: ReactNode;
-  label: string;
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button disabled={disabled} size="sm" type="button" variant="toolbar">
-          {icon}
-          {label}
-          <ChevronDownIcon aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-max min-w-40">
-        <DropdownMenuItem>{label} option</DropdownMenuItem>
-        <DropdownMenuItem>Manage {label.toLowerCase()}s</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }
 

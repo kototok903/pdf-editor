@@ -42,6 +42,20 @@ function createImageOverlay(
   };
 }
 
+function createSignatureOverlay(
+  patch: Partial<Extract<EditorOverlay, { type: "signature" }>> = {},
+): Extract<EditorOverlay, { type: "signature" }> {
+  return {
+    assetId: "signature-asset-1",
+    id: "overlay-signature-1",
+    pageNumber: 1,
+    rect: { height: 42, width: 160, x: 34, y: 44 },
+    sha256Signature: "signature-sha-1",
+    type: "signature",
+    ...patch,
+  };
+}
+
 describe("editor history", () => {
   it("commits present changes, clears redo, and restores with undo and redo", () => {
     const firstOverlay = createTextOverlay();
@@ -122,8 +136,11 @@ describe("editor history", () => {
       assetId: "image-2",
       id: "overlay-image-2",
     });
+    const signature = createSignatureOverlay({
+      assetId: "signature-asset-1",
+    });
     const committedHistory = commitEditorHistory(
-      createEditorHistory([firstImage], firstImage.id),
+      createEditorHistory([firstImage, signature], firstImage.id),
       createHistoryEntry([secondImage], secondImage.id),
     );
     const undoneHistory = undoEditorHistory(committedHistory);
@@ -131,6 +148,7 @@ describe("editor history", () => {
     expect([...getHistoryImageAssetIds(undoneHistory)].sort()).toEqual([
       "image-1",
       "image-2",
+      "signature-asset-1",
     ]);
   });
 });

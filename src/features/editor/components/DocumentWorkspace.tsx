@@ -33,6 +33,7 @@ import type {
 
 type DocumentWorkspaceProps = {
   activeImageAsset: ImageAsset | null;
+  activeSignatureAsset: ImageAsset | null;
   currentPage: number;
   document: LoadedPdfDocument | null;
   editingOverlayId: string | null;
@@ -40,6 +41,7 @@ type DocumentWorkspaceProps = {
   imageAssets: ImageAsset[];
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
+  isSignatureToolActive: boolean;
   isTextToolActive: boolean;
   isWhiteoutToolActive: boolean;
   onCancelActiveTool: () => void;
@@ -52,6 +54,7 @@ type DocumentWorkspaceProps = {
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceMarkOverlay: (pageNumber: number, rect: PdfRect) => void;
+  onPlaceSignatureOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceWhiteoutOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
@@ -73,6 +76,7 @@ type ScrollToPageRequest = {
 
 function DocumentWorkspace({
   activeImageAsset,
+  activeSignatureAsset,
   currentPage,
   document,
   editingOverlayId,
@@ -80,6 +84,7 @@ function DocumentWorkspace({
   imageAssets,
   isImageToolActive,
   isMarkToolActive,
+  isSignatureToolActive,
   isTextToolActive,
   isWhiteoutToolActive,
   onCancelActiveTool,
@@ -92,6 +97,7 @@ function DocumentWorkspace({
   onPageSizeChange,
   onPlaceImageOverlay,
   onPlaceMarkOverlay,
+  onPlaceSignatureOverlay,
   onPlaceTextOverlay,
   onPlaceWhiteoutOverlay,
   onSelectOverlay,
@@ -403,12 +409,14 @@ function DocumentWorkspace({
       {status === "loaded" && document && (
         <PdfDocumentView
           activeImageAsset={activeImageAsset}
+          activeSignatureAsset={activeSignatureAsset}
           currentPage={currentPage}
           document={document}
           editingOverlayId={editingOverlayId}
           imageAssets={imageAssets}
           isImageToolActive={isImageToolActive}
           isMarkToolActive={isMarkToolActive}
+          isSignatureToolActive={isSignatureToolActive}
           isTextToolActive={isTextToolActive}
           isWhiteoutToolActive={isWhiteoutToolActive}
           onCancelActiveTool={onCancelActiveTool}
@@ -418,6 +426,7 @@ function DocumentWorkspace({
           onPageSizeChange={onPageSizeChange}
           onPlaceImageOverlay={onPlaceImageOverlay}
           onPlaceMarkOverlay={onPlaceMarkOverlay}
+          onPlaceSignatureOverlay={onPlaceSignatureOverlay}
           onPlaceTextOverlay={onPlaceTextOverlay}
           onPlaceWhiteoutOverlay={onPlaceWhiteoutOverlay}
           onSelectOverlay={onSelectOverlay}

@@ -11,6 +11,7 @@ import type {
   ImageAsset,
   ImageOverlay,
   MarkOverlay,
+  SignatureOverlay,
   TextFontId,
   TextOverlay,
   WhiteoutOverlay,
@@ -65,7 +66,7 @@ async function exportPdf({
 
     if (overlay.type === "text") {
       await drawTextOverlay(context, page, overlay);
-    } else if (overlay.type === "image") {
+    } else if (overlay.type === "image" || overlay.type === "signature") {
       await drawImageOverlay(context, page, overlay);
     } else if (overlay.type === "mark") {
       drawMarkOverlay(page, overlay);
@@ -116,7 +117,7 @@ async function drawTextOverlay(
 async function drawImageOverlay(
   context: ExportContext,
   page: PDFPage,
-  overlay: ImageOverlay,
+  overlay: ImageOverlay | SignatureOverlay,
 ) {
   const asset = context.imageAssetsById.get(overlay.assetId);
 

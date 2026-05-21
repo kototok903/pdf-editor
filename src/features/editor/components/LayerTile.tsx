@@ -92,7 +92,8 @@ function OverlayPreview({
         </div>
       );
     }
-    case "image": {
+    case "image":
+    case "signature": {
       const asset = imageAssets.find(
         (imageAsset) => imageAsset.id === overlay.assetId,
       );

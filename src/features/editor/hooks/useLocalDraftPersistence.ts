@@ -178,7 +178,9 @@ function getPersistedDraftImageAssetIds(
 ) {
   const referencedImageAssetIds = new Set(
     overlays
-      .filter((overlay) => overlay.type === "image")
+      .filter(
+        (overlay) => overlay.type === "image" || overlay.type === "signature",
+      )
       .map((overlay) => overlay.assetId),
   );
 

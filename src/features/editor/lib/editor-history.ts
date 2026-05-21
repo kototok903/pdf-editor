@@ -1,6 +1,7 @@
 import type {
   EditorOverlay,
   ImageOverlay,
+  SignatureOverlay,
 } from "@/features/editor/editor-types";
 
 type EditorHistoryEntry = {
@@ -149,7 +150,7 @@ function getHistoryImageAssetIds(history: EditorHistoryState) {
 
   for (const entry of [...history.past, history.present, ...history.future]) {
     for (const overlay of entry.overlays) {
-      if (isImageOverlay(overlay)) {
+      if (isImageBackedOverlay(overlay)) {
         assetIds.add(overlay.assetId);
       }
     }
@@ -189,8 +190,10 @@ function getValidSelectedOverlayId(
     : null;
 }
 
-function isImageOverlay(overlay: EditorOverlay): overlay is ImageOverlay {
-  return overlay.type === "image";
+function isImageBackedOverlay(
+  overlay: EditorOverlay,
+): overlay is ImageOverlay | SignatureOverlay {
+  return overlay.type === "image" || overlay.type === "signature";
 }
 
 export {

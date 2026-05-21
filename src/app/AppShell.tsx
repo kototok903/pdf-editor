@@ -53,6 +53,9 @@ import {
   defaultTextOverlay,
   defaultWhiteoutOverlay,
 } from "@/features/editor/lib/overlay-defaults";
+import type { SignatureCreateInput } from "@/features/editor/components/SignatureCreateDialog";
+import { getSignatureFontOption } from "@/features/editor/lib/signature-fonts";
+import { rasterizeTypedSignature } from "@/features/editor/lib/signature-rasterizer";
 import {
   maxEditorZoom,
   minEditorZoom,
@@ -70,6 +73,7 @@ const zoomStep = 0.1;
 type ActiveTool =
   | { type: "image"; assetId: string }
   | { type: "mark" }
+  | { type: "signature"; assetId: string }
   | { type: "text" }
   | { type: "whiteout" }
   | null;
@@ -153,10 +157,12 @@ function AppShell() {
     addImageBlob,
     addImageFile,
     addImageUrl,
+    addSignatureBlob,
     hideImageAssetFromRecents,
     imageAssets,
     replaceImageAssets,
     recentImageAssets,
+    recentSignatureAssets,
     showImageAssetInRecents,
   } = useImageAssets();
   const { clearStoredDraft, hydrateLocalDraft } = useLocalDraftPersistence({
@@ -299,6 +305,10 @@ function AppShell() {
     activeTool?.type === "image"
       ? (imageAssets.find((asset) => asset.id === activeTool.assetId) ?? null)
       : null;
+  const activeSignatureAsset =
+    activeTool?.type === "signature"
+      ? (imageAssets.find((asset) => asset.id === activeTool.assetId) ?? null)
+      : null;
   const displayStatus =
     !isLocalDraftReady && status === "empty" ? "loading" : status;
 
@@ -379,7 +389,7 @@ function AppShell() {
       options?: { additionalRenderableImageAssetIds?: string[] },
     ) => {
       if (
-        input.type === "image" &&
+        (input.type === "image" || input.type === "signature") &&
         !imageAssets.some((asset) => asset.id === input.assetId) &&
         !options?.additionalRenderableImageAssetIds?.includes(input.assetId)
       ) {
@@ -389,7 +399,7 @@ function AppShell() {
       setActiveTool(null);
       handleEditOverlay(null);
 
-      if (input.type === "image") {
+      if (input.type === "image" || input.type === "signature") {
         showImageAssetInRecents(input.assetId);
       }
 
@@ -406,6 +416,7 @@ function AppShell() {
     handlePasteWithCurrentTextSettings,
   } = useEditorClipboardActions({
     addImageBlob,
+    addSignatureBlob,
     addRenderableOverlay,
     currentPage,
     getCurrentPageSize,
@@ -560,6 +571,39 @@ function AppShell() {
 
     setActiveTool({ assetId: asset.id, type: "image" });
     handleEditOverlay(null);
+  };
+
+  const handleCreateSignature = async ({
+    color,
+    fontId,
+    text,
+  }: SignatureCreateInput) => {
+    try {
+      const rasterizedSignature = await rasterizeTypedSignature({
+        color,
+        font: getSignatureFontOption(fontId),
+        text,
+      });
+      const asset = await addSignatureBlob(
+        rasterizedSignature.blob,
+        `${text}.png`,
+      );
+
+      setActiveTool({ assetId: asset.id, type: "signature" });
+      handleEditOverlay(null);
+      toast.success("Created signature", {
+        description: "Click a page to place it.",
+      });
+
+      return true;
+    } catch (error) {
+      toast.error("Unable to create signature", {
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+      });
+
+      return false;
+    }
   };
 
   const handleImportImageFromClipboard = () => {
@@ -744,6 +788,23 @@ function AppShell() {
     handleEditOverlay(null);
   };
 
+  const handlePlaceSignatureOverlay = (pageNumber: number, rect: PdfRect) => {
+    if (!activeSignatureAsset) {
+      return;
+    }
+
+    setCurrentPage(pageNumber);
+    addOverlay({
+      assetId: activeSignatureAsset.id,
+      pageNumber,
+      rect,
+      sha256Signature: activeSignatureAsset.sha256Signature,
+      type: "signature",
+    });
+    setActiveTool(null);
+    handleEditOverlay(null);
+  };
+
   const handlePlaceWhiteoutOverlay = (pageNumber: number, rect: PdfRect) => {
     setCurrentPage(pageNumber);
     addOverlay({
@@ -902,6 +963,7 @@ function AppShell() {
         />
         <EditorToolbar
           activeImageAssetId={activeImageAsset?.id ?? null}
+          activeSignatureAssetId={activeSignatureAsset?.id ?? null}
           canCloseDraft={Boolean(loadedDocument) || overlays.length > 0}
           canRedo={canRedo}
           canUndo={canUndo}
@@ -914,12 +976,14 @@ function AppShell() {
           isPagesSidebarOpen={isPagesSidebarOpen}
           isMarkSettingsDefault={isMarkSettingsDefault}
           isMarkToolActive={activeTool?.type === "mark"}
+          isSignatureToolActive={activeTool?.type === "signature"}
           isTextSettingsDefault={isTextSettingsDefault}
           isTextToolActive={activeTool?.type === "text"}
           isWhiteoutSettingsDefault={isWhiteoutSettingsDefault}
           isWhiteoutToolActive={activeTool?.type === "whiteout"}
           markSettings={currentMarkSettings}
           onCloseDraft={() => setIsCloseDraftDialogOpen(true)}
+          onCreateSignature={handleCreateSignature}
           onExportPdf={handleExportPdf}
           onImportImageUrl={handleImportImageUrl}
           onMarkSettingsChange={handleMarkSettingsChange}
@@ -931,9 +995,15 @@ function AppShell() {
           onOpenImageDialog={handleOpenImageDialog}
           onRedo={handleRedo}
           onRemoveImageAssetFromRecents={hideImageAssetFromRecents}
+          onRemoveSignatureAssetFromRecents={hideImageAssetFromRecents}
           onSelectImageAsset={(assetId) => {
             showImageAssetInRecents(assetId);
             setActiveTool({ assetId, type: "image" });
+            setEditingOverlayId(null);
+          }}
+          onSelectSignatureAsset={(assetId) => {
+            showImageAssetInRecents(assetId);
+            setActiveTool({ assetId, type: "signature" });
             setEditingOverlayId(null);
           }}
           onTextSettingsChange={handleTextSettingsChange}
@@ -958,6 +1028,7 @@ function AppShell() {
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           pageCount={loadedDocument?.pageCount ?? 0}
+          signatureAssets={recentSignatureAssets}
           status={displayStatus}
           textSettings={currentTextSettings}
           whiteoutSettings={currentWhiteoutSettings}
@@ -1005,9 +1076,11 @@ function AppShell() {
             editingOverlayId={editingOverlayId}
             error={error}
             activeImageAsset={activeImageAsset}
+            activeSignatureAsset={activeSignatureAsset}
             imageAssets={imageAssets}
             isImageToolActive={activeTool?.type === "image"}
             isMarkToolActive={activeTool?.type === "mark"}
+            isSignatureToolActive={activeTool?.type === "signature"}
             isTextToolActive={activeTool?.type === "text"}
             isWhiteoutToolActive={activeTool?.type === "whiteout"}
             onCancelActiveTool={handleClearActiveTool}
@@ -1020,6 +1093,7 @@ function AppShell() {
             onPageSizeChange={handlePageSizeChange}
             onPlaceImageOverlay={handlePlaceImageOverlay}
             onPlaceMarkOverlay={handlePlaceMarkOverlay}
+            onPlaceSignatureOverlay={handlePlaceSignatureOverlay}
             onPlaceTextOverlay={handlePlaceTextOverlay}
             onPlaceWhiteoutOverlay={handlePlaceWhiteoutOverlay}
             onSelectOverlay={handleSelectOverlay}

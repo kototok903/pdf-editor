@@ -31,6 +31,14 @@ describe("overlay clipboard helpers", () => {
         type: "image",
       },
       {
+        assetId: "signature-asset-1",
+        id: "signature-1",
+        pageNumber: 1,
+        rect: { height: 52, width: 180, x: 44, y: 52 },
+        sha256Signature: "signature-sha-1",
+        type: "signature",
+      },
+      {
         color: "#2563eb",
         id: "mark-1",
         markType: "check",
@@ -168,6 +176,22 @@ describe("overlay clipboard helpers", () => {
             type: "whiteout",
           },
           sourceOverlayId: "whiteout-1",
+          version: 1,
+        }),
+      ),
+    ).toBeNull();
+  });
+
+  it("rejects copied signature payloads without asset data", () => {
+    expect(
+      parseOverlayClipboardPayload(
+        JSON.stringify({
+          overlay: {
+            pageNumber: 1,
+            rect: { height: 52, width: 180, x: 44, y: 52 },
+            type: "signature",
+          },
+          sourceOverlayId: "signature-1",
           version: 1,
         }),
       ),

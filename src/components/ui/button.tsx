@@ -23,11 +23,14 @@ const buttonVariants = cva(
           "border-border bg-toolbar-button text-toolbar-foreground hover:bg-toolbar-button-hover aria-expanded:bg-toolbar-button-hover",
         "toolbar-active":
           "border-primary bg-primary text-primary-foreground hover:bg-primary aria-expanded:bg-primary",
+        page: "border-2 border-border bg-page/70 text-page-foreground hover:bg-page-muted aria-expanded:bg-page-muted",
+        "page-active":
+          "border-2 border-primary bg-page-active/60 text-page-foreground hover:bg-page-active/70 aria-expanded:bg-page-active/70",
       },
       size: {
         default:
           "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        sm: "h-[30px] gap-1.5 rounded-[min(var(--radius-md),8px)] px-2 text-[0.8125rem] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+        sm: "h-7.5 gap-1.5 rounded-[min(var(--radius-md),8px)] px-2 text-[0.8125rem] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
         xs: "h-7 gap-1 rounded-[min(var(--radius-md),8px)] px-1.5 text-xs has-data-[icon=inline-end]:pr-1 has-data-[icon=inline-start]:pl-1 [&_svg:not([class*='size-'])]:size-3",
       },
     },

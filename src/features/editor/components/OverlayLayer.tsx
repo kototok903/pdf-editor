@@ -21,10 +21,12 @@ import {
 
 type OverlayLayerProps = {
   activeImageAsset: ImageAsset | null;
+  activeSignatureAsset: ImageAsset | null;
   editingOverlayId: string | null;
   imageAssets: ImageAsset[];
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
+  isSignatureToolActive: boolean;
   isTextToolActive: boolean;
   isWhiteoutToolActive: boolean;
   onCancelActiveTool: () => void;
@@ -32,6 +34,7 @@ type OverlayLayerProps = {
   onEditOverlay: (overlayId: string | null) => void;
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceMarkOverlay: (pageNumber: number, rect: PdfRect) => void;
+  onPlaceSignatureOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceTextOverlay: (pageNumber: number, rect: PdfRect) => void;
   onPlaceWhiteoutOverlay: (pageNumber: number, rect: PdfRect) => void;
   onSelectOverlay: (overlayId: string) => void;
@@ -53,10 +56,12 @@ type WhiteoutDraft = {
 
 function OverlayLayer({
   activeImageAsset,
+  activeSignatureAsset,
   editingOverlayId,
   imageAssets,
   isImageToolActive,
   isMarkToolActive,
+  isSignatureToolActive,
   isTextToolActive,
   isWhiteoutToolActive,
   onCancelActiveTool,
@@ -64,6 +69,7 @@ function OverlayLayer({
   onEditOverlay,
   onPlaceImageOverlay,
   onPlaceMarkOverlay,
+  onPlaceSignatureOverlay,
   onPlaceTextOverlay,
   onPlaceWhiteoutOverlay,
   onSelectOverlay,
@@ -84,6 +90,7 @@ function OverlayLayer({
   const isPlacingOverlay =
     isImageToolActive ||
     isMarkToolActive ||
+    isSignatureToolActive ||
     isTextToolActive ||
     isWhiteoutToolActive;
   const whiteoutDraftRect = whiteoutDraft
@@ -100,6 +107,7 @@ function OverlayLayer({
       className={getOverlayLayerClassName({
         isImageToolActive,
         isMarkToolActive,
+        isSignatureToolActive,
         isTextToolActive,
         isWhiteoutToolActive,
       })}
@@ -145,6 +153,19 @@ function OverlayLayer({
             onPlaceMarkOverlay(
               pageNumber,
               createMarkOverlayRectAtPoint(point, pageSize),
+            );
+            return;
+          }
+
+          if (isSignatureToolActive && activeSignatureAsset) {
+            event.preventDefault();
+            onPlaceSignatureOverlay(
+              pageNumber,
+              createImageOverlayRectAtPoint(
+                point,
+                pageSize,
+                activeSignatureAsset,
+              ),
             );
             return;
           }
@@ -312,7 +333,9 @@ function OverlayLayer({
                 );
               }}
               lockAspectRatio={
-                overlay.type === "image" || overlay.type === "mark"
+                overlay.type === "image" ||
+                overlay.type === "mark" ||
+                overlay.type === "signature"
               }
               position={{ x: viewportRect.x, y: viewportRect.y }}
               resizeHandleStyles={isSelected ? resizeHandleStyles : undefined}
@@ -347,15 +370,22 @@ const handleStyle = {
 function getOverlayLayerClassName({
   isImageToolActive,
   isMarkToolActive,
+  isSignatureToolActive,
   isTextToolActive,
   isWhiteoutToolActive,
 }: {
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
+  isSignatureToolActive: boolean;
   isTextToolActive: boolean;
   isWhiteoutToolActive: boolean;
 }) {
-  if (isImageToolActive || isMarkToolActive || isWhiteoutToolActive) {
+  if (
+    isImageToolActive ||
+    isMarkToolActive ||
+    isSignatureToolActive ||
+    isWhiteoutToolActive
+  ) {
     return "absolute inset-0 cursor-crosshair";
   }
 
@@ -426,7 +456,11 @@ function getEnabledResizeHandles({
   isSelected: boolean;
   overlay: EditorOverlay;
 }) {
-  if (overlay.type === "image" || overlay.type === "mark") {
+  if (
+    overlay.type === "image" ||
+    overlay.type === "mark" ||
+    overlay.type === "signature"
+  ) {
     return isSelected ? cornerResizeHandles : false;
   }
 

@@ -35,6 +35,20 @@ function createImageOverlay(
   };
 }
 
+function createSignatureOverlay(
+  patch: Partial<Extract<EditorOverlay, { type: "signature" }>> = {},
+): Extract<EditorOverlay, { type: "signature" }> {
+  return {
+    assetId: "signature-1",
+    id: "overlay-signature-1",
+    pageNumber: 1,
+    rect: { height: 40, width: 160, x: 30, y: 40 },
+    sha256Signature: "signature-sha-1",
+    type: "signature",
+    ...patch,
+  };
+}
+
 describe("local draft persistence", () => {
   it("keeps hidden image assets referenced only by undo or redo history", () => {
     const imageAssets = [
@@ -55,5 +69,27 @@ describe("local draft persistence", () => {
     expect(
       getPersistedDraftImageAssetIds(imageAssets, [presentOverlay], history),
     ).toEqual(["present-image", "history-image"]);
+  });
+
+  it("keeps hidden signature assets referenced by overlays", () => {
+    const imageAssets = [
+      createImageAsset({
+        id: "signature-1",
+        isHiddenFromRecents: true,
+        source: "signature",
+      }),
+      createImageAsset({
+        id: "unused-signature",
+        isHiddenFromRecents: true,
+        source: "signature",
+      }),
+    ];
+    const signatureOverlay = createSignatureOverlay({
+      assetId: "signature-1",
+    });
+
+    expect(
+      getPersistedDraftImageAssetIds(imageAssets, [signatureOverlay]),
+    ).toEqual(["signature-1"]);
   });
 });
