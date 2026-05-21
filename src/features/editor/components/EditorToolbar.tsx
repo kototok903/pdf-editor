@@ -326,7 +326,7 @@ function EditorToolbar({
         <div className="ml-auto flex items-center gap-1">
           <TooltipButton label="Undo">
             <Button
-              className="w-[30px] px-0"
+              className="w-7.5 px-0"
               disabled={!canUndo}
               onClick={onUndo}
               size="sm"
@@ -338,7 +338,7 @@ function EditorToolbar({
           </TooltipButton>
           <TooltipButton label="Redo">
             <Button
-              className="w-[30px] px-0"
+              className="w-7.5 px-0"
               disabled={!canRedo}
               onClick={onRedo}
               size="sm"
@@ -353,7 +353,7 @@ function EditorToolbar({
 
           <TooltipButton label="Zoom out">
             <Button
-              className="w-[30px] px-0"
+              className="w-7.5 px-0"
               disabled={!hasPdf}
               onClick={onZoomOut}
               size="sm"
@@ -368,7 +368,7 @@ function EditorToolbar({
           </div>
           <TooltipButton label="Zoom in">
             <Button
-              className="w-[30px] px-0"
+              className="w-7.5 px-0"
               disabled={!hasPdf}
               onClick={onZoomIn}
               size="sm"
@@ -383,7 +383,7 @@ function EditorToolbar({
 
           <TooltipButton label={isDark ? "Use light theme" : "Use dark theme"}>
             <Button
-              className="w-[30px] px-0"
+              className="w-7.5 px-0"
               onClick={onToggleTheme}
               size="sm"
               type="button"
