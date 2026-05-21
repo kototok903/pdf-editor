@@ -45,6 +45,18 @@ function PdfTextLayer({
         }
 
         const viewport = page.getViewport({ scale });
+        textLayerContainer.style.setProperty(
+          "--scale-factor",
+          `${viewport.scale}`,
+        );
+        textLayerContainer.style.setProperty(
+          "--user-unit",
+          `${viewport.userUnit}`,
+        );
+        textLayerContainer.style.setProperty(
+          "--total-scale-factor",
+          "calc(var(--scale-factor) * var(--user-unit))",
+        );
         textLayer = new TextLayer({
           container: textLayerContainer,
           textContentSource: page.streamTextContent({
