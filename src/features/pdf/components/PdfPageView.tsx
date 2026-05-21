@@ -7,6 +7,8 @@ import type {
   PdfRect,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
+import { PdfTextLayer } from "@/features/pdf/components/PdfTextLayer";
+import { shouldClearOverlaySelectionOnPagePointerDown } from "@/features/pdf/lib/page-pointer-events";
 import type { PageSize, PDFDocumentProxy } from "@/features/pdf/pdf-types";
 
 type PdfPageViewProps = {
@@ -187,6 +189,18 @@ function PdfPageView({
   return (
     <article
       className="relative mx-auto overflow-hidden border bg-page text-page-foreground shadow-page"
+      onPointerDownCapture={(event) => {
+        if (
+          shouldClearOverlaySelectionOnPagePointerDown({
+            button: event.button,
+            currentTarget: event.currentTarget,
+            target: event.target,
+          })
+        ) {
+          onClearSelection();
+          onEditOverlay(null);
+        }
+      }}
       ref={articleRef}
       style={{
         minHeight: displayPageSize.height,
@@ -203,7 +217,13 @@ function PdfPageView({
           {error}
         </div>
       )}
-      <canvas ref={canvasRef} />
+      <canvas className="relative z-0 block" ref={canvasRef} />
+      <PdfTextLayer
+        pageNumber={pageNumber}
+        pdfDocument={pdfDocument}
+        scale={scale}
+        shouldRender={shouldRender}
+      />
       {displayPageSize && (
         <OverlayLayer
           activeImageAsset={activeImageAsset}

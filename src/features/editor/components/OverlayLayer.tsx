@@ -281,6 +281,7 @@ function OverlayLayer({
             />
             <Rnd
               bounds={boundsSelector}
+              data-editor-overlay-id={overlay.id}
               disableDragging={isEditing}
               enableResizing={enabledResizeHandles}
               onClick={(event: MouseEvent) => {
@@ -340,7 +341,7 @@ function OverlayLayer({
               position={{ x: viewportRect.x, y: viewportRect.y }}
               resizeHandleStyles={isSelected ? resizeHandleStyles : undefined}
               size={{ height: viewportRect.height, width: viewportRect.width }}
-              style={isPlacingOverlay ? inactiveOverlayStyle : undefined}
+              style={getOverlayInteractionStyle(isPlacingOverlay)}
             >
               <OverlayBox
                 imageAssets={imageAssets}
@@ -364,8 +365,9 @@ const handleStyle = {
   backgroundColor: "var(--primary)",
   border: "1px solid var(--primary-foreground)",
   height: "8px",
+  pointerEvents: "auto",
   width: "8px",
-};
+} as const;
 
 function getOverlayLayerClassName({
   isImageToolActive,
@@ -386,14 +388,14 @@ function getOverlayLayerClassName({
     isSignatureToolActive ||
     isWhiteoutToolActive
   ) {
-    return "absolute inset-0 cursor-crosshair";
+    return "pointer-events-auto absolute inset-0 z-20 cursor-crosshair";
   }
 
   if (isTextToolActive) {
-    return "absolute inset-0 cursor-text";
+    return "pointer-events-auto absolute inset-0 z-20 cursor-text";
   }
 
-  return "absolute inset-0";
+  return "pointer-events-none absolute inset-0 z-20";
 }
 
 function getViewportPageSizeFromElement(element: Element | null) {
@@ -429,6 +431,14 @@ function getPageSizeFromEventTarget(
 
 const inactiveOverlayStyle = {
   pointerEvents: "none",
+} as const;
+
+function getOverlayInteractionStyle(isPlacingOverlay: boolean) {
+  return isPlacingOverlay ? inactiveOverlayStyle : activeOverlayStyle;
+}
+
+const activeOverlayStyle = {
+  pointerEvents: "auto",
 } as const;
 
 function getOverlayBoundsSelector(overlayId: string) {
