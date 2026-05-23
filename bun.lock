@@ -8,13 +8,16 @@
         "@dnd-kit/dom": "^0.4.0",
         "@dnd-kit/react": "^0.4.0",
         "@fontsource-variable/geist": "^5.2.8",
+        "@fontsource/alex-brush": "^5.2.8",
         "@fontsource/allura": "^5.2.8",
         "@fontsource/caveat": "^5.2.8",
         "@fontsource/caveat-brush": "^5.2.8",
         "@fontsource/dancing-script": "^5.2.8",
         "@fontsource/homemade-apple": "^5.2.8",
+        "@fontsource/indie-flower": "^5.2.7",
         "@fontsource/kalam": "^5.2.8",
-        "@fontsource/patrick-hand": "^5.2.8",
+        "@fontsource/kaushan-script": "^5.2.8",
+        "@fontsource/permanent-marker": "^5.2.7",
         "@fontsource/reenie-beanie": "^5.2.8",
         "@fontsource/sacramento": "^5.2.8",
         "@fontsource/satisfy": "^5.2.7",
@@ -192,6 +195,8 @@
 
     "@fontsource-variable/geist": ["@fontsource-variable/geist@5.2.8", "", {}, "sha512-cJ6m9e+8MQ5dCYJsLylfZrgBh6KkG4bOLckB35Tr9J/EqdkEM6QllH5PxqP1dhTvFup+HtMRPuz9xOjxXJggxw=="],
 
+    "@fontsource/alex-brush": ["@fontsource/alex-brush@5.2.8", "", {}, "sha512-ShSsZkWN7O6H6x56Jc2c1d+YXDTCGIRBvLKiVIa7r3tyg6Ern56fN2xriAjNNBmvn37Y96XCkavrpERm/IRCEQ=="],
+
     "@fontsource/allura": ["@fontsource/allura@5.2.8", "", {}, "sha512-NzYZyYj/nET124bL0RfNDRdO2IXG+lhS5AzrwqpBHmovWznJ56t9u3w+RYR4iMa+WuCB6XFE6NTOQ4JzvCOq0A=="],
 
     "@fontsource/caveat": ["@fontsource/caveat@5.2.8", "", {}, "sha512-9fUUfFE2IQFKbx+xOcaeQxxmh8iJguEb8z+j1PeueO4UUx+XfT4pRm/B04ZDvFA794/iRxY/IibmP8ZKtIf4rw=="],
@@ -202,9 +207,13 @@
 
     "@fontsource/homemade-apple": ["@fontsource/homemade-apple@5.2.8", "", {}, "sha512-xFLXqk+q16Xt2UReeuWfKxdl2HawXJJyRMrsh6w3LZbKwpKcM0M5Nwi+npsDC3fzZQECSLzRnR+IECQqTWXfCA=="],
 
+    "@fontsource/indie-flower": ["@fontsource/indie-flower@5.2.7", "", {}, "sha512-vu9yEMW3Be2TXRkw2NYMLK1C4KQOUme3SUtqSha/wGzvBgzc2llT/lQ3bzZZ4aoCeF4x9ghGV+iwW+4hVr+Yhg=="],
+
     "@fontsource/kalam": ["@fontsource/kalam@5.2.8", "", {}, "sha512-9WDYPX1llS28xRjrqAoz3IOLeaBhCtL3HCtNanYnF1fthFPmSD5aESL6s7C1SJxAlxq/qzTlpIpw4S1W9+q3OA=="],
 
-    "@fontsource/patrick-hand": ["@fontsource/patrick-hand@5.2.8", "", {}, "sha512-FZx34VLuiF+Pjv/A/m1bTxjR6hAvmL6vdCp62uypVdgFvSrPrBOxX+vCXVy8lfNVFqvKfm/ghun+aaYVYqfBEg=="],
+    "@fontsource/kaushan-script": ["@fontsource/kaushan-script@5.2.8", "", {}, "sha512-iZ5n3EvASrFjJFdqIxW3snotnbIznnWiwy3UlIwgZmsOOfAckWJ0QPLKp5sj3jBHwsQ3NawvrIgKTQQrfbep4g=="],
+
+    "@fontsource/permanent-marker": ["@fontsource/permanent-marker@5.2.7", "", {}, "sha512-Lpjv3yD6TSRvcxjhdv4OZuNtEttbUgVNfFqAE8Qf7D1J8L97qZTZ8rj8OExX2ezCNv920psv+HBHvthAQxNE+A=="],
 
     "@fontsource/reenie-beanie": ["@fontsource/reenie-beanie@5.2.8", "", {}, "sha512-fDPSpU64a8rVtu5NKRogzKx/fukotfpcet8gFDzHYctRX3xIZ8MCbCGGS4XxJuwhSuhRJX59Ur0eU0QpBQpTZg=="],
 

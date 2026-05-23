@@ -1,10 +1,16 @@
+import "@fontsource/alex-brush/latin-400.css";
 import "@fontsource/allura/latin-400.css";
 import "@fontsource/caveat-brush/latin-400.css";
 import "@fontsource/caveat/latin-400.css";
 import "@fontsource/dancing-script/latin-400.css";
 import "@fontsource/homemade-apple/latin-400.css";
+import "@fontsource/indie-flower/latin-400.css";
 import "@fontsource/kalam/latin-400.css";
+import "@fontsource/kaushan-script/latin-400.css";
+import "@fontsource/lobster/latin-400.css";
+import "@fontsource/oleo-script/latin-400.css";
 import "@fontsource/patrick-hand/latin-400.css";
+import "@fontsource/permanent-marker/latin-400.css";
 import "@fontsource/reenie-beanie/latin-400.css";
 import "@fontsource/sacramento/latin-400.css";
 import "@fontsource/satisfy/latin-400.css";
@@ -12,13 +18,19 @@ import "@fontsource/shadows-into-light/latin-400.css";
 import "@fontsource/yellowtail/latin-400.css";
 
 type SignatureFontId =
+  | "alex-brush"
   | "allura"
   | "caveat"
   | "caveat-brush"
   | "dancing-script"
   | "homemade-apple"
+  | "indie-flower"
   | "kalam"
+  | "kaushan-script"
+  | "lobster"
+  | "oleo-script"
   | "patrick-hand"
+  | "permanent-marker"
   | "reenie-beanie"
   | "sacramento"
   | "satisfy"
@@ -73,6 +85,21 @@ const signatureFontOptions: SignatureFontOption[] = [
     label: "Kalam",
   },
   {
+    cssFontFamily: "'Kaushan Script', cursive",
+    id: "kaushan-script",
+    label: "Kaushan Script",
+  },
+  {
+    cssFontFamily: "'Alex Brush', cursive",
+    id: "alex-brush",
+    label: "Alex Brush",
+  },
+  {
+    cssFontFamily: "'Permanent Marker', cursive",
+    id: "permanent-marker",
+    label: "Permanent Marker",
+  },
+  {
     cssFontFamily: "'Homemade Apple', cursive",
     id: "homemade-apple",
     label: "Homemade Apple",
@@ -88,9 +115,9 @@ const signatureFontOptions: SignatureFontOption[] = [
     label: "Shadows Into Light",
   },
   {
-    cssFontFamily: "'Patrick Hand', cursive",
-    id: "patrick-hand",
-    label: "Patrick Hand",
+    cssFontFamily: "'Indie Flower', cursive",
+    id: "indie-flower",
+    label: "Indie Flower",
   },
 ];
 
