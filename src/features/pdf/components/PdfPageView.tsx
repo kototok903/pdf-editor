@@ -9,7 +9,15 @@ import type {
 } from "@/features/editor/editor-types";
 import { PdfTextLayer } from "@/features/pdf/components/PdfTextLayer";
 import { shouldClearOverlaySelectionOnPagePointerDown } from "@/features/pdf/lib/page-pointer-events";
-import type { PageSize, PDFDocumentProxy } from "@/features/pdf/pdf-types";
+import {
+  cleanupPdfRender,
+  type PdfRenderTask,
+} from "@/features/pdf/lib/pdf-render-cleanup";
+import type {
+  PageSize,
+  PDFDocumentProxy,
+  PDFPageProxy,
+} from "@/features/pdf/pdf-types";
 
 type PdfPageViewProps = {
   activeImageAsset: ImageAsset | null;
@@ -101,8 +109,8 @@ function PdfPageView({
   useEffect(() => {
     const canvas = canvasRef.current;
     let isCancelled = false;
-    let renderTask: { cancel: () => void; promise: Promise<void> } | null =
-      null;
+    let page: PDFPageProxy | null = null;
+    let renderTask: PdfRenderTask | null = null;
 
     if (!canvas) {
       return;
@@ -116,9 +124,14 @@ function PdfPageView({
 
     async function renderPage() {
       try {
-        const page = await pdfDocument.getPage(pageNumber);
+        page = await pdfDocument.getPage(pageNumber);
 
         if (isCancelled) {
+          try {
+            page.cleanup();
+          } catch {
+            // The document-level destroy path still releases remaining resources.
+          }
           return;
         }
 
@@ -182,7 +195,12 @@ function PdfPageView({
 
     return () => {
       isCancelled = true;
-      renderTask?.cancel();
+      cleanupPdfRender({
+        canvas: canvasElement,
+        page,
+        renderTask,
+      });
+      setRenderState(null);
     };
   }, [onPageSizeChange, pageNumber, pdfDocument, scale, shouldRender]);
 

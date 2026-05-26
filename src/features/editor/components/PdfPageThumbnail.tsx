@@ -4,7 +4,14 @@ import { MarkGlyph } from "@/features/editor/components/MarkGlyph";
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import { pdfRectToViewportRect } from "@/features/editor/lib/overlay-coordinate-utils";
 import { getTextFontFamily } from "@/features/editor/lib/text-fonts";
-import type { PDFDocumentProxy } from "@/features/pdf/pdf-types";
+import {
+  cleanupPdfRender,
+  type PdfRenderTask,
+} from "@/features/pdf/lib/pdf-render-cleanup";
+import type {
+  PDFDocumentProxy,
+  PDFPageProxy,
+} from "@/features/pdf/pdf-types";
 
 type PdfPageThumbnailProps = {
   imageAssets: ImageAsset[];
@@ -50,8 +57,8 @@ function PdfPageThumbnail({
   useEffect(() => {
     const canvas = canvasRef.current;
     let isCancelled = false;
-    let renderTask: { cancel: () => void; promise: Promise<void> } | null =
-      null;
+    let page: PDFPageProxy | null = null;
+    let renderTask: PdfRenderTask | null = null;
 
     if (!canvas) {
       return;
@@ -65,9 +72,14 @@ function PdfPageThumbnail({
 
     async function renderThumbnail() {
       try {
-        const page = await pdfDocument.getPage(pageNumber);
+        page = await pdfDocument.getPage(pageNumber);
 
         if (isCancelled) {
+          try {
+            page.cleanup();
+          } catch {
+            // The document-level destroy path still releases remaining resources.
+          }
           return;
         }
 
@@ -134,7 +146,12 @@ function PdfPageThumbnail({
 
     return () => {
       isCancelled = true;
-      renderTask?.cancel();
+      cleanupPdfRender({
+        canvas: canvasElement,
+        page,
+        renderTask,
+      });
+      setRenderState(null);
     };
   }, [pageNumber, pdfDocument, shouldRender]);
 

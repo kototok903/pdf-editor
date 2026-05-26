@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDroppable } from "@dnd-kit/react";
 
 import { PdfPageThumbnail } from "@/features/editor/components/PdfPageThumbnail";
@@ -8,6 +8,7 @@ import {
   pageDropType,
 } from "@/features/editor/components/sidebar-dnd";
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
+import { getSidebarThumbnailRenderPages } from "@/features/editor/lib/pages-sidebar-utils";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 import { cn } from "@/lib/utils";
 
@@ -35,13 +36,22 @@ function PagesSidebar({
     pages: Set<number>;
     pdfDocument: LoadedPdfDocument["pdfDocument"] | undefined;
   }>({
-    pages: new Set([currentPage]),
+    pages: new Set(),
     pdfDocument,
   });
-  const renderableThumbnailPages =
-    thumbnailPageState.pdfDocument === pdfDocument
-      ? thumbnailPageState.pages
-      : emptyPageSet;
+  const renderableThumbnailPages = useMemo(
+    () =>
+      getSidebarThumbnailRenderPages({
+        currentPage,
+        intersectingPages:
+          thumbnailPageState.pdfDocument === pdfDocument
+            ? thumbnailPageState.pages
+            : emptyPageSet,
+        overscan: sidebarCurrentPageThumbnailOverscan,
+        pageCount,
+      }),
+    [currentPage, pageCount, pdfDocument, thumbnailPageState],
+  );
   const pages = Array.from({ length: pageCount }, (_, index) => index + 1);
   const registerPageButton = useCallback(
     (pageNumber: number, element: HTMLButtonElement | null) => {
@@ -66,34 +76,37 @@ function PagesSidebar({
       return;
     }
 
+    const intersectingPages = new Set<number>();
     const observer = new IntersectionObserver(
       (entries) => {
-        const intersectingPageNumbers = entries
-          .filter((entry) => entry.isIntersecting)
-          .map((entry) =>
-            Number((entry.target as HTMLElement).dataset.pageNumber),
-          )
-          .filter(Number.isInteger);
+        let didChange = false;
 
-        if (intersectingPageNumbers.length === 0) {
+        for (const entry of entries) {
+          const pageNumber = Number(
+            (entry.target as HTMLElement).dataset.pageNumber,
+          );
+
+          if (!Number.isInteger(pageNumber)) {
+            continue;
+          }
+
+          if (entry.isIntersecting) {
+            if (!intersectingPages.has(pageNumber)) {
+              intersectingPages.add(pageNumber);
+              didChange = true;
+            }
+          } else if (intersectingPages.delete(pageNumber)) {
+            didChange = true;
+          }
+        }
+
+        if (!didChange) {
           return;
         }
 
-        setThumbnailPageState((currentState) => {
-          const nextPages = new Set(
-            currentState.pdfDocument === pdfDocument
-              ? currentState.pages
-              : [currentPage],
-          );
-
-          for (const pageNumber of intersectingPageNumbers) {
-            nextPages.add(pageNumber);
-          }
-
-          return {
-            pages: nextPages,
-            pdfDocument,
-          };
+        setThumbnailPageState({
+          pages: new Set(intersectingPages),
+          pdfDocument,
         });
       },
       {
@@ -109,7 +122,7 @@ function PagesSidebar({
     return () => {
       observer.disconnect();
     };
-  }, [currentPage, pageCount, pdfDocument]);
+  }, [pageCount, pdfDocument]);
 
   useEffect(() => {
     pageButtonRefs.current.get(currentPage)?.scrollIntoView({
@@ -142,9 +155,7 @@ function PagesSidebar({
               pageNumber={page}
               pdfDocument={document.pdfDocument}
               registerPageButton={registerPageButton}
-              shouldRenderThumbnail={
-                page === currentPage || renderableThumbnailPages.has(page)
-              }
+              shouldRenderThumbnail={renderableThumbnailPages.has(page)}
             />
           ))
         ) : (
@@ -227,5 +238,6 @@ function SidebarPageButton({
 }
 
 const emptyPageSet = new Set<number>();
+const sidebarCurrentPageThumbnailOverscan = 2;
 
 export { PagesSidebar };
