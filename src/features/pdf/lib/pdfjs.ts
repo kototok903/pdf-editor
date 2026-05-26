@@ -5,6 +5,8 @@ import {
 import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.mjs?url";
 import type { PDFDocumentProxy } from "pdfjs-dist/types/src/pdf";
 
+import { isDocumentFontExtractionEnabled } from "@/features/pdf/lib/pdf-font-extraction";
+
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 const pdfjsAssetBaseUrl = new URL(
@@ -18,7 +20,7 @@ async function loadPdfDocument(bytes: ArrayBuffer): Promise<PDFDocumentProxy> {
     cMapPacked: true,
     cMapUrl: `${pdfjsAssetBaseUrl}cmaps/`,
     data,
-    fontExtraProperties: true,
+    fontExtraProperties: isDocumentFontExtractionEnabled,
     iccUrl: `${pdfjsAssetBaseUrl}iccs/`,
     standardFontDataUrl: `${pdfjsAssetBaseUrl}standard_fonts/`,
     wasmUrl: `${pdfjsAssetBaseUrl}wasm/`,

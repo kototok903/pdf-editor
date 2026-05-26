@@ -1,7 +1,6 @@
-import fontkit from "@pdf-lib/fontkit";
-import { PDFDocument } from "pdf-lib";
-
 import type { PDFDocumentProxy } from "@/features/pdf/pdf-types";
+
+const isDocumentFontExtractionEnabled = false;
 
 type ExtractPdfFontsOptions = {
   pageCount: number;
@@ -160,6 +159,10 @@ async function validatePdfLibFont(bytes: ArrayBuffer | null) {
   }
 
   try {
+    const [{ default: fontkit }, { PDFDocument }] = await Promise.all([
+      import("@pdf-lib/fontkit"),
+      import("pdf-lib"),
+    ]);
     const pdfDocument = await PDFDocument.create();
     pdfDocument.registerFontkit(fontkit);
     await pdfDocument.embedFont(bytes.slice(0), { subset: false });
@@ -176,6 +179,7 @@ async function readSupportedCodePoints(bytes: ArrayBuffer | null) {
   }
 
   try {
+    const { default: fontkit } = await import("@pdf-lib/fontkit");
     const font = fontkit.create(new Uint8Array(bytes.slice(0)));
 
     return [...(font.characterSet ?? [])].sort((left, right) => left - right);
@@ -277,5 +281,10 @@ function getPrintableAsciiCodePoints() {
   return Array.from({ length: 95 }, (_, index) => index + 32);
 }
 
-export { extractPdfFonts, getAvailablePdfFonts, getUnavailablePdfFonts };
+export {
+  extractPdfFonts,
+  getAvailablePdfFonts,
+  getUnavailablePdfFonts,
+  isDocumentFontExtractionEnabled,
+};
 export type { AvailablePdfFont, ExtractedPdfFont };

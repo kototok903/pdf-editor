@@ -78,6 +78,7 @@ import {
   extractPdfFonts,
   getAvailablePdfFonts,
   getUnavailablePdfFonts,
+  isDocumentFontExtractionEnabled,
 } from "@/features/pdf/lib/pdf-font-extraction";
 import { scalePageSizes } from "@/features/pdf/lib/pdf-page-size-utils";
 import type { PageSize } from "@/features/pdf/pdf-types";
@@ -249,7 +250,7 @@ function AppShell() {
   useEffect(() => {
     clearDocumentTextFonts();
 
-    if (!loadedDocument) {
+    if (!loadedDocument || !isDocumentFontExtractionEnabled) {
       return;
     }
 
