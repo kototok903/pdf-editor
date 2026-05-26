@@ -5,7 +5,7 @@ import {
 import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.mjs?url";
 import type { PDFDocumentProxy } from "pdfjs-dist/types/src/pdf";
 
-import { isDocumentFontExtractionEnabled } from "@/features/pdf/lib/pdf-font-extraction";
+import { isDocumentFontExtractionEnabled } from "@/features/pdf/lib/pdf-font-extraction-config";
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 

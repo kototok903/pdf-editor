@@ -71,15 +71,9 @@ import {
 } from "@/features/editor/lib/text-fonts";
 import type { EditorHistoryEntry } from "@/features/editor/lib/editor-history";
 import { createExportFileName } from "@/features/pdf-export/lib/export-file-name";
-import { exportPdf } from "@/features/pdf-export/lib/export-pdf";
 import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
 import { usePdfPageSizes } from "@/features/pdf/hooks/usePdfPageSizes";
-import {
-  extractPdfFonts,
-  getAvailablePdfFonts,
-  getUnavailablePdfFonts,
-  isDocumentFontExtractionEnabled,
-} from "@/features/pdf/lib/pdf-font-extraction";
+import { isDocumentFontExtractionEnabled } from "@/features/pdf/lib/pdf-font-extraction-config";
 import { scalePageSizes } from "@/features/pdf/lib/pdf-page-size-utils";
 import type { PageSize } from "@/features/pdf/pdf-types";
 
@@ -257,6 +251,11 @@ function AppShell() {
     const abortController = new AbortController();
 
     const loadDocumentFonts = async () => {
+      const {
+        extractPdfFonts,
+        getAvailablePdfFonts,
+        getUnavailablePdfFonts,
+      } = await import("@/features/pdf/lib/pdf-font-extraction");
       const extractedFonts = await extractPdfFonts({
         pageCount: loadedDocument.pageCount,
         pdfDocument: loadedDocument.pdfDocument,
@@ -631,6 +630,7 @@ function AppShell() {
         loadedDocument.fileName,
         exportedFileNamesRef.current,
       );
+      const { exportPdf } = await import("@/features/pdf-export/lib/export-pdf");
       const exportedBytes = await exportPdf({
         documentFonts: documentFontOptions.filter(
           (fontOption): fontOption is DocumentTextFontOption =>

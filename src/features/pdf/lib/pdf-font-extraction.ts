@@ -1,7 +1,5 @@
 import type { PDFDocumentProxy } from "@/features/pdf/pdf-types";
 
-const isDocumentFontExtractionEnabled = false;
-
 type ExtractPdfFontsOptions = {
   pageCount: number;
   pdfDocument: PDFDocumentProxy;
@@ -285,6 +283,5 @@ export {
   extractPdfFonts,
   getAvailablePdfFonts,
   getUnavailablePdfFonts,
-  isDocumentFontExtractionEnabled,
 };
 export type { AvailablePdfFont, ExtractedPdfFont };
