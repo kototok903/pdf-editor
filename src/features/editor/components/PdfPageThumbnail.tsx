@@ -5,13 +5,11 @@ import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import { pdfRectToViewportRect } from "@/features/editor/lib/overlay-coordinate-utils";
 import { getTextFontFamily } from "@/features/editor/lib/text-fonts";
 import {
+  cleanupPdfPageResources,
   cleanupPdfRender,
   type PdfRenderTask,
 } from "@/features/pdf/lib/pdf-render-cleanup";
-import type {
-  PDFDocumentProxy,
-  PDFPageProxy,
-} from "@/features/pdf/pdf-types";
+import type { PDFDocumentProxy, PDFPageProxy } from "@/features/pdf/pdf-types";
 
 type PdfPageThumbnailProps = {
   imageAssets: ImageAsset[];
@@ -121,6 +119,7 @@ function PdfPageThumbnail({
             pdfDocument,
             status: "rendered",
           });
+          cleanupPdfPageResources(page);
         }
       } catch (error) {
         if (isCancelled) {

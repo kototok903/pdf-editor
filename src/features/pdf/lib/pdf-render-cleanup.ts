@@ -10,6 +10,18 @@ function releaseCanvasBitmap(canvas: HTMLCanvasElement) {
   canvas.height = 0;
 }
 
+function cleanupPdfPageResources(page: PDFPageProxy | null) {
+  if (!page) {
+    return;
+  }
+
+  try {
+    page.cleanup();
+  } catch {
+    // Cleanup is best-effort; a later document destroy still releases resources.
+  }
+}
+
 function cleanupPdfPageAfterRender({
   page,
   renderTask,
@@ -21,20 +33,15 @@ function cleanupPdfPageAfterRender({
     return;
   }
 
-  const cleanupPage = () => {
-    try {
-      page.cleanup();
-    } catch {
-      // Cleanup is best-effort; a later document destroy still releases resources.
-    }
-  };
-
   if (!renderTask) {
-    cleanupPage();
+    cleanupPdfPageResources(page);
     return;
   }
 
-  void renderTask.promise.then(cleanupPage, cleanupPage);
+  void renderTask.promise.then(
+    () => cleanupPdfPageResources(page),
+    () => cleanupPdfPageResources(page),
+  );
 }
 
 function cleanupPdfRender({
@@ -56,5 +63,5 @@ function cleanupPdfRender({
   cleanupPdfPageAfterRender({ page, renderTask });
 }
 
-export { cleanupPdfRender, releaseCanvasBitmap };
+export { cleanupPdfPageResources, cleanupPdfRender, releaseCanvasBitmap };
 export type { PdfRenderTask };

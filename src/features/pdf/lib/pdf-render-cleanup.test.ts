@@ -3,6 +3,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  cleanupPdfPageResources,
   cleanupPdfRender,
   releaseCanvasBitmap,
 } from "@/features/pdf/lib/pdf-render-cleanup";
@@ -54,6 +55,16 @@ describe("cleanupPdfRender", () => {
     resolveRender();
     await renderPromise;
     await Promise.resolve();
+
+    expect(cleanup).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("cleanupPdfPageResources", () => {
+  it("cleans page resources without requiring a render task", () => {
+    const cleanup = vi.fn();
+
+    cleanupPdfPageResources({ cleanup } as unknown as PDFPageProxy);
 
     expect(cleanup).toHaveBeenCalledTimes(1);
   });
