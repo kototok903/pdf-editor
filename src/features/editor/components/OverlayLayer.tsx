@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { flushSync } from "react-dom";
 import Moveable, {
   type OnDrag,
@@ -111,6 +117,7 @@ function OverlayLayer({
   const [selectedOverlayElement, setSelectedOverlayElement] =
     useState<HTMLDivElement | null>(null);
   const moveableRef = useRef<Moveable | null>(null);
+  const overlayLayerRef = useRef<HTMLDivElement | null>(null);
   const transformDraftRef = useRef<TransformDraft | null>(null);
   const pageOverlays = overlays.filter(
     (overlay) => overlay.pageNumber === pageNumber,
@@ -220,6 +227,8 @@ function OverlayLayer({
         isTextToolActive,
         isWhiteoutToolActive,
       })}
+      ref={overlayLayerRef}
+      style={getMoveableHandleOffsetStyle(selectedRotationDegrees)}
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) {
           const bounds = event.currentTarget.getBoundingClientRect();
@@ -503,6 +512,10 @@ function OverlayLayer({
             event.target,
             normalizeRotationDegrees(event.rotation),
           );
+          applyMoveableHandleOffsetStyle(
+            overlayLayerRef.current,
+            event.rotation,
+          );
         }}
         onRotateEnd={(event) => {
           const datas = event.datas as MoveableEventData;
@@ -531,6 +544,10 @@ function OverlayLayer({
           onSelectOverlay(selectedOverlay.id);
           onEditOverlay(null);
           event.set(rotationDegrees);
+          applyMoveableHandleOffsetStyle(
+            overlayLayerRef.current,
+            rotationDegrees,
+          );
           event.datas.overlayId = selectedOverlay.id;
           event.datas.startRotationDegrees = rotationDegrees;
         }}
@@ -718,6 +735,76 @@ function getMoveableCursorClassName(rotationDegrees: number) {
   return `editor-moveable-cursor-${cursorRotation}`;
 }
 
+type MoveableHandleOffsetStyle = CSSProperties & {
+  "--moveable-ne-offset-x": string;
+  "--moveable-ne-offset-y": string;
+  "--moveable-nw-offset-x": string;
+  "--moveable-nw-offset-y": string;
+  "--moveable-se-offset-x": string;
+  "--moveable-se-offset-y": string;
+  "--moveable-sw-offset-x": string;
+  "--moveable-sw-offset-y": string;
+};
+
+function getMoveableHandleOffsetStyle(
+  rotationDegrees: number,
+): MoveableHandleOffsetStyle {
+  const radians = (normalizeRotationDegrees(rotationDegrees) * Math.PI) / 180;
+  const nw = rotateVector(
+    -moveableCornerHandleOffset,
+    -moveableCornerHandleOffset,
+    radians,
+  );
+  const ne = rotateVector(
+    moveableCornerHandleOffset,
+    -moveableCornerHandleOffset,
+    radians,
+  );
+  const sw = rotateVector(
+    -moveableCornerHandleOffset,
+    moveableCornerHandleOffset,
+    radians,
+  );
+  const se = rotateVector(
+    moveableCornerHandleOffset,
+    moveableCornerHandleOffset,
+    radians,
+  );
+
+  return {
+    "--moveable-ne-offset-x": `${ne.x}px`,
+    "--moveable-ne-offset-y": `${ne.y}px`,
+    "--moveable-nw-offset-x": `${nw.x}px`,
+    "--moveable-nw-offset-y": `${nw.y}px`,
+    "--moveable-se-offset-x": `${se.x}px`,
+    "--moveable-se-offset-y": `${se.y}px`,
+    "--moveable-sw-offset-x": `${sw.x}px`,
+    "--moveable-sw-offset-y": `${sw.y}px`,
+  };
+}
+
+function applyMoveableHandleOffsetStyle(
+  element: HTMLElement | null,
+  rotationDegrees: number,
+) {
+  if (!element) {
+    return;
+  }
+
+  const offsetStyle = getMoveableHandleOffsetStyle(rotationDegrees);
+
+  for (const [property, value] of Object.entries(offsetStyle)) {
+    element.style.setProperty(property, value);
+  }
+}
+
+function rotateVector(x: number, y: number, radians: number) {
+  return {
+    x: x * Math.cos(radians) - y * Math.sin(radians),
+    y: x * Math.sin(radians) + y * Math.cos(radians),
+  };
+}
+
 function getPageSizeFromElement(element: HTMLElement | null, scale: number) {
   return getPageSizeFromEventTarget(element?.parentElement ?? null, scale);
 }
@@ -772,6 +859,7 @@ function clampViewportOverlayRect(
 }
 
 const minMoveableSideSize = 8;
+const moveableCornerHandleOffset = 6;
 const snapRotationDegrees = [0, 45, 90, 135, 180, 225, 270, 315, 360];
 
 export { OverlayLayer };

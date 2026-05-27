@@ -260,6 +260,30 @@ body {
 }
 
 .editor-moveable-controls.editor-moveable-controls
+  .moveable-control.moveable-direction.moveable-nw {
+  margin-top: calc(-4px + var(--moveable-nw-offset-y, 0px));
+  margin-left: calc(-4px + var(--moveable-nw-offset-x, 0px));
+}
+
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-control.moveable-direction.moveable-ne {
+  margin-top: calc(-4px + var(--moveable-ne-offset-y, 0px));
+  margin-left: calc(-4px + var(--moveable-ne-offset-x, 0px));
+}
+
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-control.moveable-direction.moveable-sw {
+  margin-top: calc(-4px + var(--moveable-sw-offset-y, 0px));
+  margin-left: calc(-4px + var(--moveable-sw-offset-x, 0px));
+}
+
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-control.moveable-direction.moveable-se {
+  margin-top: calc(-4px + var(--moveable-se-offset-y, 0px));
+  margin-left: calc(-4px + var(--moveable-se-offset-x, 0px));
+}
+
+.editor-moveable-controls.editor-moveable-controls
   .moveable-direction.moveable-direction.moveable-n,
 .editor-moveable-controls.editor-moveable-controls
   .moveable-direction.moveable-direction.moveable-s {
