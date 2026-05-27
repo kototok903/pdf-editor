@@ -40,10 +40,8 @@ function OverlayBox({
     return (
       <div
         className={cn(
-          "h-full w-full overflow-hidden border bg-transparent",
-          isSelected
-            ? "border-primary ring-2 ring-primary/25"
-            : "border-transparent hover:border-primary/50",
+          "h-full w-full overflow-hidden bg-transparent outline -outline-offset-1 outline-transparent",
+          !isSelected && "hover:outline-primary/50",
         )}
       >
         {asset ? (
@@ -66,10 +64,8 @@ function OverlayBox({
     return (
       <div
         className={cn(
-          "grid h-full w-full place-items-center overflow-hidden border bg-transparent",
-          isSelected
-            ? "border-primary ring-2 ring-primary/25"
-            : "border-transparent hover:border-primary/50",
+          "grid h-full w-full place-items-center overflow-hidden bg-transparent outline -outline-offset-1 outline-transparent",
+          !isSelected && "hover:outline-primary/50",
         )}
       >
         <MarkGlyph
@@ -85,10 +81,8 @@ function OverlayBox({
     return (
       <div
         className={cn(
-          "h-full w-full border",
-          isSelected
-            ? "border-primary ring-2 ring-primary/25"
-            : "border-transparent hover:border-primary/50",
+          "h-full w-full outline -outline-offset-1 outline-transparent",
+          !isSelected && "hover:outline-primary/50",
         )}
         style={{ backgroundColor: overlay.color }}
       />

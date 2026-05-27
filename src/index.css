@@ -260,6 +260,30 @@ body {
 }
 
 .editor-moveable-controls.editor-moveable-controls
+  .moveable-control.moveable-direction.moveable-nw {
+  margin-top: -10px;
+  margin-left: -10px;
+}
+
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-control.moveable-direction.moveable-ne {
+  margin-top: -10px;
+  margin-left: 2px;
+}
+
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-control.moveable-direction.moveable-sw {
+  margin-top: 2px;
+  margin-left: -10px;
+}
+
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-control.moveable-direction.moveable-se {
+  margin-top: 2px;
+  margin-left: 2px;
+}
+
+.editor-moveable-controls.editor-moveable-controls
   .moveable-direction.moveable-direction.moveable-n,
 .editor-moveable-controls.editor-moveable-controls
   .moveable-direction.moveable-direction.moveable-s {
