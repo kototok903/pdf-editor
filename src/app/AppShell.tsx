@@ -1157,6 +1157,7 @@ function AppShell() {
             onRequestWorkspacePageScroll={handleRequestWorkspacePageScroll}
             onStopEditingOverlay={handleStopEditingOverlay}
             overlays={overlays}
+            pageSizes={basePageSizes}
             replaceOverlays={replaceOverlays}
             selectedOverlayId={selectedOverlayId}
           >

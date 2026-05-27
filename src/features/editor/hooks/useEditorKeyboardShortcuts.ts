@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
 import type { EditorOverlay, PdfRect } from "@/features/editor/editor-types";
+import { getOverlayRotationDegrees } from "@/features/editor/lib/overlay-capabilities";
 import { nudgeOverlayRect } from "@/features/editor/lib/overlay-coordinate-utils";
 import type { PageSize } from "@/features/pdf/pdf-types";
 
@@ -227,14 +228,6 @@ function isRedoEvent(event: KeyboardEvent) {
 
 function isCommandOrControlEvent(event: KeyboardEvent, key: string) {
   return (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === key;
-}
-
-function getOverlayRotationDegrees(overlay: EditorOverlay) {
-  if (overlay.type !== "image" && overlay.type !== "signature") {
-    return 0;
-  }
-
-  return overlay.rotationDegrees ?? 0;
 }
 
 function isEditableTarget(target: EventTarget | null) {

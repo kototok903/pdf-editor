@@ -32,11 +32,13 @@ type SidebarDragDropProviderProps = {
     insertBelowOverlayId,
     overlayId,
     pageNumber,
+    targetPageSize,
     trackHistory,
   }: {
     insertBelowOverlayId?: string | null;
     overlayId: string;
     pageNumber: number;
+    targetPageSize?: { height: number; width: number } | null;
     trackHistory?: boolean;
   }) => void;
   onCommitHistoryFromBase: (baseEntry: EditorHistoryEntry) => void;
@@ -45,6 +47,7 @@ type SidebarDragDropProviderProps = {
   onRequestWorkspacePageScroll: (pageNumber: number) => void;
   onStopEditingOverlay: () => void;
   overlays: EditorOverlay[];
+  pageSizes: Record<number, { height: number; width: number }>;
   replaceOverlays: (
     nextOverlays: EditorOverlay[],
     nextSelectedOverlayId?: string | null,
@@ -62,6 +65,7 @@ function SidebarDragDropProvider({
   onRequestWorkspacePageScroll,
   onStopEditingOverlay,
   overlays,
+  pageSizes,
   replaceOverlays,
   selectedOverlayId,
 }: SidebarDragDropProviderProps) {
@@ -88,13 +92,18 @@ function SidebarDragDropProvider({
 
   const moveDraggedOverlayToPage = useCallback(
     (overlayId: string, pageNumber: number) => {
-      moveOverlayLayer({ overlayId, pageNumber, trackHistory: false });
+      moveOverlayLayer({
+        overlayId,
+        pageNumber,
+        targetPageSize: pageSizes[pageNumber] ?? null,
+        trackHistory: false,
+      });
       currentPageRef.current = pageNumber;
       onCurrentPageChange(pageNumber);
       onStopEditingOverlay();
       pendingWorkspaceScrollPageRef.current = pageNumber;
     },
-    [moveOverlayLayer, onCurrentPageChange, onStopEditingOverlay],
+    [moveOverlayLayer, onCurrentPageChange, onStopEditingOverlay, pageSizes],
   );
 
   const scheduleDraggedOverlayPageMove = useCallback(
@@ -244,6 +253,7 @@ function SidebarDragDropProvider({
             insertBelowOverlayId,
             overlayId: activeOverlayId,
             pageNumber,
+            targetPageSize: pageSizes[pageNumber] ?? null,
             trackHistory: false,
           });
         }
@@ -269,6 +279,7 @@ function SidebarDragDropProvider({
       onCurrentPageChange,
       onRequestWorkspacePageScroll,
       overlays,
+      pageSizes,
       replaceOverlays,
     ],
   );

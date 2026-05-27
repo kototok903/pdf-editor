@@ -9,6 +9,7 @@ import {
   TypeIcon,
 } from "lucide-react";
 import { MarkGlyph } from "@/features/editor/components/MarkGlyph";
+import { getOverlayRotationDegrees } from "@/features/editor/lib/overlay-capabilities";
 import { getTextFontFamily } from "@/features/editor/lib/text-fonts";
 
 const TYPE_ICON_STROKE_WIDTH = 2.5;
@@ -149,11 +150,7 @@ function OverlayPreview({
 }
 
 function getOverlayTransform(overlay: EditorOverlay) {
-  if (overlay.type !== "image" && overlay.type !== "signature") {
-    return undefined;
-  }
-
-  const rotationDegrees = overlay.rotationDegrees ?? 0;
+  const rotationDegrees = getOverlayRotationDegrees(overlay);
 
   return rotationDegrees === 0 ? undefined : `rotate(${rotationDegrees}deg)`;
 }

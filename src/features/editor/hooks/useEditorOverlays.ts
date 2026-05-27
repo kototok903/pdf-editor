@@ -23,6 +23,7 @@ import {
   type EditorHistoryState,
 } from "@/features/editor/lib/editor-history";
 import { moveOverlayToPageLayer } from "@/features/editor/lib/layer-sidebar-utils";
+import { isRotatableOverlay } from "@/features/editor/lib/overlay-capabilities";
 import { normalizeRotationDegrees } from "@/features/editor/lib/overlay-coordinate-utils";
 
 function createOverlayId() {
@@ -137,11 +138,13 @@ function useEditorOverlays() {
       insertBelowOverlayId,
       overlayId,
       pageNumber,
+      targetPageSize,
       trackHistory = true,
     }: {
       insertBelowOverlayId?: string | null;
       overlayId: string;
       pageNumber: number;
+      targetPageSize?: { height: number; width: number } | null;
       trackHistory?: boolean;
     }) => {
       const updateOverlays = (currentOverlays: EditorOverlay[]) =>
@@ -149,6 +152,7 @@ function useEditorOverlays() {
           insertBelowOverlayId,
           overlayId,
           pageNumber,
+          targetPageSize,
         });
 
       if (!trackHistory) {
@@ -189,8 +193,7 @@ function useEditorOverlays() {
       commitOverlayState(
         (currentOverlays) =>
           currentOverlays.map((overlay) =>
-            overlay.id === overlayId &&
-            (overlay.type === "image" || overlay.type === "signature")
+            overlay.id === overlayId && isRotatableOverlay(overlay)
               ? { ...overlay, rotationDegrees }
               : overlay,
           ),

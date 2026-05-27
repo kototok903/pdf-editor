@@ -34,6 +34,10 @@ import {
   pdfRectToViewportRect,
   viewportRectToPdfRect,
 } from "@/features/editor/lib/overlay-coordinate-utils";
+import {
+  getOverlayRotationDegrees,
+  isRotatableOverlay,
+} from "@/features/editor/lib/overlay-capabilities";
 
 type OverlayLayerProps = {
   activeImageAsset: ImageAsset | null;
@@ -153,9 +157,7 @@ function OverlayLayer({
     : false;
   const selectedRotationDegrees = getOverlayRotationDegrees(selectedOverlay);
   const canRotateSelectedOverlay =
-    canTransformSelectedOverlay && selectedOverlay
-      ? canRotateOverlay(selectedOverlay)
-      : false;
+    canTransformSelectedOverlay && isRotatableOverlay(selectedOverlay);
 
   function commitTransformDraft() {
     const draft = transformDraftRef.current;
@@ -707,18 +709,6 @@ function shouldKeepOverlayAspectRatio(overlay: EditorOverlay) {
     overlay.type === "mark" ||
     overlay.type === "signature"
   );
-}
-
-function canRotateOverlay(overlay: EditorOverlay) {
-  return overlay.type === "image" || overlay.type === "signature";
-}
-
-function getOverlayRotationDegrees(overlay: EditorOverlay | null) {
-  if (!overlay || (overlay.type !== "image" && overlay.type !== "signature")) {
-    return 0;
-  }
-
-  return normalizeRotationDegrees(overlay.rotationDegrees ?? 0);
 }
 
 function getOverlayTransform(overlay: EditorOverlay) {

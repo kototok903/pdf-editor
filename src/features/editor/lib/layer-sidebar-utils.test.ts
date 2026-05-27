@@ -85,6 +85,62 @@ describe("layer sidebar utils", () => {
     });
   });
 
+  it("clamps an overlay inside the loose bounds of a narrower target page", () => {
+    const nextOverlays = moveOverlayToPageLayer(
+      [
+        {
+          color: "#000000",
+          id: "wide-page-mark",
+          markType: "check",
+          pageNumber: 1,
+          rect: { height: 40, width: 100, x: 560, y: 30 },
+          type: "mark",
+        },
+      ],
+      {
+        overlayId: "wide-page-mark",
+        pageNumber: 2,
+        targetPageSize: { height: 800, width: 300 },
+      },
+    );
+
+    expect(nextOverlays[0]).toMatchObject({
+      pageNumber: 2,
+      rect: { height: 40, width: 100, x: 292, y: 30 },
+    });
+  });
+
+  it("does not clamp same-page layer reordering", () => {
+    const nextOverlays = moveOverlayToPageLayer(
+      [
+        {
+          color: "#000000",
+          id: "same-page-mark",
+          markType: "check",
+          pageNumber: 1,
+          rect: { height: 40, width: 100, x: 560, y: 30 },
+          type: "mark",
+        },
+        {
+          color: "#ffffff",
+          id: "same-page-whiteout",
+          pageNumber: 1,
+          rect: { height: 10, width: 10, x: 0, y: 0 },
+          type: "whiteout",
+        },
+      ],
+      {
+        overlayId: "same-page-mark",
+        pageNumber: 1,
+        targetPageSize: { height: 800, width: 300 },
+      },
+    );
+
+    expect(
+      nextOverlays.find((overlay) => overlay.id === "same-page-mark")?.rect,
+    ).toEqual({ height: 40, width: 100, x: 560, y: 30 });
+  });
+
   it("returns the existing overlays when the reference overlay is invalid", () => {
     expect(
       moveOverlayToPageLayer(overlays, {

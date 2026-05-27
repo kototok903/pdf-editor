@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { MarkGlyph } from "@/features/editor/components/MarkGlyph";
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
+import { getOverlayRotationDegrees } from "@/features/editor/lib/overlay-capabilities";
 import { pdfRectToViewportRect } from "@/features/editor/lib/overlay-coordinate-utils";
 import { getTextFontFamily } from "@/features/editor/lib/text-fonts";
 import {
@@ -229,11 +230,7 @@ function ThumbnailOverlayLayer({
 }
 
 function getOverlayTransform(overlay: EditorOverlay) {
-  if (overlay.type !== "image" && overlay.type !== "signature") {
-    return undefined;
-  }
-
-  const rotationDegrees = overlay.rotationDegrees ?? 0;
+  const rotationDegrees = getOverlayRotationDegrees(overlay);
 
   return rotationDegrees === 0 ? undefined : `rotate(${rotationDegrees}deg)`;
 }

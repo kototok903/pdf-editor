@@ -1,9 +1,12 @@
 import type { EditorOverlay } from "@/features/editor/editor-types";
+import { getOverlayRotationDegrees } from "@/features/editor/lib/overlay-capabilities";
+import { clampMovedOverlayRect } from "@/features/editor/lib/overlay-coordinate-utils";
 
 type MoveOverlayToPageLayerOptions = {
   insertBelowOverlayId?: string | null;
   overlayId: string;
   pageNumber: number;
+  targetPageSize?: { height: number; width: number } | null;
 };
 
 function getPageLayerOverlays(overlays: EditorOverlay[], pageNumber: number) {
@@ -18,6 +21,7 @@ function moveOverlayToPageLayer(
     insertBelowOverlayId,
     overlayId,
     pageNumber,
+    targetPageSize,
   }: MoveOverlayToPageLayerOptions,
 ) {
   if (overlayId === insertBelowOverlayId) {
@@ -33,7 +37,19 @@ function moveOverlayToPageLayer(
   const remainingOverlays = overlays.filter(
     (overlay) => overlay.id !== overlayId,
   );
-  const movedOverlay = { ...overlayToMove, pageNumber };
+  const movedOverlay = {
+    ...overlayToMove,
+    pageNumber,
+    rect:
+      targetPageSize && overlayToMove.pageNumber !== pageNumber
+        ? clampMovedOverlayRect(
+            overlayToMove.rect,
+            targetPageSize,
+            undefined,
+            getOverlayRotationDegrees(overlayToMove),
+          )
+        : overlayToMove.rect,
+  };
   const insertBelowOverlayIndex =
     insertBelowOverlayId == null
       ? -1
