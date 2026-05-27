@@ -3,10 +3,13 @@ import { flushSync } from "react-dom";
 import Moveable, {
   type OnDrag,
   type OnDragStart,
+  type OnRotate,
+  type OnRotateStart,
   type OnResize,
   type OnResizeStart,
 } from "react-moveable";
 
+import { cn } from "@/lib/utils";
 import type {
   EditorOverlay,
   ImageAsset,
@@ -21,6 +24,7 @@ import {
   createMarkOverlayRectAtPoint,
   createOverlayRectAtPoint,
   createRectFromDragPoints,
+  normalizeRotationDegrees,
   pdfRectToViewportRect,
   viewportRectToPdfRect,
 } from "@/features/editor/lib/overlay-coordinate-utils";
@@ -46,6 +50,7 @@ type OverlayLayerProps = {
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
+  onUpdateOverlayRotation: (overlayId: string, rotationDegrees: number) => void;
   overlays: EditorOverlay[];
   pageNumber: number;
   scale: number;
@@ -67,7 +72,9 @@ type TransformDraft = {
 
 type MoveableEventData = {
   overlayId?: string;
+  rotationDegrees?: number;
   startRect?: ViewportRect;
+  startRotationDegrees?: number;
 };
 
 function OverlayLayer({
@@ -91,6 +98,7 @@ function OverlayLayer({
   onSelectOverlay,
   onUpdateTextOverlay,
   onUpdateOverlayRect,
+  onUpdateOverlayRotation,
   overlays,
   pageNumber,
   scale,
@@ -136,8 +144,13 @@ function OverlayLayer({
   const selectedKeepRatio = selectedOverlay
     ? shouldKeepOverlayAspectRatio(selectedOverlay)
     : false;
+  const selectedRotationDegrees = getOverlayRotationDegrees(selectedOverlay);
+  const canRotateSelectedOverlay =
+    canTransformSelectedOverlay && selectedOverlay
+      ? canRotateOverlay(selectedOverlay)
+      : false;
 
-  const commitTransformDraft = useCallback(() => {
+  function commitTransformDraft() {
     const draft = transformDraftRef.current;
 
     if (!draft) {
@@ -152,13 +165,14 @@ function OverlayLayer({
         viewportRectToPdfRect(draft.rect, scale),
         pageSize,
         minVisibleOverlayViewportSize / scale,
+        selectedRotationDegrees,
       ),
     );
     transformDraftRef.current = null;
     requestAnimationFrame(() => {
       moveableRef.current?.updateRect();
     });
-  }, [onUpdateOverlayRect, scale, selectedOverlayElement]);
+  }
 
   function getSelectedViewportRect() {
     if (!selectedOverlay) {
@@ -187,6 +201,7 @@ function OverlayLayer({
     editingOverlayId,
     isPlacingOverlay,
     scale,
+    selectedRotationDegrees,
     selectedOverlay?.rect.height,
     selectedOverlay?.rect.width,
     selectedOverlay?.rect.x,
@@ -402,12 +417,13 @@ function OverlayLayer({
             }}
             ref={isSelected ? setSelectedOverlayRef : undefined}
             style={{
-              cursor:
-                isPlacingOverlay || isEditing ? undefined : "all-scroll",
+              cursor: isPlacingOverlay || isEditing ? undefined : "all-scroll",
               height: viewportRect.height,
               left: viewportRect.x,
               pointerEvents: isPlacingOverlay ? "none" : "auto",
               top: viewportRect.y,
+              transform: getOverlayTransform(overlay),
+              transformOrigin: "center center",
               width: viewportRect.width,
             }}
           >
@@ -425,7 +441,10 @@ function OverlayLayer({
         );
       })}
       <Moveable
-        className="editor-moveable-controls"
+        className={cn(
+          "editor-moveable-controls",
+          getMoveableCursorClassName(selectedRotationDegrees),
+        )}
         container={null}
         draggable={canTransformSelectedOverlay}
         edge={false}
@@ -446,6 +465,7 @@ function OverlayLayer({
             },
             event.target,
             scale,
+            datas.rotationDegrees,
           );
           const nextDraft = {
             overlayId: datas.overlayId,
@@ -468,7 +488,51 @@ function OverlayLayer({
           onSelectOverlay(selectedOverlay.id);
           onEditOverlay(null);
           event.datas.overlayId = selectedOverlay.id;
+          event.datas.rotationDegrees =
+            getOverlayRotationDegrees(selectedOverlay);
           event.datas.startRect = selectedRect;
+        }}
+        onRotate={(event: OnRotate) => {
+          const datas = event.datas as MoveableEventData;
+
+          if (!datas.overlayId) {
+            return;
+          }
+
+          applyRotationToElement(
+            event.target,
+            normalizeRotationDegrees(event.rotation),
+          );
+        }}
+        onRotateEnd={(event) => {
+          const datas = event.datas as MoveableEventData;
+
+          if (!datas.overlayId || datas.startRotationDegrees === undefined) {
+            return;
+          }
+
+          onUpdateOverlayRotation(
+            datas.overlayId,
+            normalizeRotationDegrees(
+              event.lastEvent?.rotation ?? datas.startRotationDegrees,
+            ),
+          );
+          requestAnimationFrame(() => {
+            moveableRef.current?.updateRect();
+          });
+        }}
+        onRotateStart={(event: OnRotateStart) => {
+          if (!selectedOverlay) {
+            return;
+          }
+
+          const rotationDegrees = getOverlayRotationDegrees(selectedOverlay);
+
+          onSelectOverlay(selectedOverlay.id);
+          onEditOverlay(null);
+          event.set(rotationDegrees);
+          event.datas.overlayId = selectedOverlay.id;
+          event.datas.startRotationDegrees = rotationDegrees;
         }}
         onResize={(event: OnResize) => {
           const datas = event.datas as MoveableEventData;
@@ -486,6 +550,7 @@ function OverlayLayer({
             },
             event.target,
             scale,
+            datas.rotationDegrees,
           );
           const nextDraft = {
             overlayId: datas.overlayId,
@@ -509,14 +574,22 @@ function OverlayLayer({
           onEditOverlay(null);
           event.setMin([minMoveableSideSize, minMoveableSideSize]);
           event.datas.overlayId = selectedOverlay.id;
+          event.datas.rotationDegrees =
+            getOverlayRotationDegrees(selectedOverlay);
           event.datas.startRect = selectedRect;
         }}
         origin={false}
         ref={moveableRef}
         renderDirections={selectedRenderDirections}
         resizable={canResizeSelectedOverlay}
+        rotatable={canRotateSelectedOverlay}
+        rotationPosition="top"
+        snappable={canRotateSelectedOverlay ? ["rotatable"] : false}
+        snapRotationDegrees={snapRotationDegrees}
+        snapRotationThreshold={5}
         target={selectedOverlayElement}
         throttleDrag={0}
+        throttleRotate={1}
         throttleResize={1}
         zoom={1}
       />
@@ -619,6 +692,32 @@ function shouldKeepOverlayAspectRatio(overlay: EditorOverlay) {
   );
 }
 
+function canRotateOverlay(overlay: EditorOverlay) {
+  return overlay.type === "image" || overlay.type === "signature";
+}
+
+function getOverlayRotationDegrees(overlay: EditorOverlay | null) {
+  if (!overlay || (overlay.type !== "image" && overlay.type !== "signature")) {
+    return 0;
+  }
+
+  return normalizeRotationDegrees(overlay.rotationDegrees ?? 0);
+}
+
+function getOverlayTransform(overlay: EditorOverlay) {
+  const rotationDegrees = getOverlayRotationDegrees(overlay);
+
+  return rotationDegrees === 0 ? undefined : `rotate(${rotationDegrees}deg)`;
+}
+
+function getMoveableCursorClassName(rotationDegrees: number) {
+  const cursorRotation = normalizeRotationDegrees(
+    Math.round(rotationDegrees / 45) * 45,
+  );
+
+  return `editor-moveable-cursor-${cursorRotation}`;
+}
+
 function getPageSizeFromElement(element: HTMLElement | null, scale: number) {
   return getPageSizeFromEventTarget(element?.parentElement ?? null, scale);
 }
@@ -637,10 +736,24 @@ function applyViewportRectToElement(
   element.style.width = `${rect.width}px`;
 }
 
+function applyRotationToElement(
+  element: HTMLElement | SVGElement,
+  rotationDegrees: number,
+) {
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+
+  element.style.transform =
+    rotationDegrees === 0 ? "" : `rotate(${rotationDegrees}deg)`;
+  element.style.transformOrigin = "center center";
+}
+
 function clampViewportOverlayRect(
   rect: ViewportRect,
   element: HTMLElement | SVGElement,
   scale: number,
+  rotationDegrees = 0,
 ) {
   const pageSize = getPageSizeFromElement(
     element instanceof HTMLElement ? element : null,
@@ -652,11 +765,13 @@ function clampViewportOverlayRect(
       viewportRectToPdfRect(rect, scale),
       pageSize,
       minVisibleOverlayViewportSize / scale,
+      rotationDegrees,
     ),
     scale,
   );
 }
 
 const minMoveableSideSize = 8;
+const snapRotationDegrees = [0, 45, 90, 135, 180, 225, 270, 315, 360];
 
 export { OverlayLayer };

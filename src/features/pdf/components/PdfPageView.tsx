@@ -45,6 +45,7 @@ type PdfPageViewProps = {
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
+  onUpdateOverlayRotation: (overlayId: string, rotationDegrees: number) => void;
   overlays: EditorOverlay[];
   pageSize: PageSize;
   pageNumber: number;
@@ -78,6 +79,7 @@ function PdfPageView({
   onSelectOverlay,
   onUpdateTextOverlay,
   onUpdateOverlayRect,
+  onUpdateOverlayRotation,
   overlays,
   pageSize,
   pageNumber,
@@ -265,6 +267,7 @@ function PdfPageView({
           onSelectOverlay={onSelectOverlay}
           onUpdateTextOverlay={onUpdateTextOverlay}
           onUpdateOverlayRect={onUpdateOverlayRect}
+          onUpdateOverlayRotation={onUpdateOverlayRotation}
           overlays={overlays}
           pageNumber={pageNumber}
           scale={scale}

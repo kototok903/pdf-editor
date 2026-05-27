@@ -27,6 +27,7 @@ describe("overlay clipboard helpers", () => {
         id: "image-1",
         pageNumber: 1,
         rect: { height: 100, width: 120, x: 40, y: 48 },
+        rotationDegrees: 45,
         sha256Signature: "signature-1",
         type: "image",
       },
@@ -35,6 +36,7 @@ describe("overlay clipboard helpers", () => {
         id: "signature-1",
         pageNumber: 1,
         rect: { height: 52, width: 180, x: 44, y: 52 },
+        rotationDegrees: 315,
         sha256Signature: "signature-sha-1",
         type: "signature",
       },
@@ -94,6 +96,7 @@ describe("overlay clipboard helpers", () => {
       id: "image-1",
       pageNumber: 1,
       rect: { height: 90, width: 110, x: 250, y: 240 },
+      rotationDegrees: 90,
       sha256Signature: "signature-1",
       type: "image",
     };
@@ -112,6 +115,9 @@ describe("overlay clipboard helpers", () => {
       width: 110,
       x: 210,
       y: 210,
+    });
+    expect(duplicateOverlayInput(overlay, { pageSize })).toMatchObject({
+      rotationDegrees: 90,
     });
   });
 
@@ -164,6 +170,27 @@ describe("overlay clipboard helpers", () => {
         }),
       ),
     ).toBeNull();
+  });
+
+  it("accepts legacy copied image payloads without rotation", () => {
+    expect(
+      parseOverlayClipboardPayload(
+        JSON.stringify({
+          overlay: {
+            assetId: "asset-1",
+            pageNumber: 1,
+            rect: { height: 100, width: 120, x: 40, y: 48 },
+            sha256Signature: "signature-1",
+            type: "image",
+          },
+          sourceOverlayId: "image-1",
+          version: 1,
+        }),
+      )?.overlay,
+    ).toMatchObject({
+      assetId: "asset-1",
+      type: "image",
+    });
   });
 
   it("rejects copied whiteout payloads without a color", () => {

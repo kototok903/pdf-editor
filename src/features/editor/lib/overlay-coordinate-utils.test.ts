@@ -8,6 +8,7 @@ import {
   createOverlayRectAtPoint,
   createRectFromDragPoints,
   nudgeOverlayRect,
+  normalizeRotationDegrees,
   pdfRectToViewportRect,
   viewportRectToPdfRect,
 } from "@/features/editor/lib/overlay-coordinate-utils";
@@ -159,6 +160,18 @@ describe("overlay-coordinate-utils", () => {
     });
   });
 
+  it("uses rotated visual bounds when clamping moved overlays", () => {
+    const rect = clampMovedOverlayRect(
+      { height: 40, width: 100, x: -100, y: 30 },
+      { height: 800, width: 600 },
+      8,
+      90,
+    );
+
+    expect(rect.x).toBeCloseTo(-62);
+    expect(rect.y).toBe(30);
+  });
+
   it("keeps small moved overlays from leaving the page completely", () => {
     expect(
       clampMovedOverlayRect(
@@ -204,5 +217,13 @@ describe("overlay-coordinate-utils", () => {
         2,
       ),
     ).toEqual({ height: 40, width: 100, x: -96, y: 30 });
+  });
+
+  it("normalizes rotation degrees", () => {
+    expect(normalizeRotationDegrees(0)).toBe(0);
+    expect(normalizeRotationDegrees(360)).toBe(0);
+    expect(normalizeRotationDegrees(-10)).toBe(350);
+    expect(normalizeRotationDegrees(725)).toBe(5);
+    expect(normalizeRotationDegrees(Number.NaN)).toBe(0);
   });
 });

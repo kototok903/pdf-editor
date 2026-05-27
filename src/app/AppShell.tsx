@@ -140,6 +140,7 @@ function AppShell() {
     undo,
     updateMarkOverlay,
     updateOverlayRect,
+    updateOverlayRotation,
     updateTextOverlay,
     updateTextOverlayDraft,
     updateWhiteoutOverlay,
@@ -161,8 +162,7 @@ function AppShell() {
     [renderedBasePageSizes, scannedBasePageSizes],
   );
   const pageSizes = useMemo(
-    () =>
-      scalePageSizes(basePageSizes, zoom),
+    () => scalePageSizes(basePageSizes, zoom),
     [basePageSizes, zoom],
   );
   const {
@@ -252,11 +252,8 @@ function AppShell() {
     const abortController = new AbortController();
 
     const loadDocumentFonts = async () => {
-      const {
-        extractPdfFonts,
-        getAvailablePdfFonts,
-        getUnavailablePdfFonts,
-      } = await import("@/features/pdf/lib/pdf-font-extraction");
+      const { extractPdfFonts, getAvailablePdfFonts, getUnavailablePdfFonts } =
+        await import("@/features/pdf/lib/pdf-font-extraction");
       const extractedFonts = await extractPdfFonts({
         pageCount: loadedDocument.pageCount,
         pdfDocument: loadedDocument.pdfDocument,
@@ -631,7 +628,8 @@ function AppShell() {
         loadedDocument.fileName,
         exportedFileNamesRef.current,
       );
-      const { exportPdf } = await import("@/features/pdf-export/lib/export-pdf");
+      const { exportPdf } =
+        await import("@/features/pdf-export/lib/export-pdf");
       const exportedBytes = await exportPdf({
         documentFonts: documentFontOptions.filter(
           (fontOption): fontOption is DocumentTextFontOption =>
@@ -796,6 +794,7 @@ function AppShell() {
                 pageSize,
                 asset,
               ),
+              rotationDegrees: 0,
               sha256Signature: asset.sha256Signature,
               type: "image",
             },
@@ -889,6 +888,7 @@ function AppShell() {
       assetId: activeImageAsset.id,
       pageNumber,
       rect,
+      rotationDegrees: 0,
       sha256Signature: activeImageAsset.sha256Signature,
       type: "image",
     });
@@ -906,6 +906,7 @@ function AppShell() {
       assetId: activeSignatureAsset.id,
       pageNumber,
       rect,
+      rotationDegrees: 0,
       sha256Signature: activeSignatureAsset.sha256Signature,
       type: "signature",
     });
@@ -1208,6 +1209,7 @@ function AppShell() {
             onSelectOverlay={handleSelectOverlay}
             onUpdateTextOverlay={updateTextOverlayDraft}
             onUpdateOverlayRect={updateOverlayRect}
+            onUpdateOverlayRotation={updateOverlayRotation}
             overlays={overlays}
             pageSizes={pageSizes}
             selectedOverlayId={selectedOverlayId}

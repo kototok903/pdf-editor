@@ -11,6 +11,31 @@ function rectToPdfPageRect(rect: PdfRect, pageHeight: number) {
   };
 }
 
+function rotatedRectToPdfPageImageOptions(
+  rect: PdfRect,
+  pageHeight: number,
+  rotationDegrees: number,
+) {
+  const pdfRotationDegrees = -rotationDegrees;
+  const radians = (pdfRotationDegrees * Math.PI) / 180;
+  const halfWidth = rect.width / 2;
+  const halfHeight = rect.height / 2;
+  const centerX = rect.x + halfWidth;
+  const centerY = pageHeight - rect.y - halfHeight;
+  const rotatedCenterOffsetX =
+    Math.cos(radians) * halfWidth - Math.sin(radians) * halfHeight;
+  const rotatedCenterOffsetY =
+    Math.sin(radians) * halfWidth + Math.cos(radians) * halfHeight;
+
+  return {
+    height: rect.height,
+    rotationDegrees: pdfRotationDegrees,
+    width: rect.width,
+    x: centerX - rotatedCenterOffsetX,
+    y: centerY - rotatedCenterOffsetY,
+  };
+}
+
 function textRectToPdfPosition(
   rect: PdfRect,
   pageHeight: number,
@@ -41,4 +66,9 @@ function hexToPdfRgb(hexColor: string) {
   return rgb(parts[0] / 255, parts[1] / 255, parts[2] / 255);
 }
 
-export { hexToPdfRgb, rectToPdfPageRect, textRectToPdfPosition };
+export {
+  hexToPdfRgb,
+  rectToPdfPageRect,
+  rotatedRectToPdfPageImageOptions,
+  textRectToPdfPosition,
+};

@@ -103,6 +103,9 @@ function OverlayPreview({
           className="size-full min-h-0 min-w-0 object-contain shadow-glow"
           draggable={false}
           src={asset.objectUrl}
+          style={{
+            transform: getOverlayTransform(overlay),
+          }}
         />
       ) : null;
     }
@@ -143,6 +146,16 @@ function OverlayPreview({
       return <div className="h-full w-full" />;
     }
   }
+}
+
+function getOverlayTransform(overlay: EditorOverlay) {
+  if (overlay.type !== "image" && overlay.type !== "signature") {
+    return undefined;
+  }
+
+  const rotationDegrees = overlay.rotationDegrees ?? 0;
+
+  return rotationDegrees === 0 ? undefined : `rotate(${rotationDegrees}deg)`;
 }
 
 function LayerTypeIcon({ overlay }: { overlay: EditorOverlay }) {

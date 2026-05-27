@@ -34,6 +34,7 @@ describe("editor clipboard helpers", () => {
       id: "image-1",
       pageNumber: 1,
       rect: { height: 100, width: 120, x: 40, y: 48 },
+      rotationDegrees: 0,
       sha256Signature: "signature-1",
       type: "image",
     };

@@ -123,7 +123,19 @@ function clampMovedOverlayRect(
   rect: PdfRect,
   pageSize: { height: number; width: number },
   minVisibleOverlaySize = defaultMinVisibleOverlaySize,
+  rotationDegrees = 0,
 ): PdfRect {
+  const normalizedRotation = normalizeRotationDegrees(rotationDegrees);
+
+  if (normalizedRotation !== 0) {
+    return clampMovedRotatedOverlayRect(
+      rect,
+      pageSize,
+      minVisibleOverlaySize,
+      normalizedRotation,
+    );
+  }
+
   const visibleWidth = Math.min(minVisibleOverlaySize, rect.width);
   const visibleHeight = Math.min(minVisibleOverlaySize, rect.height);
 
@@ -142,11 +154,49 @@ function clampMovedOverlayRect(
   };
 }
 
+function clampMovedRotatedOverlayRect(
+  rect: PdfRect,
+  pageSize: { height: number; width: number },
+  minVisibleOverlaySize: number,
+  rotationDegrees: number,
+): PdfRect {
+  const radians = (rotationDegrees * Math.PI) / 180;
+  const halfWidth = rect.width / 2;
+  const halfHeight = rect.height / 2;
+  const visualHalfWidth =
+    Math.abs(Math.cos(radians)) * halfWidth +
+    Math.abs(Math.sin(radians)) * halfHeight;
+  const visualHalfHeight =
+    Math.abs(Math.sin(radians)) * halfWidth +
+    Math.abs(Math.cos(radians)) * halfHeight;
+  const visibleWidth = Math.min(minVisibleOverlaySize, visualHalfWidth * 2);
+  const visibleHeight = Math.min(minVisibleOverlaySize, visualHalfHeight * 2);
+  const centerX = rect.x + halfWidth;
+  const centerY = rect.y + halfHeight;
+  const nextCenterX = clamp(
+    centerX,
+    visibleWidth - visualHalfWidth,
+    pageSize.width - visibleWidth + visualHalfWidth,
+  );
+  const nextCenterY = clamp(
+    centerY,
+    visibleHeight - visualHalfHeight,
+    pageSize.height - visibleHeight + visualHalfHeight,
+  );
+
+  return {
+    ...rect,
+    x: nextCenterX - halfWidth,
+    y: nextCenterY - halfHeight,
+  };
+}
+
 function nudgeOverlayRect(
   rect: PdfRect,
   direction: "down" | "left" | "right" | "up",
   pageSize: { height: number; width: number },
   scale: number,
+  rotationDegrees = 0,
 ): PdfRect {
   const offset = keyboardNudgeStep / scale;
   const minVisibleOverlaySize = defaultMinVisibleOverlaySize / scale;
@@ -167,11 +217,26 @@ function nudgeOverlayRect(
           : rect.y,
   };
 
-  return clampMovedOverlayRect(nextRect, pageSize, minVisibleOverlaySize);
+  return clampMovedOverlayRect(
+    nextRect,
+    pageSize,
+    minVisibleOverlaySize,
+    rotationDegrees,
+  );
 }
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function normalizeRotationDegrees(rotationDegrees: number) {
+  if (!Number.isFinite(rotationDegrees)) {
+    return 0;
+  }
+
+  const normalizedRotation = rotationDegrees % 360;
+
+  return normalizedRotation < 0 ? normalizedRotation + 360 : normalizedRotation;
 }
 
 export {
@@ -182,6 +247,7 @@ export {
   createOverlayRectAtPoint,
   createRectFromDragPoints,
   nudgeOverlayRect,
+  normalizeRotationDegrees,
   pdfRectToViewportRect,
   viewportRectToPdfRect,
 };

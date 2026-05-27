@@ -430,6 +430,7 @@ function createCenteredImageOverlayInput(
       pageSize,
       asset,
     ),
+    rotationDegrees: 0,
     sha256Signature: asset.sha256Signature,
     type: "image",
   };

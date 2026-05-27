@@ -211,6 +211,8 @@ function ThumbnailOverlayLayer({
                 height: viewportRect.height,
                 left: viewportRect.x,
                 top: viewportRect.y,
+                transform: getOverlayTransform(overlay),
+                transformOrigin: "center center",
                 width: viewportRect.width,
               }}
             >
@@ -224,6 +226,16 @@ function ThumbnailOverlayLayer({
         })}
     </div>
   );
+}
+
+function getOverlayTransform(overlay: EditorOverlay) {
+  if (overlay.type !== "image" && overlay.type !== "signature") {
+    return undefined;
+  }
+
+  const rotationDegrees = overlay.rotationDegrees ?? 0;
+
+  return rotationDegrees === 0 ? undefined : `rotate(${rotationDegrees}deg)`;
 }
 
 function ThumbnailOverlay({

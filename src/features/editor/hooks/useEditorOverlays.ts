@@ -23,6 +23,7 @@ import {
   type EditorHistoryState,
 } from "@/features/editor/lib/editor-history";
 import { moveOverlayToPageLayer } from "@/features/editor/lib/layer-sidebar-utils";
+import { normalizeRotationDegrees } from "@/features/editor/lib/overlay-coordinate-utils";
 
 function createOverlayId() {
   return crypto.randomUUID();
@@ -72,10 +73,7 @@ function useEditorOverlays() {
 
   const addOverlay = useCallback(
     (input: EditorOverlayInput) => {
-      const overlay: EditorOverlay = {
-        id: createOverlayId(),
-        ...input,
-      };
+      const overlay = createOverlayFromInput(input);
 
       commitOverlayState(
         (currentOverlays) => [...currentOverlays, overlay],
@@ -186,6 +184,22 @@ function useEditorOverlays() {
     [commitOverlayState, selectedOverlayId],
   );
 
+  const updateOverlayRotation = useCallback(
+    (overlayId: string, rotationDegrees: number) => {
+      commitOverlayState(
+        (currentOverlays) =>
+          currentOverlays.map((overlay) =>
+            overlay.id === overlayId &&
+            (overlay.type === "image" || overlay.type === "signature")
+              ? { ...overlay, rotationDegrees }
+              : overlay,
+          ),
+        selectedOverlayId,
+      );
+    },
+    [commitOverlayState, selectedOverlayId],
+  );
+
   const updateTextOverlay = useCallback(
     (overlayId: string, patch: TextOverlayPatch) => {
       commitOverlayState(
@@ -288,10 +302,29 @@ function useEditorOverlays() {
     undo,
     updateMarkOverlay,
     updateOverlayRect,
+    updateOverlayRotation,
     updateTextOverlay,
     updateTextOverlayDraft,
     updateWhiteoutOverlay,
   };
+}
+
+function createOverlayFromInput(input: EditorOverlayInput): EditorOverlay {
+  const id = createOverlayId();
+
+  switch (input.type) {
+    case "image":
+    case "signature":
+      return {
+        ...input,
+        id,
+        rotationDegrees: normalizeRotationDegrees(input.rotationDegrees ?? 0),
+      };
+    case "mark":
+    case "text":
+    case "whiteout":
+      return { ...input, id };
+  }
 }
 
 export { useEditorOverlays };

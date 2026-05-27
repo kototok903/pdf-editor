@@ -133,6 +133,7 @@ function useEditorKeyboardShortcuts({
           direction,
           pageSize,
           scale,
+          getOverlayRotationDegrees(selectedOverlay),
         ),
       );
     };
@@ -226,6 +227,14 @@ function isRedoEvent(event: KeyboardEvent) {
 
 function isCommandOrControlEvent(event: KeyboardEvent, key: string) {
   return (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === key;
+}
+
+function getOverlayRotationDegrees(overlay: EditorOverlay) {
+  if (overlay.type !== "image" && overlay.type !== "signature") {
+    return 0;
+  }
+
+  return overlay.rotationDegrees ?? 0;
 }
 
 function isEditableTarget(target: EventTarget | null) {

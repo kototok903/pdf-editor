@@ -260,30 +260,6 @@ body {
 }
 
 .editor-moveable-controls.editor-moveable-controls
-  .moveable-control.moveable-direction.moveable-nw {
-  margin-top: -10px;
-  margin-left: -10px;
-}
-
-.editor-moveable-controls.editor-moveable-controls
-  .moveable-control.moveable-direction.moveable-ne {
-  margin-top: -10px;
-  margin-left: 2px;
-}
-
-.editor-moveable-controls.editor-moveable-controls
-  .moveable-control.moveable-direction.moveable-sw {
-  margin-top: 2px;
-  margin-left: -10px;
-}
-
-.editor-moveable-controls.editor-moveable-controls
-  .moveable-control.moveable-direction.moveable-se {
-  margin-top: 2px;
-  margin-left: 2px;
-}
-
-.editor-moveable-controls.editor-moveable-controls
   .moveable-direction.moveable-direction.moveable-n,
 .editor-moveable-controls.editor-moveable-controls
   .moveable-direction.moveable-direction.moveable-s {
@@ -297,22 +273,114 @@ body {
   cursor: col-resize;
 }
 
-.editor-moveable-controls.editor-moveable-controls
-  .moveable-direction.moveable-direction.moveable-nw {
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-0
+  .moveable-direction.moveable-direction.moveable-nw,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-180
+  .moveable-direction.moveable-direction.moveable-se {
   cursor: nw-resize;
 }
 
-.editor-moveable-controls.editor-moveable-controls
-  .moveable-direction.moveable-direction.moveable-se {
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-0
+  .moveable-direction.moveable-direction.moveable-se,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-180
+  .moveable-direction.moveable-direction.moveable-nw {
   cursor: se-resize;
 }
 
-.editor-moveable-controls.editor-moveable-controls
-  .moveable-direction.moveable-direction.moveable-ne {
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-0
+  .moveable-direction.moveable-direction.moveable-ne,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-180
+  .moveable-direction.moveable-direction.moveable-sw {
   cursor: ne-resize;
 }
 
-.editor-moveable-controls.editor-moveable-controls
-  .moveable-direction.moveable-direction.moveable-sw {
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-0
+  .moveable-direction.moveable-direction.moveable-sw,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-180
+  .moveable-direction.moveable-direction.moveable-ne {
   cursor: sw-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-45
+  .moveable-direction.moveable-direction.moveable-nw,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-225
+  .moveable-direction.moveable-direction.moveable-se {
+  cursor: n-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-45
+  .moveable-direction.moveable-direction.moveable-se,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-225
+  .moveable-direction.moveable-direction.moveable-nw {
+  cursor: s-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-45
+  .moveable-direction.moveable-direction.moveable-ne,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-225
+  .moveable-direction.moveable-direction.moveable-sw {
+  cursor: e-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-45
+  .moveable-direction.moveable-direction.moveable-sw,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-225
+  .moveable-direction.moveable-direction.moveable-ne {
+  cursor: w-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-90
+  .moveable-direction.moveable-direction.moveable-nw,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-270
+  .moveable-direction.moveable-direction.moveable-se {
+  cursor: ne-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-90
+  .moveable-direction.moveable-direction.moveable-se,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-270
+  .moveable-direction.moveable-direction.moveable-nw {
+  cursor: sw-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-90
+  .moveable-direction.moveable-direction.moveable-ne,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-270
+  .moveable-direction.moveable-direction.moveable-sw {
+  cursor: se-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-90
+  .moveable-direction.moveable-direction.moveable-sw,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-270
+  .moveable-direction.moveable-direction.moveable-ne {
+  cursor: nw-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-135
+  .moveable-direction.moveable-direction.moveable-nw,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-315
+  .moveable-direction.moveable-direction.moveable-se {
+  cursor: e-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-135
+  .moveable-direction.moveable-direction.moveable-se,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-315
+  .moveable-direction.moveable-direction.moveable-nw {
+  cursor: w-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-135
+  .moveable-direction.moveable-direction.moveable-ne,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-315
+  .moveable-direction.moveable-direction.moveable-sw {
+  cursor: s-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-135
+  .moveable-direction.moveable-direction.moveable-sw,
+.editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-315
+  .moveable-direction.moveable-direction.moveable-ne {
+  cursor: n-resize;
 }

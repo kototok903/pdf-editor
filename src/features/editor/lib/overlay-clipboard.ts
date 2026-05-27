@@ -4,6 +4,7 @@ import type {
   PdfRect,
 } from "@/features/editor/editor-types";
 import { isSupportedMarkType } from "@/features/editor/lib/mark-definitions";
+import { normalizeRotationDegrees } from "@/features/editor/lib/overlay-coordinate-utils";
 import { isSupportedTextFontId } from "@/features/editor/lib/text-font-id-utils";
 
 const APP_OVERLAY_MIME_TYPE = "web application/x-pdf-editor-overlay+json";
@@ -98,6 +99,7 @@ function overlayToInput(overlay: EditorOverlay): EditorOverlayInput {
         assetId: overlay.assetId,
         pageNumber: overlay.pageNumber,
         rect: overlay.rect,
+        rotationDegrees: normalizeRotationDegrees(overlay.rotationDegrees),
         sha256Signature: overlay.sha256Signature,
         type: overlay.type,
       };
@@ -171,6 +173,7 @@ function isOverlayInput(value: unknown): value is EditorOverlayInput {
     case "signature":
       return (
         typeof value.assetId === "string" &&
+        isOptionalFiniteNumber(value.rotationDegrees) &&
         typeof value.sha256Signature === "string"
       );
     case "mark":
@@ -212,6 +215,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function isOptionalFiniteNumber(value: unknown) {
+  return value === undefined || isFiniteNumber(value);
 }
 
 function clamp(value: number, min: number, max: number) {

@@ -41,12 +41,14 @@ type ImageAsset = {
 
 type ImageOverlay = BaseOverlay & {
   assetId: string;
+  rotationDegrees: number;
   sha256Signature: string;
   type: "image";
 };
 
 type SignatureOverlay = BaseOverlay & {
   assetId: string;
+  rotationDegrees: number;
   sha256Signature: string;
   type: "signature";
 };
@@ -79,8 +81,10 @@ type EditorOverlay =
 
 type EditorOverlayInput =
   | Omit<TextOverlay, "id">
-  | Omit<ImageOverlay, "id">
-  | Omit<SignatureOverlay, "id">
+  | (Omit<ImageOverlay, "id" | "rotationDegrees"> &
+      Partial<Pick<ImageOverlay, "rotationDegrees">>)
+  | (Omit<SignatureOverlay, "id" | "rotationDegrees"> &
+      Partial<Pick<SignatureOverlay, "rotationDegrees">>)
   | Omit<MarkOverlay, "id">
   | Omit<WhiteoutOverlay, "id">
   | {

@@ -60,6 +60,7 @@ type DocumentWorkspaceProps = {
   onSelectOverlay: (overlayId: string) => void;
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
+  onUpdateOverlayRotation: (overlayId: string, rotationDegrees: number) => void;
   overlays: EditorOverlay[];
   pageSizes: Record<number, PageSize>;
   selectedOverlayId: string | null;
@@ -103,6 +104,7 @@ function DocumentWorkspace({
   onSelectOverlay,
   onUpdateTextOverlay,
   onUpdateOverlayRect,
+  onUpdateOverlayRotation,
   overlays,
   pageSizes,
   selectedOverlayId,
@@ -432,6 +434,7 @@ function DocumentWorkspace({
           onSelectOverlay={onSelectOverlay}
           onUpdateTextOverlay={onUpdateTextOverlay}
           onUpdateOverlayRect={onUpdateOverlayRect}
+          onUpdateOverlayRotation={onUpdateOverlayRotation}
           overlays={overlays}
           pageSizes={pageSizes}
           scale={zoom}

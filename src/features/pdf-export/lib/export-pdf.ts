@@ -1,5 +1,11 @@
 import fontkit from "@pdf-lib/fontkit";
-import { LineCapStyle, PDFDocument, type PDFFont, type PDFPage } from "pdf-lib";
+import {
+  degrees,
+  LineCapStyle,
+  PDFDocument,
+  type PDFFont,
+  type PDFPage,
+} from "pdf-lib";
 
 import type {
   EditorOverlay,
@@ -19,6 +25,7 @@ import {
 import {
   hexToPdfRgb,
   rectToPdfPageRect,
+  rotatedRectToPdfPageImageOptions,
   textRectToPdfPosition,
 } from "@/features/pdf-export/lib/export-coordinate-utils";
 import {
@@ -197,8 +204,26 @@ async function drawImageOverlay(
 
   const image = await getPdfImage(context, asset);
   const { height: pageHeight } = page.getSize();
+  const rotationDegrees = overlay.rotationDegrees ?? 0;
 
-  page.drawImage(image, rectToPdfPageRect(overlay.rect, pageHeight));
+  if (rotationDegrees === 0) {
+    page.drawImage(image, rectToPdfPageRect(overlay.rect, pageHeight));
+    return;
+  }
+
+  const imageOptions = rotatedRectToPdfPageImageOptions(
+    overlay.rect,
+    pageHeight,
+    rotationDegrees,
+  );
+
+  page.drawImage(image, {
+    height: imageOptions.height,
+    rotate: degrees(imageOptions.rotationDegrees),
+    width: imageOptions.width,
+    x: imageOptions.x,
+    y: imageOptions.y,
+  });
 }
 
 function drawMarkOverlay(page: PDFPage, overlay: MarkOverlay) {
