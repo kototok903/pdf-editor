@@ -15,7 +15,7 @@ import type {
 } from "@/features/editor/editor-types";
 import {
   findCenteredPageNumber,
-  getScrollTopForPage,
+  shouldHandleScrollToPageRequest,
   shouldApplyCenteredPageFromScroll,
 } from "@/features/editor/lib/page-scroll-utils";
 import {
@@ -71,6 +71,7 @@ type DocumentWorkspaceProps = {
 };
 
 type ScrollToPageRequest = {
+  behavior: ScrollBehavior;
   pageNumber: number;
   requestId: number;
 };
@@ -123,6 +124,8 @@ function DocumentWorkspace({
   const handledScrollToPageRequestIdRef = useRef<number | null>(null);
   const workspaceRef = useRef<HTMLElement | null>(null);
   const [dragIntent, setDragIntent] = useState<WorkspaceDragIntent>(null);
+  const [scrollTargetPageElementVersion, setScrollTargetPageElementVersion] =
+    useState(0);
   const hasDocument = status === "loaded" && Boolean(document);
 
   const reportCenteredPage = useCallback(() => {
@@ -212,12 +215,17 @@ function DocumentWorkspace({
     (pageNumber: number, element: HTMLElement | null) => {
       if (element) {
         pageElementsRef.current.set(pageNumber, element);
+
+        if (scrollToPageRequest?.pageNumber === pageNumber) {
+          setScrollTargetPageElementVersion((version) => version + 1);
+        }
+
         return;
       }
 
       pageElementsRef.current.delete(pageNumber);
     },
-    [],
+    [scrollToPageRequest],
   );
 
   useEffect(() => {
@@ -249,14 +257,6 @@ function DocumentWorkspace({
       return;
     }
 
-    if (
-      handledScrollToPageRequestIdRef.current === scrollToPageRequest.requestId
-    ) {
-      return;
-    }
-
-    handledScrollToPageRequestIdRef.current = scrollToPageRequest.requestId;
-
     const workspace = workspaceRef.current;
     const pageElement = pageElementsRef.current.get(
       scrollToPageRequest.pageNumber,
@@ -266,23 +266,27 @@ function DocumentWorkspace({
       return;
     }
 
-    const workspaceBounds = workspace.getBoundingClientRect();
-    const pageBounds = pageElement.getBoundingClientRect();
-    const targetScrollTop = getScrollTopForPage({
-      containerScrollTop: workspace.scrollTop,
-      containerTop: workspaceBounds.top,
-      pageTop: pageBounds.top,
-      topSpacing: pageScrollTopSpacing,
-    });
+    if (
+      !shouldHandleScrollToPageRequest({
+        handledRequestId: handledScrollToPageRequestIdRef.current,
+        hasPageElement: true,
+        hasWorkspace: true,
+        requestId: scrollToPageRequest.requestId,
+      })
+    ) {
+      return;
+    }
 
+    handledScrollToPageRequestIdRef.current = scrollToPageRequest.requestId;
     programmaticScrollTargetPageRef.current = scrollToPageRequest.pageNumber;
 
-    workspace.scrollTo({
-      behavior: "smooth",
-      top: targetScrollTop,
+    pageElement.scrollIntoView({
+      behavior: scrollToPageRequest.behavior,
+      block: "start",
+      inline: "nearest",
     });
 
-    if (Math.abs(workspace.scrollTop - targetScrollTop) < 1) {
+    if (scrollToPageRequest.behavior === "auto") {
       endProgrammaticPageScroll();
       return;
     }
@@ -291,6 +295,7 @@ function DocumentWorkspace({
   }, [
     endProgrammaticPageScroll,
     scheduleProgrammaticScrollEnd,
+    scrollTargetPageElementVersion,
     scrollToPageRequest,
   ]);
 
@@ -389,6 +394,7 @@ function DocumentWorkspace({
       onScroll={handleScroll}
       onWheel={handleManualScrollInterruption}
       ref={workspaceRef}
+      style={{ scrollPaddingTop: pageScrollTopSpacing }}
     >
       {status === "empty" && (
         <PdfUploadEmptyState
@@ -452,7 +458,7 @@ const programmaticScrollEndDelayMs = 120;
 function PdfPageSkeleton() {
   return (
     <div className="space-y-7">
-      <Skeleton className="mx-auto h-[800px] w-[600px] shadow-page" />
+      <Skeleton className="mx-auto h-200 w-150 shadow-page" />
     </div>
   );
 }
@@ -469,7 +475,7 @@ function WorkspaceMessage({
   title: string;
 }) {
   return (
-    <div className="mx-auto flex min-h-[360px] w-full max-w-lg flex-col items-center justify-center rounded-lg border bg-toolbar/70 px-8 text-center">
+    <div className="mx-auto flex min-h-90 w-full max-w-lg flex-col items-center justify-center rounded-lg border bg-toolbar/70 px-8 text-center">
       <h1 className="text-xl font-semibold">{title}</h1>
       <p className="mt-2 text-sm text-muted-foreground">{description}</p>
       {actionLabel && onAction && (

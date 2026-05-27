@@ -36,20 +36,6 @@ function findCenteredPageNumber({
   return closestPage;
 }
 
-function getScrollTopForPage({
-  containerScrollTop,
-  containerTop,
-  pageTop,
-  topSpacing,
-}: {
-  containerScrollTop: number;
-  containerTop: number;
-  pageTop: number;
-  topSpacing: number;
-}) {
-  return Math.max(0, containerScrollTop + pageTop - containerTop - topSpacing);
-}
-
 function shouldApplyCenteredPageFromScroll({
   centeredPage,
   currentPage,
@@ -62,9 +48,23 @@ function shouldApplyCenteredPageFromScroll({
   return programmaticScrollTargetPage === null && centeredPage !== currentPage;
 }
 
+function shouldHandleScrollToPageRequest({
+  handledRequestId,
+  hasPageElement,
+  hasWorkspace,
+  requestId,
+}: {
+  handledRequestId: number | null;
+  hasPageElement: boolean;
+  hasWorkspace: boolean;
+  requestId: number;
+}) {
+  return handledRequestId !== requestId && hasPageElement && hasWorkspace;
+}
+
 export {
   findCenteredPageNumber,
-  getScrollTopForPage,
   shouldApplyCenteredPageFromScroll,
+  shouldHandleScrollToPageRequest,
 };
 export type { PageViewportBounds };

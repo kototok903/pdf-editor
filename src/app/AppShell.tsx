@@ -104,6 +104,7 @@ function AppShell() {
     Record<number, PageSize>
   >({});
   const [scrollToPageRequest, setScrollToPageRequest] = useState<{
+    behavior: ScrollBehavior;
     pageNumber: number;
     requestId: number;
   } | null>(null);
@@ -332,12 +333,16 @@ function AppShell() {
             null,
             restoredDraft.draft.history,
           );
-          setCurrentPage(
-            Math.min(
-              restoredDocument.pageCount,
-              Math.max(1, restoredDraft.draft.currentPage),
-            ),
+          const restoredCurrentPage = Math.min(
+            restoredDocument.pageCount,
+            Math.max(1, restoredDraft.draft.currentPage),
           );
+          setCurrentPage(restoredCurrentPage);
+          setScrollToPageRequest((currentRequest) => ({
+            behavior: "auto",
+            pageNumber: restoredCurrentPage,
+            requestId: (currentRequest?.requestId ?? 0) + 1,
+          }));
         } else {
           try {
             await clearStoredDraft();
@@ -1041,12 +1046,16 @@ function AppShell() {
     }));
   };
 
-  const handleRequestWorkspacePageScroll = useCallback((pageNumber: number) => {
-    setScrollToPageRequest((currentRequest) => ({
-      pageNumber,
-      requestId: (currentRequest?.requestId ?? 0) + 1,
-    }));
-  }, []);
+  const handleRequestWorkspacePageScroll = useCallback(
+    (pageNumber: number, behavior: ScrollBehavior = "smooth") => {
+      setScrollToPageRequest((currentRequest) => ({
+        behavior,
+        pageNumber,
+        requestId: (currentRequest?.requestId ?? 0) + 1,
+      }));
+    },
+    [],
+  );
 
   const handleSelectSidebarPage = (pageNumber: number) => {
     setCurrentPage(pageNumber);

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   findCenteredPageNumber,
-  getScrollTopForPage,
   shouldApplyCenteredPageFromScroll,
+  shouldHandleScrollToPageRequest,
 } from "@/features/editor/lib/page-scroll-utils";
 
 describe("page-scroll-utils", () => {
@@ -46,28 +46,6 @@ describe("page-scroll-utils", () => {
     ).toBe(3);
   });
 
-  it("calculates scrollTop needed to place page below top spacing", () => {
-    expect(
-      getScrollTopForPage({
-        containerScrollTop: 300,
-        containerTop: 100,
-        pageTop: 450,
-        topSpacing: 24,
-      }),
-    ).toBe(626);
-  });
-
-  it("does not return negative scrollTop", () => {
-    expect(
-      getScrollTopForPage({
-        containerScrollTop: 10,
-        containerTop: 100,
-        pageTop: 90,
-        topSpacing: 24,
-      }),
-    ).toBe(0);
-  });
-
   it("applies centered page updates during manual scrolling", () => {
     expect(
       shouldApplyCenteredPageFromScroll({
@@ -94,6 +72,39 @@ describe("page-scroll-utils", () => {
         centeredPage: 3,
         currentPage: 3,
         programmaticScrollTargetPage: null,
+      }),
+    ).toBe(false);
+  });
+
+  it("handles a new scroll-to-page request when the workspace and page are ready", () => {
+    expect(
+      shouldHandleScrollToPageRequest({
+        handledRequestId: 4,
+        hasPageElement: true,
+        hasWorkspace: true,
+        requestId: 5,
+      }),
+    ).toBe(true);
+  });
+
+  it("does not consume a scroll-to-page request before the target page exists", () => {
+    expect(
+      shouldHandleScrollToPageRequest({
+        handledRequestId: null,
+        hasPageElement: false,
+        hasWorkspace: true,
+        requestId: 5,
+      }),
+    ).toBe(false);
+  });
+
+  it("skips already handled scroll-to-page requests", () => {
+    expect(
+      shouldHandleScrollToPageRequest({
+        handledRequestId: 5,
+        hasPageElement: true,
+        hasWorkspace: true,
+        requestId: 5,
       }),
     ).toBe(false);
   });
