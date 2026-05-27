@@ -4,7 +4,7 @@ const defaultOverlayHeight = 32;
 const defaultOverlayWidth = 140;
 const defaultMarkSize = 18;
 const maxInitialImageSize = 220;
-const minVisibleOverlaySize = 8;
+const defaultMinVisibleOverlaySize = 8;
 const keyboardNudgeStep = 1;
 
 function pdfRectToViewportRect(rect: PdfRect, scale: number): ViewportRect {
@@ -122,18 +122,22 @@ function createRectFromDragPoints(
 function clampMovedOverlayRect(
   rect: PdfRect,
   pageSize: { height: number; width: number },
+  minVisibleOverlaySize = defaultMinVisibleOverlaySize,
 ): PdfRect {
+  const visibleWidth = Math.min(minVisibleOverlaySize, rect.width);
+  const visibleHeight = Math.min(minVisibleOverlaySize, rect.height);
+
   return {
     ...rect,
     x: clamp(
       rect.x,
-      Math.min(0, minVisibleOverlaySize - rect.width),
-      Math.max(0, pageSize.width - minVisibleOverlaySize),
+      Math.min(0, visibleWidth - rect.width),
+      Math.max(0, pageSize.width - visibleWidth),
     ),
     y: clamp(
       rect.y,
-      Math.min(0, minVisibleOverlaySize - rect.height),
-      Math.max(0, pageSize.height - minVisibleOverlaySize),
+      Math.min(0, visibleHeight - rect.height),
+      Math.max(0, pageSize.height - visibleHeight),
     ),
   };
 }
@@ -145,6 +149,7 @@ function nudgeOverlayRect(
   scale: number,
 ): PdfRect {
   const offset = keyboardNudgeStep / scale;
+  const minVisibleOverlaySize = defaultMinVisibleOverlaySize / scale;
 
   const nextRect = {
     ...rect,
@@ -162,11 +167,11 @@ function nudgeOverlayRect(
           : rect.y,
   };
 
-  return clampMovedOverlayRect(nextRect, pageSize);
+  return clampMovedOverlayRect(nextRect, pageSize, minVisibleOverlaySize);
 }
 
 function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), Math.max(min, max));
+  return Math.min(Math.max(value, min), max);
 }
 
 export {

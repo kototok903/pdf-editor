@@ -233,3 +233,62 @@ body {
     @apply font-sans;
   }
 }
+
+/* Moveable injects unlayered CSS, so these overrides must stay unlayered. */
+.editor-moveable-controls.editor-moveable-controls {
+  --moveable-color: var(--primary);
+}
+
+.editor-moveable-controls,
+.editor-moveable-controls * {
+  pointer-events: auto;
+}
+
+.editor-moveable-controls.editor-moveable-controls .moveable-line {
+  height: 1px;
+}
+
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-control.moveable-control {
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  margin-left: -4px;
+  border: 1px solid var(--primary-foreground);
+  border-radius: 0;
+  background: var(--primary);
+}
+
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-direction.moveable-direction.moveable-n,
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-direction.moveable-direction.moveable-s {
+  cursor: row-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-direction.moveable-direction.moveable-e,
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-direction.moveable-direction.moveable-w {
+  cursor: col-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-direction.moveable-direction.moveable-nw {
+  cursor: nw-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-direction.moveable-direction.moveable-se {
+  cursor: se-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-direction.moveable-direction.moveable-ne {
+  cursor: ne-resize;
+}
+
+.editor-moveable-controls.editor-moveable-controls
+  .moveable-direction.moveable-direction.moveable-sw {
+  cursor: sw-resize;
+}

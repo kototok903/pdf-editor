@@ -23,7 +23,8 @@ function shouldClearOverlaySelectionOnPagePointerDown({
 
   return (
     !target.closest("[data-editor-overlay-id]") &&
-    !target.closest("[data-editor-overlay-handle]")
+    !target.closest("[data-editor-overlay-handle]") &&
+    !target.closest(".editor-moveable-controls")
   );
 }
 

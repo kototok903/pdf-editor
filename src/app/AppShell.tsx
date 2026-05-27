@@ -153,16 +153,17 @@ function AppShell() {
     status,
   } = usePdfDocument();
   const scannedBasePageSizes = usePdfPageSizes(loadedDocument);
+  const basePageSizes = useMemo(
+    () => ({
+      ...scannedBasePageSizes,
+      ...renderedBasePageSizes,
+    }),
+    [renderedBasePageSizes, scannedBasePageSizes],
+  );
   const pageSizes = useMemo(
     () =>
-      scalePageSizes(
-        {
-          ...scannedBasePageSizes,
-          ...renderedBasePageSizes,
-        },
-        zoom,
-      ),
-    [renderedBasePageSizes, scannedBasePageSizes, zoom],
+      scalePageSizes(basePageSizes, zoom),
+    [basePageSizes, zoom],
   );
   const {
     addImageBlob,
@@ -528,7 +529,7 @@ function AppShell() {
     onRemoveOverlay: removeOverlay,
     onUndo: handleUndo,
     onUpdateOverlayRect: updateOverlayRect,
-    pageSizes,
+    pageSizes: basePageSizes,
     scale: zoom,
     selectedOverlay,
   });

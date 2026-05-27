@@ -194,4 +194,15 @@ describe("overlay-coordinate-utils", () => {
       ),
     ).toEqual({ height: 40, width: 100, x: -92, y: 30 });
   });
+
+  it("keeps nudged overlays inside zoom-scaled loose page boundaries", () => {
+    expect(
+      nudgeOverlayRect(
+        { height: 40, width: 100, x: -96, y: 30 },
+        "left",
+        { height: 800, width: 600 },
+        2,
+      ),
+    ).toEqual({ height: 40, width: 100, x: -96, y: 30 });
+  });
 });

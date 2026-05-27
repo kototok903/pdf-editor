@@ -65,7 +65,10 @@ function TextOverlayContent({
 
   if (!isEditing) {
     return (
-      <div className={cn(className, "whitespace-pre-wrap")} style={style}>
+      <div
+        className={cn(className, "whitespace-pre-wrap wrap-anywhere")}
+        style={style}
+      >
         {overlay.text}
       </div>
     );

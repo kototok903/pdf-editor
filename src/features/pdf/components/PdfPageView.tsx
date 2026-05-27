@@ -221,6 +221,7 @@ function PdfPageView({
       }}
       ref={articleRef}
       style={{
+        boxSizing: "content-box",
         minHeight: displayPageSize.height,
         width: displayPageSize.width,
       }}

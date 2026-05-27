@@ -66,6 +66,23 @@ describe("shouldClearOverlaySelectionOnPagePointerDown", () => {
     ).toBe(false);
   });
 
+  it("does not clear selection when clicking Moveable controls", () => {
+    const page = document.createElement("article");
+    const controls = document.createElement("div");
+    controls.className = "editor-moveable-controls";
+    const handle = document.createElement("div");
+    controls.append(handle);
+    page.append(controls);
+
+    expect(
+      shouldClearOverlaySelectionOnPagePointerDown({
+        button: 0,
+        currentTarget: page,
+        target: handle,
+      }),
+    ).toBe(false);
+  });
+
   it("does not clear selection for non-primary buttons", () => {
     const page = document.createElement("article");
 

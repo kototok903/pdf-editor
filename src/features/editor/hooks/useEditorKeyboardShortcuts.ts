@@ -131,10 +131,7 @@ function useEditorKeyboardShortcuts({
         nudgeOverlayRect(
           selectedOverlay.rect,
           direction,
-          {
-            height: pageSize.height / scale,
-            width: pageSize.width / scale,
-          },
+          pageSize,
           scale,
         ),
       );
