@@ -4,18 +4,22 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type PdfUploadEmptyStateProps = {
+  description?: string;
   isPdfDropActive?: boolean;
   onOpenFile: () => void;
+  title?: string;
 };
 
 function PdfUploadEmptyState({
+  description = "Files stay in your browser. Choose a PDF and it will render into the editor workspace.",
   isPdfDropActive = false,
   onOpenFile,
+  title = "Open a PDF to start",
 }: PdfUploadEmptyStateProps) {
   return (
     <div
       className={cn(
-        "mx-auto flex min-h-[420px] w-full max-w-xl flex-col items-center justify-center rounded-lg border border-dashed border-border bg-toolbar/70 px-8 text-center transition-colors",
+        "mx-auto flex min-h-105 w-full max-w-xl flex-col items-center justify-center rounded-lg border border-dashed border-border bg-toolbar/70 px-8 text-center transition-colors",
         isPdfDropActive && "border-primary bg-primary/10",
       )}
     >
@@ -28,10 +32,9 @@ function PdfUploadEmptyState({
       >
         <FileIcon aria-hidden="true" />
       </div>
-      <h1 className="mt-5 text-xl font-semibold">Open a PDF to start</h1>
+      <h1 className="mt-5 text-xl font-semibold">{title}</h1>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-        Files stay in your browser. Choose a PDF and it will render into the
-        editor workspace.
+        {description}
       </p>
       <Button className="mt-5" onClick={onOpenFile} type="button">
         Open PDF

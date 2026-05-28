@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import { createEditorHistory } from "@/features/editor/lib/editor-history";
-import { getPersistedDraftImageAssetIds } from "@/features/editor/hooks/useLocalDraftPersistence";
+import {
+  getPersistedDraftImageAssetIds,
+  getPersistedProjectImageAssetIds,
+} from "@/features/editor/hooks/useLocalDraftPersistence";
 
 function createImageAsset(patch: Partial<ImageAsset> = {}): ImageAsset {
   return {
@@ -93,5 +96,33 @@ describe("local draft persistence", () => {
     expect(
       getPersistedDraftImageAssetIds(imageAssets, [signatureOverlay]),
     ).toEqual(["signature-1"]);
+  });
+
+  it("keeps hidden image assets referenced by any project history", () => {
+    const imageAssets = [
+      createImageAsset({ id: "visible-image", isHiddenFromRecents: false }),
+      createImageAsset({ id: "project-a-image", isHiddenFromRecents: true }),
+      createImageAsset({ id: "project-b-image", isHiddenFromRecents: true }),
+      createImageAsset({ id: "unused-image", isHiddenFromRecents: true }),
+    ];
+    const projectAHistory = createEditorHistory([
+      createImageOverlay({
+        assetId: "project-a-image",
+        id: "project-a-overlay",
+      }),
+    ]);
+    const projectBHistory = createEditorHistory([
+      createImageOverlay({
+        assetId: "project-b-image",
+        id: "project-b-overlay",
+      }),
+    ]);
+
+    expect(
+      getPersistedProjectImageAssetIds(imageAssets, [
+        projectAHistory,
+        projectBHistory,
+      ]),
+    ).toEqual(["visible-image", "project-a-image", "project-b-image"]);
   });
 });

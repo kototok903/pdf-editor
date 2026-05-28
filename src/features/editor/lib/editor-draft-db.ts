@@ -16,7 +16,19 @@ type PersistedImageAssetRecord = {
   width: number;
 };
 
+type PersistedEditorProjectRecord = {
+  createdAt: number;
+  currentPage: number;
+  fileName: string;
+  history?: EditorHistoryState;
+  id: string;
+  pageCount: number;
+  pdfBytes: ArrayBuffer;
+  updatedAt: number;
+};
+
 type PersistedEditorDraftRecord = {
+  activeProjectId?: string;
   currentPage: number;
   fileName: string;
   history?: EditorHistoryState;
@@ -24,6 +36,8 @@ type PersistedEditorDraftRecord = {
   imageAssetIds: string[];
   overlays: EditorOverlay[];
   pdfBytes: ArrayBuffer;
+  projectId?: string;
+  projects?: PersistedEditorProjectRecord[];
   updatedAt: number;
 };
 
@@ -336,5 +350,6 @@ export {
 export type {
   EditorDraftStorage,
   PersistedEditorDraftRecord,
+  PersistedEditorProjectRecord,
   PersistedImageAssetRecord,
 };

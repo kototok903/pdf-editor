@@ -57,6 +57,20 @@ import type { SignatureCreateInput } from "@/features/editor/components/Signatur
 import { getSignatureFontOption } from "@/features/editor/lib/signature-fonts";
 import { rasterizeTypedSignature } from "@/features/editor/lib/signature-rasterizer";
 import {
+  createProject,
+  getNextActiveProjectAfterClose,
+  removeProject,
+  sortProjectsForSwitcher,
+  updateProjectFromDocument,
+  upsertProject,
+  type Project,
+} from "@/features/editor/lib/editor-projects";
+import {
+  createProjectPath,
+  getProjectIdFromPath,
+  isProjectPath,
+} from "@/features/editor/lib/project-route-utils";
+import {
   maxEditorZoom,
   minEditorZoom,
   type EditorPreferences,
@@ -69,7 +83,12 @@ import {
   type DocumentTextFontMenuOption,
   type DocumentTextFontOption,
 } from "@/features/editor/lib/text-fonts";
-import type { EditorHistoryEntry } from "@/features/editor/lib/editor-history";
+import {
+  createEditorHistory,
+  type EditorHistoryEntry,
+  type EditorHistoryState,
+} from "@/features/editor/lib/editor-history";
+import type { PersistedEditorProjectRecord } from "@/features/editor/lib/editor-draft-db";
 import { createExportFileName } from "@/features/pdf-export/lib/export-file-name";
 import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
 import { usePdfPageSizes } from "@/features/pdf/hooks/usePdfPageSizes";
@@ -78,6 +97,7 @@ import { scalePageSizes } from "@/features/pdf/lib/pdf-page-size-utils";
 import type { PageSize } from "@/features/pdf/pdf-types";
 
 const zoomStep = 0.1;
+const rootPath = "/";
 type ActiveTool =
   | { type: "image"; assetId: string }
   | { type: "mark" }
@@ -85,6 +105,15 @@ type ActiveTool =
   | { type: "text" }
   | { type: "whiteout" }
   | null;
+
+function isEmptyEditorHistory(history: EditorHistoryState) {
+  return (
+    history.future.length === 0 &&
+    history.past.length === 0 &&
+    history.present.overlays.length === 0 &&
+    history.present.selectedOverlayId === null
+  );
+}
 
 function AppShell() {
   const exportedFileNamesRef = useRef<Set<string>>(new Set());
@@ -96,10 +125,21 @@ function AppShell() {
   const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
-  const [isCloseDraftDialogOpen, setIsCloseDraftDialogOpen] = useState(false);
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [isCloseProjectDialogOpen, setIsCloseProjectDialogOpen] =
+    useState(false);
   const [isLocalDraftReady, setIsLocalDraftReady] = useState(false);
-  const [pendingReplacementPdfFile, setPendingReplacementPdfFile] =
-    useState<File | null>(null);
+  const [pendingCloseProjectId, setPendingCloseProjectId] = useState<
+    string | null
+  >(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [routePathname, setRoutePathname] = useState(
+    () => window.location.pathname,
+  );
+  const [routeProjectId, setRouteProjectId] = useState(() =>
+    getProjectIdFromPath(window.location.pathname),
+  );
+  const initialRouteProjectIdRef = useRef(routeProjectId);
   const [renderedBasePageSizes, setRenderedBasePageSizes] = useState<
     Record<number, PageSize>
   >({});
@@ -125,7 +165,6 @@ function AppShell() {
     addOverlay,
     canRedo,
     canUndo,
-    clearOverlays,
     clearSelection,
     commitHistoryFromBase,
     getHistoryEntrySnapshot,
@@ -179,12 +218,14 @@ function AppShell() {
     showImageAssetInRecents,
   } = useImageAssets();
   const { clearStoredDraft, hydrateLocalDraft } = useLocalDraftPersistence({
+    activeProjectId,
     currentPage,
     document: loadedDocument,
     history,
     imageAssets,
     isReadyToPersist: isLocalDraftReady,
     overlays,
+    projects,
   });
 
   const selectedTextOverlay = useMemo(
@@ -242,6 +283,49 @@ function AppShell() {
   useEffect(() => {
     globalThis.document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
+
+  const replaceProjectPath = useCallback((projectId: string | null) => {
+    const nextPath = projectId ? createProjectPath(projectId) : rootPath;
+
+    if (window.location.pathname === nextPath) {
+      setRoutePathname(nextPath);
+      setRouteProjectId(projectId);
+      return;
+    }
+
+    window.history.replaceState(null, "", nextPath);
+    setRoutePathname(nextPath);
+    setRouteProjectId(projectId);
+  }, []);
+
+  const pushProjectPath = useCallback((projectId: string | null) => {
+    const nextPath = projectId ? createProjectPath(projectId) : rootPath;
+
+    if (window.location.pathname === nextPath) {
+      setRoutePathname(nextPath);
+      setRouteProjectId(projectId);
+      return;
+    }
+
+    window.history.pushState(null, "", nextPath);
+    setRoutePathname(nextPath);
+    setRouteProjectId(projectId);
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const nextPathname = window.location.pathname;
+
+      setRoutePathname(nextPathname);
+      setRouteProjectId(getProjectIdFromPath(nextPathname));
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
 
   useEffect(() => {
     clearDocumentTextFonts();
@@ -304,6 +388,7 @@ function AppShell() {
 
     const restoreLocalDraft = async () => {
       const restoredDraft = await hydrateLocalDraft();
+      const initialRouteProjectId = initialRouteProjectIdRef.current;
 
       if (isCancelled) {
         for (const asset of restoredDraft.imageAssets) {
@@ -318,41 +403,107 @@ function AppShell() {
       }
 
       if (restoredDraft.draft) {
-        const restoredDocument = await openBytes(
-          restoredDraft.draft.pdfBytes,
-          restoredDraft.draft.fileName,
-        );
+        const restoredProjects =
+          restoredDraft.draft.projects?.map(createProjectFromPersistedRecord) ??
+          [];
 
-        if (isCancelled) {
-          return;
-        }
+        if (restoredProjects.length > 0) {
+          setProjects(restoredProjects);
 
-        if (restoredDocument) {
-          resetHistory(
-            restoredDraft.draft.overlays,
-            null,
-            restoredDraft.draft.history,
-          );
-          const restoredCurrentPage = Math.min(
-            restoredDocument.pageCount,
-            Math.max(1, restoredDraft.draft.currentPage),
-          );
-          setCurrentPage(restoredCurrentPage);
-          setScrollToPageRequest((currentRequest) => ({
-            behavior: "auto",
-            pageNumber: restoredCurrentPage,
-            requestId: (currentRequest?.requestId ?? 0) + 1,
-          }));
+          const targetProject = initialRouteProjectId
+            ? (restoredProjects.find(
+                (project) => project.id === initialRouteProjectId,
+              ) ?? null)
+            : null;
+
+          if (!targetProject) {
+            setActiveProjectId(null);
+            clearFile();
+            resetHistory();
+          } else {
+            const restoredDocument = await openBytes(
+              targetProject.pdfBytes,
+              targetProject.fileName,
+            );
+
+            if (isCancelled) {
+              return;
+            }
+
+            if (restoredDocument) {
+              const restoredCurrentPage = Math.min(
+                restoredDocument.pageCount,
+                Math.max(1, targetProject.currentPage),
+              );
+
+              resetHistory([], null, targetProject.history);
+              setCurrentPage(restoredCurrentPage);
+              setScrollToPageRequest((currentRequest) => ({
+                behavior: "auto",
+                pageNumber: restoredCurrentPage,
+                requestId: (currentRequest?.requestId ?? 0) + 1,
+              }));
+              setActiveProjectId(targetProject.id);
+            } else {
+              toast.error("Unable to restore project", {
+                description: "The saved local project could not be opened.",
+              });
+            }
+          }
         } else {
-          try {
-            await clearStoredDraft();
-          } catch {
-            // The restore path already failed; keep the editor usable.
+          const restoredDocument = await openBytes(
+            restoredDraft.draft.pdfBytes,
+            restoredDraft.draft.fileName,
+          );
+
+          if (isCancelled) {
+            return;
           }
 
-          toast.error("Unable to restore draft", {
-            description: "The saved local draft was removed.",
-          });
+          if (restoredDocument) {
+            const restoredHistory =
+              restoredDraft.draft.history ??
+              createEditorHistory(restoredDraft.draft.overlays);
+            resetHistory([], null, restoredHistory);
+            const restoredCurrentPage = Math.min(
+              restoredDocument.pageCount,
+              Math.max(1, restoredDraft.draft.currentPage),
+            );
+            setCurrentPage(restoredCurrentPage);
+            setScrollToPageRequest((currentRequest) => ({
+              behavior: "auto",
+              pageNumber: restoredCurrentPage,
+              requestId: (currentRequest?.requestId ?? 0) + 1,
+            }));
+            const restoredProject = createProject({
+              currentPage: restoredCurrentPage,
+              document: restoredDocument,
+              history: restoredHistory,
+              id:
+                restoredDraft.draft.projectId ??
+                initialRouteProjectId ??
+                undefined,
+              now: restoredDraft.draft.updatedAt,
+            });
+            setProjects([restoredProject]);
+            if (initialRouteProjectId === restoredProject.id) {
+              setActiveProjectId(restoredProject.id);
+            } else {
+              setActiveProjectId(null);
+              clearFile();
+              resetHistory();
+            }
+          } else {
+            try {
+              await clearStoredDraft();
+            } catch {
+              // The restore path already failed; keep the editor usable.
+            }
+
+            toast.error("Unable to restore project", {
+              description: "The saved local project was removed.",
+            });
+          }
         }
       }
 
@@ -368,9 +519,11 @@ function AppShell() {
     };
   }, [
     clearStoredDraft,
+    clearFile,
     hydrateLocalDraft,
     openBytes,
     replaceImageAssets,
+    replaceProjectPath,
     resetHistory,
   ]);
 
@@ -381,6 +534,13 @@ function AppShell() {
   const activeSignatureAsset =
     activeTool?.type === "signature"
       ? (imageAssets.find((asset) => asset.id === activeTool.assetId) ?? null)
+      : null;
+  const missingProjectId =
+    isLocalDraftReady &&
+    routeProjectId &&
+    routeProjectId !== activeProjectId &&
+    !projects.some((project) => project.id === routeProjectId)
+      ? routeProjectId
       : null;
   const displayStatus =
     !isLocalDraftReady && status === "empty" ? "loading" : status;
@@ -540,41 +700,7 @@ function AppShell() {
     fileInputRef.current?.click();
   };
 
-  const replacePdfFile = useCallback(
-    (file: File) => {
-      setCurrentPage(1);
-      clearOverlays();
-      clearClipboardHistory();
-      textEditHistoryEntryRef.current = null;
-      editingOverlayIdRef.current = null;
-      setEditingOverlayId(null);
-      setActiveTool(null);
-      setRenderedBasePageSizes({});
-      clearDocumentTextFonts();
-      setDocumentFontOptions([]);
-      setEditorPreferences((currentPreferences) =>
-        isDocumentTextFontId(currentPreferences.textDefaults.fontId)
-          ? {
-              ...currentPreferences,
-              textDefaults: {
-                ...currentPreferences.textDefaults,
-                fontId: defaultTextOverlay.fontId,
-              },
-            }
-          : currentPreferences,
-      );
-      exportedFileNamesRef.current = new Set();
-      void openFile(file);
-    },
-    [clearClipboardHistory, clearOverlays, openFile, setEditorPreferences],
-  );
-
-  const handleConfirmCloseDraft = useCallback(() => {
-    setIsCloseDraftDialogOpen(false);
-    setPendingReplacementPdfFile(null);
-    setCurrentPage(1);
-    clearFile();
-    clearOverlays();
+  const resetProjectRuntimeState = useCallback(() => {
     clearClipboardHistory();
     textEditHistoryEntryRef.current = null;
     editingOverlayIdRef.current = null;
@@ -596,16 +722,404 @@ function AppShell() {
         : currentPreferences,
     );
     exportedFileNamesRef.current = new Set();
+  }, [clearClipboardHistory, setEditorPreferences]);
+
+  const isProjectViewCleared =
+    !activeProjectId &&
+    !loadedDocument &&
+    status === "empty" &&
+    currentPage === 1 &&
+    isEmptyEditorHistory(history);
+
+  const clearActiveProjectView = useCallback(() => {
+    if (isProjectViewCleared) {
+      return;
+    }
+
+    setActiveProjectId(null);
+
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+
+    if (loadedDocument || status !== "empty") {
+      clearFile();
+    }
+
+    if (!isEmptyEditorHistory(history)) {
+      resetHistory();
+    }
+
+    resetProjectRuntimeState();
+  }, [
+    clearFile,
+    currentPage,
+    history,
+    isProjectViewCleared,
+    loadedDocument,
+    resetHistory,
+    resetProjectRuntimeState,
+    status,
+  ]);
+
+  const getActiveProjectSnapshot = useCallback(() => {
+    if (!activeProjectId || !loadedDocument) {
+      return null;
+    }
+
+    const currentProject =
+      projects.find((project) => project.id === activeProjectId) ??
+      createProject({
+        currentPage,
+        document: loadedDocument,
+        history,
+        id: activeProjectId,
+      });
+
+    return updateProjectFromDocument(currentProject, {
+      currentPage,
+      document: loadedDocument,
+      history,
+    });
+  }, [activeProjectId, currentPage, history, loadedDocument, projects]);
+
+  const activateProject = useCallback(
+    async (
+      project: Project,
+      options: { pathUpdate?: "none" | "push" | "replace" } = {},
+    ) => {
+      setCurrentPage(1);
+      resetHistory();
+      resetProjectRuntimeState();
+      setActiveProjectId(project.id);
+
+      const restoredDocument = await openBytes(
+        project.pdfBytes,
+        project.fileName,
+      );
+
+      if (!restoredDocument) {
+        setActiveProjectId(null);
+        return false;
+      }
+
+      const restoredCurrentPage = Math.min(
+        restoredDocument.pageCount,
+        Math.max(1, project.currentPage),
+      );
+
+      resetHistory([], null, project.history);
+      setCurrentPage(restoredCurrentPage);
+      setScrollToPageRequest((currentRequest) => ({
+        behavior: "auto",
+        pageNumber: restoredCurrentPage,
+        requestId: (currentRequest?.requestId ?? 0) + 1,
+      }));
+
+      if (options.pathUpdate === "push") {
+        pushProjectPath(project.id);
+      } else if (options.pathUpdate === "replace") {
+        replaceProjectPath(project.id);
+      }
+
+      return true;
+    },
+    [
+      openBytes,
+      pushProjectPath,
+      replaceProjectPath,
+      resetHistory,
+      resetProjectRuntimeState,
+    ],
+  );
+
+  const openPdfAsProject = useCallback(
+    async (file: File) => {
+      commitPendingTextEdit();
+      const previousProject = getActiveProjectSnapshot();
+
+      if (previousProject) {
+        setProjects((currentProjects) =>
+          upsertProject(currentProjects, previousProject),
+        );
+      }
+
+      setCurrentPage(1);
+      resetHistory();
+      resetProjectRuntimeState();
+
+      const openedDocument = await openFile(file);
+
+      if (!openedDocument) {
+        if (previousProject) {
+          await activateProject(previousProject);
+        }
+
+        return;
+      }
+
+      const project = createProject({
+        document: openedDocument,
+        history: createEditorHistory(),
+      });
+
+      setProjects((currentProjects) =>
+        upsertProject(
+          previousProject
+            ? upsertProject(currentProjects, previousProject)
+            : currentProjects,
+          project,
+        ),
+      );
+      setActiveProjectId(project.id);
+      pushProjectPath(project.id);
+      setCurrentPage(1);
+      resetHistory();
+    },
+    [
+      activateProject,
+      commitPendingTextEdit,
+      getActiveProjectSnapshot,
+      openFile,
+      pushProjectPath,
+      resetHistory,
+      resetProjectRuntimeState,
+    ],
+  );
+
+  const handleRequestCloseProject = useCallback(
+    (projectId: string | null = activeProjectId) => {
+      if (!projectId) {
+        return;
+      }
+
+      setPendingCloseProjectId(projectId);
+      setIsCloseProjectDialogOpen(true);
+    },
+    [activeProjectId],
+  );
+
+  const handleCloseActiveProject = useCallback(() => {
+    commitPendingTextEdit();
+    const activeSnapshot = getActiveProjectSnapshot();
+
+    if (activeSnapshot) {
+      setProjects((currentProjects) =>
+        upsertProject(currentProjects, activeSnapshot),
+      );
+    }
+
+    setActiveProjectId(null);
+    pushProjectPath(null);
+    setCurrentPage(1);
+    clearFile();
+    resetHistory();
+    resetProjectRuntimeState();
+  }, [
+    clearFile,
+    commitPendingTextEdit,
+    getActiveProjectSnapshot,
+    pushProjectPath,
+    resetHistory,
+    resetProjectRuntimeState,
+  ]);
+
+  const handleRemoveProject = useCallback(
+    (projectId: string) => {
+      if (projectId === activeProjectId) {
+        handleRequestCloseProject(projectId);
+        return;
+      }
+
+      setProjects((currentProjects) =>
+        removeProject(currentProjects, projectId),
+      );
+    },
+    [activeProjectId, handleRequestCloseProject],
+  );
+
+  const handleConfirmCloseProject = useCallback(() => {
+    setIsCloseProjectDialogOpen(false);
+    commitPendingTextEdit();
+
+    const activeSnapshot = getActiveProjectSnapshot();
+    const currentProjects = activeSnapshot
+      ? upsertProject(projects, activeSnapshot)
+      : projects;
+    const projectIdToClose =
+      pendingCloseProjectId ?? activeProjectId ?? activeSnapshot?.id;
+    const nextProjects = projectIdToClose
+      ? removeProject(currentProjects, projectIdToClose)
+      : currentProjects;
+    const isClosingActiveProject =
+      Boolean(projectIdToClose) && projectIdToClose === activeProjectId;
+    const nextProject = isClosingActiveProject
+      ? getNextActiveProjectAfterClose(currentProjects, projectIdToClose)
+      : null;
+
+    setProjects(nextProjects);
+    setPendingCloseProjectId(null);
+
+    if (!isClosingActiveProject) {
+      return;
+    }
+
+    if (nextProject) {
+      void activateProject(nextProject, { pathUpdate: "replace" });
+      return;
+    }
+
+    setActiveProjectId(null);
+    replaceProjectPath(null);
+    setCurrentPage(1);
+    clearFile();
+    resetHistory();
+    resetProjectRuntimeState();
     void clearStoredDraft().catch(() => {
-      // Closing the visible draft should not be blocked by storage errors.
+      // Closing the visible project should not be blocked by storage errors.
     });
   }, [
-    clearClipboardHistory,
+    activeProjectId,
+    activateProject,
     clearFile,
-    clearOverlays,
     clearStoredDraft,
-    setEditorPreferences,
+    commitPendingTextEdit,
+    getActiveProjectSnapshot,
+    pendingCloseProjectId,
+    projects,
+    replaceProjectPath,
+    resetHistory,
+    resetProjectRuntimeState,
   ]);
+
+  useEffect(() => {
+    if (!isLocalDraftReady) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    queueMicrotask(() => {
+      if (isCancelled) {
+        return;
+      }
+
+      if (!routeProjectId && !isProjectPath(routePathname)) {
+        if (activeProjectId) {
+          const activeSnapshot = getActiveProjectSnapshot();
+
+          if (activeSnapshot) {
+            setProjects((currentProjects) =>
+              upsertProject(currentProjects, activeSnapshot),
+            );
+          }
+        }
+
+        clearActiveProjectView();
+        return;
+      }
+
+      if (routeProjectId === activeProjectId) {
+        return;
+      }
+
+      if (!routeProjectId) {
+        clearActiveProjectView();
+        return;
+      }
+
+      const targetProject = projects.find(
+        (project) => project.id === routeProjectId,
+      );
+
+      if (!targetProject) {
+        clearActiveProjectView();
+        return;
+      }
+
+      const activeSnapshot = getActiveProjectSnapshot();
+
+      if (activeSnapshot) {
+        setProjects((currentProjects) =>
+          upsertProject(currentProjects, activeSnapshot),
+        );
+      }
+
+      void activateProject(targetProject, { pathUpdate: "none" });
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    activeProjectId,
+    activateProject,
+    clearActiveProjectView,
+    getActiveProjectSnapshot,
+    isLocalDraftReady,
+    projects,
+    routePathname,
+    routeProjectId,
+  ]);
+
+  const toolbarProjects = useMemo(() => {
+    if (!activeProjectId || !loadedDocument) {
+      return sortProjectsForSwitcher(projects, activeProjectId);
+    }
+
+    const existingProject =
+      projects.find((project) => project.id === activeProjectId) ?? null;
+    const activeProject = updateProjectFromDocument(
+      existingProject ??
+        createProject({
+          currentPage,
+          document: loadedDocument,
+          history,
+          id: activeProjectId,
+        }),
+      {
+        currentPage,
+        document: loadedDocument,
+        history,
+      },
+    );
+
+    return sortProjectsForSwitcher(
+      upsertProject(projects, activeProject),
+      activeProjectId,
+    );
+  }, [activeProjectId, currentPage, history, loadedDocument, projects]);
+
+  const handleSelectProject = useCallback(
+    (projectId: string) => {
+      if (projectId === activeProjectId) {
+        return;
+      }
+
+      commitPendingTextEdit();
+      const activeSnapshot = getActiveProjectSnapshot();
+      const currentProjects = activeSnapshot
+        ? upsertProject(projects, activeSnapshot)
+        : projects;
+      const targetProject = currentProjects.find(
+        (project) => project.id === projectId,
+      );
+
+      if (!targetProject) {
+        return;
+      }
+
+      setProjects(currentProjects);
+      pushProjectPath(projectId);
+    },
+    [
+      activeProjectId,
+      commitPendingTextEdit,
+      getActiveProjectSnapshot,
+      pushProjectPath,
+      projects,
+    ],
+  );
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -615,7 +1129,7 @@ function AppShell() {
       return;
     }
 
-    replacePdfFile(file);
+    void openPdfAsProject(file);
   };
 
   const handleExportPdf = async () => {
@@ -754,26 +1268,10 @@ function AppShell() {
 
   const handleDropPdfFile = useCallback(
     (file: File) => {
-      if (loadedDocument) {
-        setPendingReplacementPdfFile(file);
-        return;
-      }
-
-      replacePdfFile(file);
+      void openPdfAsProject(file);
     },
-    [loadedDocument, replacePdfFile],
+    [openPdfAsProject],
   );
-
-  const handleConfirmReplaceDroppedPdf = useCallback(() => {
-    const file = pendingReplacementPdfFile;
-
-    if (!file) {
-      return;
-    }
-
-    setPendingReplacementPdfFile(null);
-    replacePdfFile(file);
-  }, [pendingReplacementPdfFile, replacePdfFile]);
 
   const handleDropImageFile = useCallback(
     (file: File) => {
@@ -1063,7 +1561,7 @@ function AppShell() {
   };
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={700}>
       <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
         <input
           accept="application/pdf"
@@ -1080,9 +1578,10 @@ function AppShell() {
           type="file"
         />
         <EditorToolbar
+          activeProjectId={activeProjectId}
           activeImageAssetId={activeImageAsset?.id ?? null}
           activeSignatureAssetId={activeSignatureAsset?.id ?? null}
-          canCloseDraft={Boolean(loadedDocument) || overlays.length > 0}
+          canCloseProject={Boolean(loadedDocument) || overlays.length > 0}
           canRedo={canRedo}
           canUndo={canUndo}
           documentFontOptions={documentFontOptions}
@@ -1101,7 +1600,7 @@ function AppShell() {
           isWhiteoutSettingsDefault={isWhiteoutSettingsDefault}
           isWhiteoutToolActive={activeTool?.type === "whiteout"}
           markSettings={currentMarkSettings}
-          onCloseDraft={() => setIsCloseDraftDialogOpen(true)}
+          onCloseActiveProject={handleCloseActiveProject}
           onCreateSignature={handleCreateSignature}
           onExportPdf={handleExportPdf}
           onImportImageUrl={handleImportImageUrl}
@@ -1115,6 +1614,8 @@ function AppShell() {
           onRedo={handleRedo}
           onRemoveImageAssetFromRecents={hideImageAssetFromRecents}
           onRemoveSignatureAssetFromRecents={hideImageAssetFromRecents}
+          onRemoveProject={handleRemoveProject}
+          onSelectProject={handleSelectProject}
           onSelectImageAsset={(assetId) => {
             showImageAssetInRecents(assetId);
             setActiveTool({ assetId, type: "image" });
@@ -1147,6 +1648,7 @@ function AppShell() {
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           pageCount={loadedDocument?.pageCount ?? 0}
+          projects={toolbarProjects}
           signatureAssets={recentSignatureAssets}
           status={displayStatus}
           textSettings={currentTextSettings}
@@ -1200,6 +1702,7 @@ function AppShell() {
             imageAssets={imageAssets}
             isImageToolActive={activeTool?.type === "image"}
             isMarkToolActive={activeTool?.type === "mark"}
+            missingProjectId={missingProjectId}
             isSignatureToolActive={activeTool?.type === "signature"}
             isTextToolActive={activeTool?.type === "text"}
             isWhiteoutToolActive={activeTool?.type === "whiteout"}
@@ -1230,38 +1733,18 @@ function AppShell() {
           />
         </div>
         <Dialog
-          open={Boolean(pendingReplacementPdfFile)}
+          open={isCloseProjectDialogOpen}
           onOpenChange={(isOpen) => {
+            setIsCloseProjectDialogOpen(isOpen);
+
             if (!isOpen) {
-              setPendingReplacementPdfFile(null);
+              setPendingCloseProjectId(null);
             }
           }}
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Replace current PDF?</DialogTitle>
-              <DialogDescription>
-                Opening {pendingReplacementPdfFile?.name ?? "this PDF"} will
-                replace the current PDF. Any unsaved changes will be lost.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button onClick={handleConfirmReplaceDroppedPdf} type="button">
-                Replace PDF
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <Dialog
-          open={isCloseDraftDialogOpen}
-          onOpenChange={setIsCloseDraftDialogOpen}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Close current draft?</DialogTitle>
+              <DialogTitle>Close current project?</DialogTitle>
               <DialogDescription>
                 This will remove the open PDF and local edits from this browser.
                 Your original file will not be deleted.
@@ -1271,8 +1754,8 @@ function AppShell() {
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
-              <Button onClick={handleConfirmCloseDraft} type="button">
-                Close Draft
+              <Button onClick={handleConfirmCloseProject} type="button">
+                Close Project
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1305,6 +1788,21 @@ function getExportErrorMessage(error: unknown) {
   }
 
   return "Please try again.";
+}
+
+function createProjectFromPersistedRecord(
+  record: PersistedEditorProjectRecord,
+): Project {
+  return {
+    createdAt: record.createdAt,
+    currentPage: record.currentPage,
+    fileName: record.fileName,
+    history: record.history ?? createEditorHistory(),
+    id: record.id,
+    lastModifiedAt: record.updatedAt,
+    pageCount: record.pageCount,
+    pdfBytes: record.pdfBytes,
+  };
 }
 
 export { AppShell };

@@ -65,6 +65,42 @@ describe("editor draft db", () => {
     );
   });
 
+  it("writes multi-project draft records", async () => {
+    const storage = createMemoryEditorDraftStorage();
+    const projectBytes = new Uint8Array([7, 8, 9]).buffer;
+
+    await writeActiveDraft(
+      createDraftRecord({
+        activeProjectId: "project-a",
+        projects: [
+          {
+            createdAt: 100,
+            currentPage: 1,
+            fileName: "a.pdf",
+            id: "project-a",
+            pageCount: 2,
+            pdfBytes: projectBytes,
+            updatedAt: 200,
+          },
+        ],
+      }),
+      storage,
+    );
+
+    expect(await readActiveDraft(storage)).toEqual(
+      expect.objectContaining({
+        activeProjectId: "project-a",
+        projects: [
+          expect.objectContaining({
+            fileName: "a.pdf",
+            id: "project-a",
+            pdfBytes: projectBytes,
+          }),
+        ],
+      }),
+    );
+  });
+
   it("writes image assets with bytes and metadata", async () => {
     const storage = createMemoryEditorDraftStorage();
     const image = createImageRecord();

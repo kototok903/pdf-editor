@@ -18,6 +18,7 @@ import {
   imageAssetFromPersistedRecord,
   toPersistedImageAssetRecord,
 } from "@/features/editor/lib/persisted-image-assets";
+import type { Project } from "@/features/editor/lib/editor-projects";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 
 type LocalDraftHydrationState = "idle" | "hydrating" | "hydrated" | "error";
@@ -28,21 +29,25 @@ type LocalDraftHydrationResult = {
 };
 
 type UseLocalDraftPersistenceOptions = {
+  activeProjectId: string | null;
   currentPage: number;
   document: LoadedPdfDocument | null;
   history: EditorHistoryState;
   imageAssets: ImageAsset[];
   isReadyToPersist: boolean;
   overlays: EditorOverlay[];
+  projects: Project[];
 };
 
 function useLocalDraftPersistence({
+  activeProjectId,
   currentPage,
   document,
   history,
   imageAssets,
   isReadyToPersist,
   overlays,
+  projects,
 }: UseLocalDraftPersistenceOptions) {
   const [hydrationState, setHydrationState] =
     useState<LocalDraftHydrationState>("idle");
@@ -112,15 +117,25 @@ function useLocalDraftPersistence({
         currentPage,
         document,
         history,
+        activeProjectId,
         imageAssets,
-        overlays,
+        projects,
       }).catch(() => {
         // Persistence is best-effort; editing should continue.
       });
     }, 500);
 
     return () => window.clearTimeout(timeoutId);
-  }, [currentPage, document, history, imageAssets, isReadyToPersist, overlays]);
+  }, [
+    activeProjectId,
+    currentPage,
+    document,
+    history,
+    imageAssets,
+    isReadyToPersist,
+    overlays,
+    projects,
+  ]);
 
   return {
     clearStoredDraft,
@@ -139,36 +154,99 @@ async function persistActiveDraft({
   currentPage,
   document,
   history,
+  activeProjectId,
   imageAssets,
-  overlays,
+  projects,
 }: {
+  activeProjectId: string | null;
   currentPage: number;
   document: LoadedPdfDocument | null;
   history: EditorHistoryState;
   imageAssets: ImageAsset[];
-  overlays: EditorOverlay[];
+  projects: Project[];
 }) {
-  if (!document) {
+  const projectsToPersist = getProjectsToPersist({
+    activeProjectId,
+    currentPage,
+    document,
+    history,
+    projects,
+  });
+
+  if (projectsToPersist.length === 0) {
     await clearActiveDraft();
     return;
   }
 
-  const imageAssetIds = getPersistedDraftImageAssetIds(
+  const imageAssetIds = getPersistedProjectImageAssetIds(
     imageAssets,
-    overlays,
-    history,
+    projectsToPersist.map((project) => project.history),
   );
+  const activeProject =
+    projectsToPersist.find((project) => project.id === activeProjectId) ??
+    projectsToPersist[0];
 
   await writeActiveDraft({
-    currentPage,
-    fileName: document.fileName,
-    history,
+    activeProjectId: activeProject.id,
+    currentPage: activeProject.currentPage,
+    fileName: activeProject.fileName,
+    history: activeProject.history,
     id: activeDraftKey,
     imageAssetIds,
-    overlays,
-    pdfBytes: document.bytes,
-    updatedAt: Date.now(),
+    overlays: activeProject.history.present.overlays,
+    pdfBytes: activeProject.pdfBytes,
+    projectId: activeProject.id,
+    projects: projectsToPersist.map((project) => ({
+      createdAt: project.createdAt,
+      currentPage: project.currentPage,
+      fileName: project.fileName,
+      history: project.history,
+      id: project.id,
+      pageCount: project.pageCount,
+      pdfBytes: project.pdfBytes,
+      updatedAt: project.lastModifiedAt,
+    })),
+    updatedAt: activeProject.lastModifiedAt,
   });
+}
+
+function getProjectsToPersist({
+  activeProjectId,
+  currentPage,
+  document,
+  history,
+  projects,
+}: {
+  activeProjectId: string | null;
+  currentPage: number;
+  document: LoadedPdfDocument | null;
+  history: EditorHistoryState;
+  projects: Project[];
+}) {
+  if (!activeProjectId || !document) {
+    return projects;
+  }
+
+  const activeProject =
+    projects.find((project) => project.id === activeProjectId) ?? null;
+  const nextActiveProject: Project = {
+    createdAt: activeProject?.createdAt ?? Date.now(),
+    currentPage: Math.min(document.pageCount, Math.max(1, currentPage)),
+    fileName: document.fileName,
+    history,
+    id: activeProjectId,
+    lastModifiedAt: Date.now(),
+    pageCount: document.pageCount,
+    pdfBytes: document.bytes,
+  };
+
+  if (!activeProject) {
+    return [...projects, nextActiveProject];
+  }
+
+  return projects.map((project) =>
+    project.id === activeProjectId ? nextActiveProject : project,
+  );
 }
 
 function getPersistedDraftImageAssetIds(
@@ -198,5 +276,29 @@ function getPersistedDraftImageAssetIds(
     .map((asset) => asset.id);
 }
 
-export { getPersistedDraftImageAssetIds, useLocalDraftPersistence };
+function getPersistedProjectImageAssetIds(
+  imageAssets: ImageAsset[],
+  histories: EditorHistoryState[],
+) {
+  const referencedImageAssetIds = new Set<string>();
+
+  for (const history of histories) {
+    for (const assetId of getHistoryImageAssetIds(history)) {
+      referencedImageAssetIds.add(assetId);
+    }
+  }
+
+  return imageAssets
+    .filter(
+      (asset) =>
+        !asset.isHiddenFromRecents || referencedImageAssetIds.has(asset.id),
+    )
+    .map((asset) => asset.id);
+}
+
+export {
+  getPersistedDraftImageAssetIds,
+  getPersistedProjectImageAssetIds,
+  useLocalDraftPersistence,
+};
 export type { LocalDraftHydrationState };

@@ -44,6 +44,17 @@ import {
   type DocumentTextFontMenuOption,
 } from "@/features/editor/lib/text-fonts";
 
+type TextToolButtonProps = {
+  disabled: boolean;
+  documentFontOptions: DocumentTextFontMenuOption[];
+  isDefault: boolean;
+  isSelected: boolean;
+  onSettingsChange: (patch: TextOverlayPatch) => void;
+  onSettingsReset: () => void;
+  onTextToolClick: () => void;
+  settings: TextOverlayDefaults;
+};
+
 function TextToolButton({
   disabled,
   documentFontOptions,
@@ -53,16 +64,7 @@ function TextToolButton({
   onSettingsReset,
   onTextToolClick,
   settings,
-}: {
-  disabled: boolean;
-  documentFontOptions: DocumentTextFontMenuOption[];
-  isDefault: boolean;
-  isSelected: boolean;
-  onSettingsChange: (patch: TextOverlayPatch) => void;
-  onSettingsReset: () => void;
-  onTextToolClick: () => void;
-  settings: TextOverlayDefaults;
-}) {
+}: TextToolButtonProps) {
   return (
     <div className="inline-flex shrink-0">
       <Button

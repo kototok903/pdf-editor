@@ -17,6 +17,16 @@ import {
 } from "@/components/ui/color-picker";
 import { rgbArrayToHex } from "@/features/editor/lib/editor-utils";
 
+type WhiteoutToolButtonProps = {
+  disabled: boolean;
+  isDefault: boolean;
+  isSelected: boolean;
+  onSettingsChange: (patch: WhiteoutOverlayPatch) => void;
+  onSettingsReset: () => void;
+  onWhiteoutToolClick: () => void;
+  settings: WhiteoutOverlayDefaults;
+};
+
 function WhiteoutToolButton({
   disabled,
   isDefault,
@@ -25,15 +35,7 @@ function WhiteoutToolButton({
   onSettingsReset,
   onWhiteoutToolClick,
   settings,
-}: {
-  disabled: boolean;
-  isDefault: boolean;
-  isSelected: boolean;
-  onSettingsChange: (patch: WhiteoutOverlayPatch) => void;
-  onSettingsReset: () => void;
-  onWhiteoutToolClick: () => void;
-  settings: WhiteoutOverlayDefaults;
-}) {
+}: WhiteoutToolButtonProps) {
   return (
     <div className="inline-flex shrink-0">
       <Button

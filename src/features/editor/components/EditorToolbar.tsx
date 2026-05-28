@@ -1,32 +1,15 @@
 import { useState } from "react";
 import {
-  ChevronDownIcon,
-  FileDownIcon,
-  FileIcon,
-  FileTextIcon,
-  Layers2Icon,
   MoonIcon,
   Redo2Icon,
   SunIcon,
   Undo2Icon,
-  XIcon,
   ZoomInIcon,
   ZoomOutIcon,
 } from "lucide-react";
 
-import {
-  FileTextDashedIcon,
-  Layers2DashedIcon,
-} from "@/components/ui/custom-icons";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
 import { TextToolButton } from "@/features/editor/components/TextToolButton";
 import { ImageToolDropdown } from "@/features/editor/components/ImageToolDropdown";
 import { ImageUrlDialog } from "@/features/editor/components/ImageUrlDialog";
@@ -45,8 +28,12 @@ import type {
 import { TooltipButton } from "@/features/editor/components/TooltipButton";
 import { WhiteoutToolButton } from "@/features/editor/components/WhiteoutToolButton";
 import type { DocumentTextFontMenuOption } from "@/features/editor/lib/text-fonts";
+import type { Project } from "@/features/editor/lib/editor-projects";
+import { ProjectDropdown } from "@/features/editor/components/ProjectDropdown";
+import { SidebarsToggle } from "@/features/editor/components/SidebarsToggle";
 
 type EditorToolbarProps = {
+  activeProjectId: string | null;
   activeImageAssetId: string | null;
   activeSignatureAssetId: string | null;
   documentFontOptions: DocumentTextFontMenuOption[];
@@ -69,7 +56,7 @@ type EditorToolbarProps = {
   onMarkSettingsReset: () => void;
   onMarkToolActivate: () => void;
   onMarkToolClick: () => void;
-  onCloseDraft: () => void;
+  onCloseActiveProject: () => void;
   onCreateSignature: (input: SignatureCreateInput) => Promise<boolean>;
   onExportPdf: () => void;
   onOpenFile: () => void;
@@ -77,6 +64,8 @@ type EditorToolbarProps = {
   onRedo: () => void;
   onRemoveImageAssetFromRecents: (assetId: string) => void;
   onRemoveSignatureAssetFromRecents: (assetId: string) => void;
+  onRemoveProject: (projectId: string) => void;
+  onSelectProject: (projectId: string) => void;
   onSelectImageAsset: (assetId: string) => void;
   onSelectSignatureAsset: (assetId: string) => void;
   onTextSettingsChange: (patch: TextOverlayPatch) => void;
@@ -92,6 +81,7 @@ type EditorToolbarProps = {
   onZoomIn: () => void;
   onZoomOut: () => void;
   pageCount: number;
+  projects: Project[];
   signatureAssets: ImageAsset[];
   status: "empty" | "loading" | "loaded" | "error";
   canRedo: boolean;
@@ -101,13 +91,14 @@ type EditorToolbarProps = {
     color: string;
     markType: MarkType;
   };
-  canCloseDraft: boolean;
+  canCloseProject: boolean;
   textSettings: TextOverlayDefaults;
   whiteoutSettings: WhiteoutOverlayDefaults;
   zoomPercent: number;
 };
 
 function EditorToolbar({
+  activeProjectId,
   activeImageAssetId,
   activeSignatureAssetId,
   documentFontOptions,
@@ -126,9 +117,9 @@ function EditorToolbar({
   isWhiteoutToolActive,
   markSettings,
   canRedo,
-  canCloseDraft,
+  canCloseProject,
   canUndo,
-  onCloseDraft,
+  onCloseActiveProject,
   onCreateSignature,
   onExportPdf,
   onImportImageFromClipboard,
@@ -142,6 +133,8 @@ function EditorToolbar({
   onRedo,
   onRemoveImageAssetFromRecents,
   onRemoveSignatureAssetFromRecents,
+  onRemoveProject,
+  onSelectProject,
   onSelectImageAsset,
   onSelectSignatureAsset,
   onTextSettingsChange,
@@ -157,6 +150,7 @@ function EditorToolbar({
   onZoomIn,
   onZoomOut,
   pageCount,
+  projects,
   signatureAssets,
   status,
   isExporting,
@@ -171,93 +165,27 @@ function EditorToolbar({
   return (
     <header className="sticky top-0 z-20 border-b bg-toolbar text-toolbar-foreground">
       <div className="flex h-12 items-center gap-1.5 px-2.5">
-        <div className="inline-flex shrink-0">
-          <TooltipButton label="Toggle pages">
-            <Button
-              aria-label="Toggle pages sidebar"
-              aria-pressed={isPagesSidebarOpen}
-              className="w-7.5 rounded-r-none px-0"
-              onClick={onTogglePagesSidebar}
-              size="sm"
-              type="button"
-              variant="toolbar"
-            >
-              {isPagesSidebarOpen ? (
-                <FileTextDashedIcon aria-hidden="true" />
-              ) : (
-                <FileTextIcon aria-hidden="true" />
-              )}
-            </Button>
-          </TooltipButton>
-          <TooltipButton label="Toggle layers">
-            <Button
-              aria-label="Toggle layers sidebar"
-              aria-pressed={isLayersSidebarOpen}
-              className="-ml-px w-7.5 rounded-l-none px-0"
-              onClick={onToggleLayersSidebar}
-              size="sm"
-              type="button"
-              variant="toolbar"
-            >
-              {isLayersSidebarOpen ? (
-                <Layers2DashedIcon aria-hidden="true" />
-              ) : (
-                <Layers2Icon aria-hidden="true" />
-              )}
-            </Button>
-          </TooltipButton>
-        </div>
+        <ProjectDropdown
+          hasPdf={hasPdf}
+          fileName={fileName}
+          projects={projects}
+          activeProjectId={activeProjectId}
+          isExporting={isExporting}
+          isLoading={isLoading}
+          canCloseProject={canCloseProject}
+          onExportPdf={onExportPdf}
+          onOpenFile={onOpenFile}
+          onCloseActiveProject={onCloseActiveProject}
+          onSelectProject={onSelectProject}
+          onRemoveProject={onRemoveProject}
+        />
 
-        <div className="mr-1 min-w-24">
-          {isLoading ? (
-            <>
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="mt-1.5 h-2.5 w-14" />
-            </>
-          ) : (
-            <TooltipButton label={fileName ?? ""} disabled={!fileName}>
-              <div>
-                <div className="max-w-36 truncate text-xs font-semibold">
-                  {fileName ?? "No PDF open"}
-                </div>
-                <div className="text-[11px] text-muted-foreground">
-                  {pageCount > 0
-                    ? `${pageCount} page${pageCount === 1 ? "" : "s"}`
-                    : "Choose a file"}
-                </div>
-              </div>
-            </TooltipButton>
-          )}
-        </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm" type="button" variant="toolbar">
-              <FileTextIcon aria-hidden="true" />
-              File
-              <ChevronDownIcon aria-hidden="true" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-max min-w-40">
-            <DropdownMenuItem
-              onSelect={() => {
-                onOpenFile();
-              }}
-            >
-              <FileIcon aria-hidden="true" /> Open PDF
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              disabled={!hasPdf || isExporting}
-              onSelect={onExportPdf}
-            >
-              <FileDownIcon aria-hidden="true" />{" "}
-              {isExporting ? "Exporting..." : "Export PDF"}
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled={!canCloseDraft} onSelect={onCloseDraft}>
-              <XIcon aria-hidden="true" /> Close Draft
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <SidebarsToggle
+          isPagesSidebarOpen={isPagesSidebarOpen}
+          isLayersSidebarOpen={isLayersSidebarOpen}
+          onTogglePagesSidebar={onTogglePagesSidebar}
+          onToggleLayersSidebar={onToggleLayersSidebar}
+        />
 
         <Separator className="mx-1 h-6 self-center!" orientation="vertical" />
 

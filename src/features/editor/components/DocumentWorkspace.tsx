@@ -41,6 +41,7 @@ type DocumentWorkspaceProps = {
   imageAssets: ImageAsset[];
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
+  missingProjectId: string | null;
   isSignatureToolActive: boolean;
   isTextToolActive: boolean;
   isWhiteoutToolActive: boolean;
@@ -86,6 +87,7 @@ function DocumentWorkspace({
   imageAssets,
   isImageToolActive,
   isMarkToolActive,
+  missingProjectId,
   isSignatureToolActive,
   isTextToolActive,
   isWhiteoutToolActive,
@@ -396,7 +398,16 @@ function DocumentWorkspace({
       ref={workspaceRef}
       style={{ scrollPaddingTop: pageScrollTopSpacing }}
     >
-      {status === "empty" && (
+      {status === "empty" && missingProjectId && (
+        <PdfUploadEmptyState
+          description="That project is not open in this browser. Choose a PDF to start a project."
+          isPdfDropActive={dragIntent === "pdf"}
+          onOpenFile={onOpenFile}
+          title="Project not found"
+        />
+      )}
+
+      {status === "empty" && !missingProjectId && (
         <PdfUploadEmptyState
           isPdfDropActive={dragIntent === "pdf"}
           onOpenFile={onOpenFile}
