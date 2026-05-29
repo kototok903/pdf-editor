@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Project } from "@/features/editor/lib/editor-projects";
-import { TooltipButton } from "@/features/editor/components/TooltipButton";
+import { Tooltip } from "@/components/ui/tooltip";
 
 type ProjectDropdownProps = {
   hasPdf: boolean;
@@ -54,7 +54,7 @@ function ProjectDropdown({
         <Skeleton className="h-7.5 w-19.5" />
       ) : (
         <DropdownMenu>
-          <TooltipButton label={fileName ?? ""} disabled={!fileName}>
+          <Tooltip tooltip={fileName ?? ""} disabled={!fileName}>
             <DropdownMenuTrigger asChild>
               <Button
                 className="min-w-0 justify-start gap-1.5 text-left"
@@ -72,7 +72,7 @@ function ProjectDropdown({
                 <ChevronDownIcon aria-hidden="true" className="shrink-0" />
               </Button>
             </DropdownMenuTrigger>
-          </TooltipButton>
+          </Tooltip>
           <DropdownMenuContent align="start" className="w-72 p-1.5">
             <DropdownMenuItem
               onSelect={() => {

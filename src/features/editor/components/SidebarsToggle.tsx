@@ -4,8 +4,8 @@ import {
 } from "@/components/ui/custom-icons";
 
 import { Button } from "@/components/ui/button";
-import { TooltipButton } from "@/features/editor/components/TooltipButton";
 import { FileTextIcon, Layers2Icon } from "lucide-react";
+import { Tooltip } from "@/components/ui/tooltip";
 
 type SidebarsToggleProps = {
   isPagesSidebarOpen: boolean;
@@ -22,7 +22,7 @@ function SidebarsToggle({
 }: SidebarsToggleProps) {
   return (
     <div className="inline-flex shrink-0">
-      <TooltipButton label="Toggle pages">
+      <Tooltip tooltip="Toggle pages">
         <Button
           aria-label="Toggle pages sidebar"
           aria-pressed={isPagesSidebarOpen}
@@ -38,8 +38,8 @@ function SidebarsToggle({
             <FileTextIcon aria-hidden="true" />
           )}
         </Button>
-      </TooltipButton>
-      <TooltipButton label="Toggle layers">
+      </Tooltip>
+      <Tooltip tooltip="Toggle layers">
         <Button
           aria-label="Toggle layers sidebar"
           aria-pressed={isLayersSidebarOpen}
@@ -55,7 +55,7 @@ function SidebarsToggle({
             <Layers2Icon aria-hidden="true" />
           )}
         </Button>
-      </TooltipButton>
+      </Tooltip>
     </div>
   );
 }

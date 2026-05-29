@@ -25,12 +25,12 @@ import type {
   WhiteoutOverlayDefaults,
   WhiteoutOverlayPatch,
 } from "@/features/editor/editor-types";
-import { TooltipButton } from "@/features/editor/components/TooltipButton";
 import { WhiteoutToolButton } from "@/features/editor/components/WhiteoutToolButton";
 import type { DocumentTextFontMenuOption } from "@/features/editor/lib/text-fonts";
 import type { Project } from "@/features/editor/lib/editor-projects";
 import { ProjectDropdown } from "@/features/editor/components/ProjectDropdown";
 import { SidebarsToggle } from "@/features/editor/components/SidebarsToggle";
+import { Tooltip } from "@/components/ui/tooltip";
 
 type EditorToolbarProps = {
   activeProjectId: string | null;
@@ -189,20 +189,18 @@ function EditorToolbar({
 
         <Separator className="mx-1 h-6 self-center!" orientation="vertical" />
 
-        <TooltipButton label="Text" disabled={!hasPdf}>
-          <div>
-            <TextToolButton
-              disabled={!hasPdf}
-              documentFontOptions={documentFontOptions}
-              isDefault={isTextSettingsDefault}
-              isSelected={isTextToolActive}
-              onSettingsChange={onTextSettingsChange}
-              onSettingsReset={onTextSettingsReset}
-              onTextToolClick={onTextToolClick}
-              settings={textSettings}
-            />
-          </div>
-        </TooltipButton>
+        <Tooltip tooltip="Text" disabled={!hasPdf}>
+          <TextToolButton
+            disabled={!hasPdf}
+            documentFontOptions={documentFontOptions}
+            isDefault={isTextSettingsDefault}
+            isSelected={isTextToolActive}
+            onSettingsChange={onTextSettingsChange}
+            onSettingsReset={onTextSettingsReset}
+            onTextToolClick={onTextToolClick}
+            settings={textSettings}
+          />
+        </Tooltip>
 
         <ImageToolDropdown
           activeImageAssetId={activeImageAssetId}
@@ -225,38 +223,34 @@ function EditorToolbar({
           signatureAssets={signatureAssets}
         />
 
-        <TooltipButton label="Mark" disabled={!hasPdf}>
-          <div>
-            <MarkToolDropdown
-              color={markSettings.color}
-              disabled={!hasPdf}
-              isDefault={isMarkSettingsDefault}
-              isSelected={isMarkToolActive}
-              markType={markSettings.markType}
-              onMarkToolActivate={onMarkToolActivate}
-              onMarkToolClick={onMarkToolClick}
-              onSettingsChange={onMarkSettingsChange}
-              onSettingsReset={onMarkSettingsReset}
-            />
-          </div>
-        </TooltipButton>
+        <Tooltip tooltip="Mark" disabled={!hasPdf}>
+          <MarkToolDropdown
+            color={markSettings.color}
+            disabled={!hasPdf}
+            isDefault={isMarkSettingsDefault}
+            isSelected={isMarkToolActive}
+            markType={markSettings.markType}
+            onMarkToolActivate={onMarkToolActivate}
+            onMarkToolClick={onMarkToolClick}
+            onSettingsChange={onMarkSettingsChange}
+            onSettingsReset={onMarkSettingsReset}
+          />
+        </Tooltip>
 
-        <TooltipButton label="Whiteout" disabled={!hasPdf}>
-          <div>
-            <WhiteoutToolButton
-              disabled={!hasPdf}
-              isDefault={isWhiteoutSettingsDefault}
-              isSelected={isWhiteoutToolActive}
-              onSettingsChange={onWhiteoutSettingsChange}
-              onSettingsReset={onWhiteoutSettingsReset}
-              onWhiteoutToolClick={onWhiteoutToolClick}
-              settings={whiteoutSettings}
-            />
-          </div>
-        </TooltipButton>
+        <Tooltip tooltip="Whiteout" disabled={!hasPdf}>
+          <WhiteoutToolButton
+            disabled={!hasPdf}
+            isDefault={isWhiteoutSettingsDefault}
+            isSelected={isWhiteoutToolActive}
+            onSettingsChange={onWhiteoutSettingsChange}
+            onSettingsReset={onWhiteoutSettingsReset}
+            onWhiteoutToolClick={onWhiteoutToolClick}
+            settings={whiteoutSettings}
+          />
+        </Tooltip>
 
         <div className="ml-auto flex items-center gap-1">
-          <TooltipButton label="Undo">
+          <Tooltip tooltip="Undo" disabled={!canUndo}>
             <Button
               className="w-7.5 px-0"
               disabled={!canUndo}
@@ -267,8 +261,8 @@ function EditorToolbar({
             >
               <Undo2Icon aria-hidden="true" />
             </Button>
-          </TooltipButton>
-          <TooltipButton label="Redo">
+          </Tooltip>
+          <Tooltip tooltip="Redo" disabled={!canRedo}>
             <Button
               className="w-7.5 px-0"
               disabled={!canRedo}
@@ -279,11 +273,11 @@ function EditorToolbar({
             >
               <Redo2Icon aria-hidden="true" />
             </Button>
-          </TooltipButton>
+          </Tooltip>
 
           <Separator className="mx-1 h-6 self-center!" orientation="vertical" />
 
-          <TooltipButton label="Zoom out">
+          <Tooltip tooltip="Zoom out" disabled={!hasPdf}>
             <Button
               className="w-7.5 px-0"
               disabled={!hasPdf}
@@ -294,11 +288,11 @@ function EditorToolbar({
             >
               <ZoomOutIcon aria-hidden="true" />
             </Button>
-          </TooltipButton>
+          </Tooltip>
           <div className="w-11 text-center text-xs text-muted-foreground">
             {zoomPercent}%
           </div>
-          <TooltipButton label="Zoom in">
+          <Tooltip tooltip="Zoom in" disabled={!hasPdf}>
             <Button
               className="w-7.5 px-0"
               disabled={!hasPdf}
@@ -309,11 +303,11 @@ function EditorToolbar({
             >
               <ZoomInIcon aria-hidden="true" />
             </Button>
-          </TooltipButton>
+          </Tooltip>
 
           <Separator className="mx-1 h-6 self-center!" orientation="vertical" />
 
-          <TooltipButton label={isDark ? "Use light theme" : "Use dark theme"}>
+          <Tooltip tooltip={isDark ? "Use light theme" : "Use dark theme"}>
             <Button
               className="w-7.5 px-0"
               onClick={onToggleTheme}
@@ -327,7 +321,7 @@ function EditorToolbar({
                 <MoonIcon aria-hidden="true" />
               )}
             </Button>
-          </TooltipButton>
+          </Tooltip>
         </div>
       </div>
       <ImageUrlDialog

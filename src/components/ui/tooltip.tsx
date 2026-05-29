@@ -18,7 +18,7 @@ function TooltipProvider({
   );
 }
 
-function Tooltip({
+function TooltipRoot({
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
   return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
@@ -59,4 +59,19 @@ function TooltipContent({
   );
 }
 
-export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger };
+type TooltipProps = {
+  children: React.ReactNode;
+  tooltip: string | React.ReactNode;
+  disabled?: boolean;
+};
+
+function Tooltip({ children, tooltip, disabled }: TooltipProps) {
+  return (
+    <TooltipRoot>
+      <TooltipTrigger>{children}</TooltipTrigger>
+      <TooltipContent disabled={disabled}>{tooltip}</TooltipContent>
+    </TooltipRoot>
+  );
+}
+
+export { TooltipRoot, TooltipContent, TooltipProvider, TooltipTrigger, Tooltip };
