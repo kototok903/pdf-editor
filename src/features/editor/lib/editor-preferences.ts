@@ -85,6 +85,20 @@ function writeEditorPreferences(
   }
 }
 
+function clearEditorPreferences(
+  storage: Storage | undefined = getBrowserStorage(),
+) {
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.removeItem(editorPreferencesStorageKey);
+  } catch {
+    // localStorage can be unavailable; clearing app data should stay best-effort.
+  }
+}
+
 function normalizeEditorPreferences(value: unknown): EditorPreferences {
   if (!isRecord(value)) {
     return defaultEditorPreferences;
@@ -205,6 +219,7 @@ function asThemeName(value: unknown, fallback: EditorThemeName) {
 }
 
 export {
+  clearEditorPreferences,
   defaultEditorPreferences,
   editorPreferencesStorageKey,
   maxEditorZoom,

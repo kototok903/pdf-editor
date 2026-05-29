@@ -25,6 +25,10 @@ import { EditorToolbar } from "@/features/editor/components/EditorToolbar";
 import { LayersSidebar } from "@/features/editor/components/LayersSidebar";
 import { PagesSidebar } from "@/features/editor/components/PagesSidebar";
 import { SidebarDragDropProvider } from "@/features/editor/components/SidebarDragDropProvider";
+import {
+  ClearLocalDataDialog,
+  SettingsDialog,
+} from "@/features/editor/components/SettingsDialog";
 import type {
   EditorOverlayInput,
   MarkOverlay,
@@ -71,6 +75,8 @@ import {
   isProjectPath,
 } from "@/features/editor/lib/project-route-utils";
 import {
+  clearEditorPreferences,
+  defaultEditorPreferences,
   maxEditorZoom,
   minEditorZoom,
   type EditorPreferences,
@@ -88,7 +94,10 @@ import {
   type EditorHistoryEntry,
   type EditorHistoryState,
 } from "@/features/editor/lib/editor-history";
-import type { PersistedEditorProjectRecord } from "@/features/editor/lib/editor-draft-db";
+import {
+  clearEditorDraftDatabase,
+  type PersistedEditorProjectRecord,
+} from "@/features/editor/lib/editor-draft-db";
 import { createExportFileName } from "@/features/pdf-export/lib/export-file-name";
 import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
 import { usePdfPageSizes } from "@/features/pdf/hooks/usePdfPageSizes";
@@ -128,7 +137,11 @@ function AppShell() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [isCloseProjectDialogOpen, setIsCloseProjectDialogOpen] =
     useState(false);
+  const [isClearLocalDataDialogOpen, setIsClearLocalDataDialogOpen] =
+    useState(false);
+  const [isClearingLocalData, setIsClearingLocalData] = useState(false);
   const [isLocalDraftReady, setIsLocalDraftReady] = useState(false);
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [pendingCloseProjectId, setPendingCloseProjectId] = useState<
     string | null
   >(null);
@@ -1591,6 +1604,53 @@ function AppShell() {
     }));
   };
 
+  const handleClearLocalAppData = useCallback(async () => {
+    if (isClearingLocalData) {
+      return;
+    }
+
+    setIsClearingLocalData(true);
+    setIsLocalDraftReady(false);
+    commitPendingTextEdit();
+
+    try {
+      await clearEditorDraftDatabase();
+      clearEditorPreferences();
+
+      replaceImageAssets([]);
+      setProjects([]);
+      setActiveProjectId(null);
+      replaceProjectPath(null);
+      setCurrentPage(1);
+      clearFile();
+      resetHistory();
+      resetProjectRuntimeState();
+      setEditorPreferences(defaultEditorPreferences);
+      setPendingCloseProjectId(null);
+      setIsCloseProjectDialogOpen(false);
+      setIsClearLocalDataDialogOpen(false);
+      setIsSettingsDialogOpen(false);
+
+      toast.success("Cleared local app data");
+    } catch {
+      toast.error("Unable to clear local app data", {
+        description: "Please try again.",
+      });
+    } finally {
+      setIsLocalDraftReady(true);
+      setIsClearingLocalData(false);
+    }
+  }, [
+    clearFile,
+    commitPendingTextEdit,
+    isClearingLocalData,
+    replaceImageAssets,
+    replaceProjectPath,
+    resetHistory,
+    resetProjectRuntimeState,
+    setEditorPreferences,
+  ]);
+
   const handleRequestWorkspacePageScroll = useCallback(
     (pageNumber: number, behavior: ScrollBehavior = "smooth") => {
       setScrollToPageRequest((currentRequest) => ({
@@ -1634,7 +1694,6 @@ function AppShell() {
           documentFontOptions={documentFontOptions}
           fileName={loadedDocument?.fileName ?? null}
           imageAssets={recentImageAssets}
-          isDark={isDark}
           isExporting={isExporting}
           isImageToolActive={activeTool?.type === "image"}
           isLayersSidebarOpen={editorPreferences.isLayersSidebarOpen}
@@ -1658,6 +1717,7 @@ function AppShell() {
           onImportImageFromClipboard={handleImportImageFromClipboard}
           onOpenFile={handleOpenFileDialog}
           onOpenImageDialog={handleOpenImageDialog}
+          onOpenSettings={() => setIsSettingsDialogOpen(true)}
           onRedo={handleRedo}
           onRemoveImageAssetFromRecents={hideImageAssetFromRecents}
           onRemoveSignatureAssetFromRecents={hideImageAssetFromRecents}
@@ -1688,9 +1748,6 @@ function AppShell() {
               ...currentPreferences,
               isPagesSidebarOpen: !currentPreferences.isPagesSidebarOpen,
             }))
-          }
-          onToggleTheme={() =>
-            updateEditorPreferences({ themeName: isDark ? "light" : "dark" })
           }
           onUndo={handleUndo}
           onZoomIn={handleZoomIn}
@@ -1780,6 +1837,26 @@ function AppShell() {
             zoom={zoom}
           />
         </div>
+        <SettingsDialog
+          onClearLocalDataClick={() => {
+            setIsSettingsDialogOpen(false);
+            setIsClearLocalDataDialogOpen(true);
+          }}
+          onOpenChange={setIsSettingsDialogOpen}
+          onThemeChange={(nextThemeName) =>
+            updateEditorPreferences({ themeName: nextThemeName })
+          }
+          open={isSettingsDialogOpen}
+          themeName={themeName}
+        />
+        <ClearLocalDataDialog
+          isClearing={isClearingLocalData}
+          onConfirm={() => {
+            void handleClearLocalAppData();
+          }}
+          onOpenChange={setIsClearLocalDataDialogOpen}
+          open={isClearLocalDataDialogOpen}
+        />
         <Dialog
           open={isCloseProjectDialogOpen}
           onOpenChange={(isOpen) => {

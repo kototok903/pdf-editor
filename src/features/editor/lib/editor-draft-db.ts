@@ -53,6 +53,8 @@ type EditorDraftStorage = {
   writeActiveDraft: (draft: PersistedEditorDraftRecord) => Promise<void>;
 };
 
+type EditorDraftDatabaseDeleter = Pick<IDBFactory, "deleteDatabase">;
+
 const editorDraftDbName = "pdf-editor:drafts";
 const editorDraftDbVersion = 1;
 const imageAssetsStoreName = "imageAssets";
@@ -103,6 +105,23 @@ async function clearActiveDraft(
   storage: EditorDraftStorage = createIndexedDbEditorDraftStorage(),
 ) {
   await storage.clearActiveDraft();
+}
+
+function clearEditorDraftDatabase(
+  indexedDb: EditorDraftDatabaseDeleter | undefined = getIndexedDb(),
+) {
+  if (!indexedDb) {
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    const request = indexedDb.deleteDatabase(editorDraftDbName);
+
+    request.onerror = () => reject(request.error);
+    request.onblocked = () =>
+      reject(new Error("The local draft database is open in another tab."));
+    request.onsuccess = () => resolve();
+  });
 }
 
 function createMemoryEditorDraftStorage({
@@ -339,6 +358,7 @@ function requestToPromise<Result>(request: IDBRequest<Result>) {
 export {
   activeDraftKey,
   clearActiveDraft,
+  clearEditorDraftDatabase,
   createMemoryEditorDraftStorage,
   deletePersistedImageAsset,
   putPersistedImageAsset,

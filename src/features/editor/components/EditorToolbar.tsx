@@ -1,8 +1,7 @@
 import { useState } from "react";
 import {
-  MoonIcon,
   Redo2Icon,
-  SunIcon,
+  SettingsIcon,
   Undo2Icon,
   ZoomInIcon,
   ZoomOutIcon,
@@ -39,7 +38,6 @@ type EditorToolbarProps = {
   documentFontOptions: DocumentTextFontMenuOption[];
   fileName: string | null;
   imageAssets: ImageAsset[];
-  isDark: boolean;
   isImageToolActive: boolean;
   isLayersSidebarOpen: boolean;
   isPagesSidebarOpen: boolean;
@@ -72,7 +70,7 @@ type EditorToolbarProps = {
   onTextSettingsChange: (patch: TextOverlayPatch) => void;
   onTextSettingsReset: () => void;
   onTextToolClick: () => void;
-  onToggleTheme: () => void;
+  onOpenSettings: () => void;
   onToggleLayersSidebar: () => void;
   onTogglePagesSidebar: () => void;
   onUndo: () => void;
@@ -105,7 +103,6 @@ function EditorToolbar({
   documentFontOptions,
   fileName,
   imageAssets,
-  isDark,
   isImageToolActive,
   isLayersSidebarOpen,
   isPagesSidebarOpen,
@@ -142,7 +139,7 @@ function EditorToolbar({
   onTextSettingsChange,
   onTextSettingsReset,
   onTextToolClick,
-  onToggleTheme,
+  onOpenSettings,
   onToggleLayersSidebar,
   onTogglePagesSidebar,
   onUndo,
@@ -310,19 +307,15 @@ function EditorToolbar({
 
           <Separator className="mx-1 h-6 self-center!" orientation="vertical" />
 
-          <Tooltip tooltip={isDark ? "Use light theme" : "Use dark theme"}>
+          <Tooltip tooltip="Settings">
             <Button
               className="w-7.5 px-0"
-              onClick={onToggleTheme}
+              onClick={onOpenSettings}
               size="sm"
               type="button"
               variant="toolbar"
             >
-              {isDark ? (
-                <SunIcon aria-hidden="true" />
-              ) : (
-                <MoonIcon aria-hidden="true" />
-              )}
+              <SettingsIcon aria-hidden="true" />
             </Button>
           </Tooltip>
         </div>

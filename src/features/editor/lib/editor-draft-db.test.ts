@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   activeDraftKey,
+  clearEditorDraftDatabase,
   createMemoryEditorDraftStorage,
   readActiveDraft,
   readPersistedImageAssets,
@@ -132,5 +133,27 @@ describe("editor draft db", () => {
     await expect(
       putPersistedImageAsset(createImageRecord(), storage),
     ).rejects.toThrow("Unable to write local draft data.");
+  });
+
+  it("deletes the editor draft database", async () => {
+    const request = {
+      error: null,
+      onblocked: null,
+      onerror: null,
+      onsuccess: null,
+    } as IDBOpenDBRequest;
+    const indexedDb = {
+      deleteDatabase: vi.fn(() => request),
+    };
+    const promise = clearEditorDraftDatabase(indexedDb);
+
+    request.onsuccess?.(new Event("success"));
+
+    await expect(promise).resolves.toBeUndefined();
+    expect(indexedDb.deleteDatabase).toHaveBeenCalledWith("pdf-editor:drafts");
+  });
+
+  it("ignores missing IndexedDB when deleting the editor draft database", async () => {
+    await expect(clearEditorDraftDatabase(undefined)).resolves.toBeUndefined();
   });
 });

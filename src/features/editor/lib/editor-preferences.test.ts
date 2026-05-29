@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, type Mock } from "vitest";
 
 import {
+  clearEditorPreferences,
   defaultEditorPreferences,
   editorPreferencesStorageKey,
   readEditorPreferences,
@@ -178,5 +179,27 @@ describe("editor preferences persistence", () => {
     expect(() =>
       writeEditorPreferences(defaultEditorPreferences, undefined),
     ).not.toThrow();
+  });
+
+  it("clears persisted preferences", () => {
+    const storage = createMemoryStorage(
+      JSON.stringify(defaultEditorPreferences),
+    );
+
+    clearEditorPreferences(storage);
+
+    expect(storage.removeItem).toHaveBeenCalledWith(
+      editorPreferencesStorageKey,
+    );
+    expect(readEditorPreferences(storage)).toEqual(defaultEditorPreferences);
+  });
+
+  it("ignores storage errors when clearing preferences", () => {
+    const storage = createMemoryStorage();
+    (storage.removeItem as Mock).mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+
+    expect(() => clearEditorPreferences(storage)).not.toThrow();
   });
 });
