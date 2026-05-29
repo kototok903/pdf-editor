@@ -113,13 +113,17 @@ function ProjectDropdown({
                         className="grid grid-cols-[1fr_auto] items-center gap-2 rounded-md border border-transparent p-1.5 text-left outline-none hover:border-border hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 data-[active=true]:border-primary/50 data-[active=true]:bg-primary/10"
                         data-active={isActive}
                         key={project.id}
+                        onClick={() => onSelectProject(project.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onSelectProject(project.id);
+                          }
+                        }}  
+                        role="button"
+                        tabIndex={0}
                       >
-                        <button
-                          aria-current={isActive ? "true" : undefined}
-                          className="min-w-0 text-left"
-                          onClick={() => onSelectProject(project.id)}
-                          type="button"
-                        >
+                        <span className="min-w-0">
                           <span className="block truncate text-sm font-medium">
                             {project.fileName}
                           </span>
@@ -128,7 +132,7 @@ function ProjectDropdown({
                             {project.pageCount === 1 ? "page" : "pages"} ·{" "}
                             {formatProjectLastModified(project.lastModifiedAt)}
                           </span>
-                        </button>
+                        </span>
                         <Button
                           aria-label={`Close ${project.fileName}`}
                           className="size-7 p-0"
