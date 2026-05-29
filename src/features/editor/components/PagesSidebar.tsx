@@ -135,7 +135,12 @@ function PagesSidebar({
       <div className="shrink-0 border-b border-sidebar-border p-2">
         <div className="flex items-center justify-between gap-2 text-xs">
           <span>Page</span>
-          <span className="text-muted-foreground">
+          <span 
+            className="text-muted-foreground text-right"
+            style={{
+              minWidth: `${String(pageCount).length * 2}ch`,
+            }}
+          >
             {pageCount > 0 ? `${currentPage}/${pageCount}` : "0/0"}
           </span>
         </div>
