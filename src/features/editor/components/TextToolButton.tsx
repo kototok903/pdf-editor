@@ -29,8 +29,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Tooltip,
   TooltipContent,
+  TooltipRoot,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { rgbArrayToHex } from "@/features/editor/lib/editor-utils";
@@ -218,7 +218,7 @@ function DocumentFontReasonTooltip({
   const Icon = icon === "search" ? SearchAlertIcon : TriangleAlertIcon;
 
   return (
-    <Tooltip>
+    <TooltipRoot>
       <TooltipTrigger asChild>
         <span
           aria-label={reason}
@@ -230,7 +230,7 @@ function DocumentFontReasonTooltip({
       <TooltipContent side="right" sideOffset={8}>
         {reason}
       </TooltipContent>
-    </Tooltip>
+    </TooltipRoot>
   );
 }
 
@@ -240,7 +240,7 @@ function UnavailableDocumentFontItem({
   fontOption: Extract<DocumentTextFontMenuOption, { isAvailable: false }>;
 }) {
   return (
-    <Tooltip>
+    <TooltipRoot>
       <TooltipTrigger asChild>
         <div
           aria-disabled="true"
@@ -257,7 +257,7 @@ function UnavailableDocumentFontItem({
       <TooltipContent side="right" sideOffset={8}>
         {fontOption.reason}
       </TooltipContent>
-    </Tooltip>
+    </TooltipRoot>
   );
 }
 

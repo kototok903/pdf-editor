@@ -93,6 +93,33 @@ function useLocalDraftPersistence({
     await clearActiveDraft();
   }, []);
 
+  const persistLocalDraftNow = useCallback(
+    async (options: { projects?: Project[] } = {}) => {
+      if (!isReadyToPersist) {
+        return;
+      }
+
+      await persistRecentImages(imageAssets);
+      await persistActiveDraft({
+        currentPage,
+        document,
+        history,
+        activeProjectId,
+        imageAssets,
+        projects: options.projects ?? projects,
+      });
+    },
+    [
+      activeProjectId,
+      currentPage,
+      document,
+      history,
+      imageAssets,
+      isReadyToPersist,
+      projects,
+    ],
+  );
+
   useEffect(() => {
     if (!isReadyToPersist) {
       return;
@@ -141,6 +168,7 @@ function useLocalDraftPersistence({
     clearStoredDraft,
     hydrateLocalDraft,
     hydrationState,
+    persistLocalDraftNow,
   };
 }
 

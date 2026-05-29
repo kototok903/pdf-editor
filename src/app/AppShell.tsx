@@ -217,16 +217,17 @@ function AppShell() {
     recentSignatureAssets,
     showImageAssetInRecents,
   } = useImageAssets();
-  const { clearStoredDraft, hydrateLocalDraft } = useLocalDraftPersistence({
-    activeProjectId,
-    currentPage,
-    document: loadedDocument,
-    history,
-    imageAssets,
-    isReadyToPersist: isLocalDraftReady,
-    overlays,
-    projects,
-  });
+  const { clearStoredDraft, hydrateLocalDraft, persistLocalDraftNow } =
+    useLocalDraftPersistence({
+      activeProjectId,
+      currentPage,
+      document: loadedDocument,
+      history,
+      imageAssets,
+      isReadyToPersist: isLocalDraftReady,
+      overlays,
+      projects,
+    });
 
   const selectedTextOverlay = useMemo(
     () =>
@@ -1121,6 +1122,52 @@ function AppShell() {
     ],
   );
 
+  const handleOpenProjectInNewTab = useCallback(
+    async (projectId: string) => {
+      commitPendingTextEdit();
+
+      const activeSnapshot = getActiveProjectSnapshot();
+      const currentProjects = activeSnapshot
+        ? upsertProject(projects, activeSnapshot)
+        : projects;
+      const targetProject = currentProjects.find(
+        (project) => project.id === projectId,
+      );
+
+      if (!targetProject) {
+        return;
+      }
+
+      const newTab = window.open("about:blank", "_blank");
+
+      if (!newTab) {
+        toast.error("Unable to open project", {
+          description: "Your browser blocked the new tab.",
+        });
+        return;
+      }
+
+      newTab.opener = null;
+      setProjects(currentProjects);
+
+      try {
+        await persistLocalDraftNow({ projects: currentProjects });
+        newTab.location.replace(createProjectPath(projectId));
+      } catch {
+        newTab.close();
+        toast.error("Unable to open project", {
+          description: "The latest local edits could not be saved first.",
+        });
+      }
+    },
+    [
+      commitPendingTextEdit,
+      getActiveProjectSnapshot,
+      persistLocalDraftNow,
+      projects,
+    ],
+  );
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -1614,6 +1661,7 @@ function AppShell() {
           onRedo={handleRedo}
           onRemoveImageAssetFromRecents={hideImageAssetFromRecents}
           onRemoveSignatureAssetFromRecents={hideImageAssetFromRecents}
+          onOpenProjectInNewTab={handleOpenProjectInNewTab}
           onRemoveProject={handleRemoveProject}
           onSelectProject={handleSelectProject}
           onSelectImageAsset={(assetId) => {

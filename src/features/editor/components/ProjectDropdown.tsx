@@ -1,5 +1,6 @@
 import {
   ChevronDownIcon,
+  ExternalLinkIcon,
   FileDownIcon,
   FileIcon,
   FileTextIcon,
@@ -30,6 +31,7 @@ type ProjectDropdownProps = {
   onExportPdf: () => void;
   onOpenFile: () => void;
   onCloseActiveProject: () => void;
+  onOpenProjectInNewTab: (projectId: string) => void;
   onSelectProject: (projectId: string) => void;
   onRemoveProject: (projectId: string) => void;
 };
@@ -45,6 +47,7 @@ function ProjectDropdown({
   onExportPdf,
   onOpenFile,
   onCloseActiveProject,
+  onOpenProjectInNewTab,
   onSelectProject,
   onRemoveProject,
 }: ProjectDropdownProps) {
@@ -119,7 +122,7 @@ function ProjectDropdown({
                             event.preventDefault();
                             onSelectProject(project.id);
                           }
-                        }}  
+                        }}
                         role="button"
                         tabIndex={0}
                       >
@@ -133,19 +136,39 @@ function ProjectDropdown({
                             {formatProjectLastModified(project.lastModifiedAt)}
                           </span>
                         </span>
-                        <Button
-                          aria-label={`Close ${project.fileName}`}
-                          className="size-7 p-0"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onRemoveProject(project.id);
-                          }}
-                          size="sm"
-                          type="button"
-                          variant="ghost"
-                        >
-                          <XIcon aria-hidden="true" />
-                        </Button>
+                        <span className="flex shrink-0 items-center gap-0">
+                          {!isActive && (
+                            <Button
+                              aria-label={`Open ${project.fileName} in new tab`}
+                              className="size-7 p-0"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onOpenProjectInNewTab(project.id);
+                              }}
+                              onKeyDown={(event) => event.stopPropagation()}
+                              size="sm"
+                              title="Open in new tab"
+                              type="button"
+                              variant="ghost"
+                            >
+                              <ExternalLinkIcon aria-hidden="true" />
+                            </Button>
+                          )}
+                          <Button
+                            aria-label={`Close ${project.fileName}`}
+                            className="size-7 p-0"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onRemoveProject(project.id);
+                            }}
+                            onKeyDown={(event) => event.stopPropagation()}
+                            size="sm"
+                            type="button"
+                            variant="ghost"
+                          >
+                            <XIcon aria-hidden="true" />
+                          </Button>
+                        </span>
                       </div>
                     );
                   })

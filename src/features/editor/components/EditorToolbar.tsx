@@ -65,6 +65,7 @@ type EditorToolbarProps = {
   onRemoveImageAssetFromRecents: (assetId: string) => void;
   onRemoveSignatureAssetFromRecents: (assetId: string) => void;
   onRemoveProject: (projectId: string) => void;
+  onOpenProjectInNewTab: (projectId: string) => void;
   onSelectProject: (projectId: string) => void;
   onSelectImageAsset: (assetId: string) => void;
   onSelectSignatureAsset: (assetId: string) => void;
@@ -134,6 +135,7 @@ function EditorToolbar({
   onRemoveImageAssetFromRecents,
   onRemoveSignatureAssetFromRecents,
   onRemoveProject,
+  onOpenProjectInNewTab,
   onSelectProject,
   onSelectImageAsset,
   onSelectSignatureAsset,
@@ -176,6 +178,7 @@ function EditorToolbar({
           onExportPdf={onExportPdf}
           onOpenFile={onOpenFile}
           onCloseActiveProject={onCloseActiveProject}
+          onOpenProjectInNewTab={onOpenProjectInNewTab}
           onSelectProject={onSelectProject}
           onRemoveProject={onRemoveProject}
         />
