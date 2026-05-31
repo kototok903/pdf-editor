@@ -68,10 +68,16 @@ type TooltipProps = {
 function Tooltip({ children, tooltip, disabled }: TooltipProps) {
   return (
     <TooltipRoot>
-      <TooltipTrigger>{children}</TooltipTrigger>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
       <TooltipContent disabled={disabled}>{tooltip}</TooltipContent>
     </TooltipRoot>
   );
 }
 
-export { TooltipRoot, TooltipContent, TooltipProvider, TooltipTrigger, Tooltip };
+export {
+  TooltipRoot,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  Tooltip,
+};

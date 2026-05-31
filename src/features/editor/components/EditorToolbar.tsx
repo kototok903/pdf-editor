@@ -189,18 +189,16 @@ function EditorToolbar({
 
         <Separator className="mx-1 h-6 self-center!" orientation="vertical" />
 
-        <Tooltip tooltip="Text" disabled={!hasPdf}>
-          <TextToolButton
-            disabled={!hasPdf}
-            documentFontOptions={documentFontOptions}
-            isDefault={isTextSettingsDefault}
-            isSelected={isTextToolActive}
-            onSettingsChange={onTextSettingsChange}
-            onSettingsReset={onTextSettingsReset}
-            onTextToolClick={onTextToolClick}
-            settings={textSettings}
-          />
-        </Tooltip>
+        <TextToolButton
+          disabled={!hasPdf}
+          documentFontOptions={documentFontOptions}
+          isDefault={isTextSettingsDefault}
+          isSelected={isTextToolActive}
+          onSettingsChange={onTextSettingsChange}
+          onSettingsReset={onTextSettingsReset}
+          onTextToolClick={onTextToolClick}
+          settings={textSettings}
+        />
 
         <ImageToolDropdown
           activeImageAssetId={activeImageAssetId}
@@ -223,31 +221,27 @@ function EditorToolbar({
           signatureAssets={signatureAssets}
         />
 
-        <Tooltip tooltip="Mark" disabled={!hasPdf}>
-          <MarkToolDropdown
-            color={markSettings.color}
-            disabled={!hasPdf}
-            isDefault={isMarkSettingsDefault}
-            isSelected={isMarkToolActive}
-            markType={markSettings.markType}
-            onMarkToolActivate={onMarkToolActivate}
-            onMarkToolClick={onMarkToolClick}
-            onSettingsChange={onMarkSettingsChange}
-            onSettingsReset={onMarkSettingsReset}
-          />
-        </Tooltip>
+        <MarkToolDropdown
+          color={markSettings.color}
+          disabled={!hasPdf}
+          isDefault={isMarkSettingsDefault}
+          isSelected={isMarkToolActive}
+          markType={markSettings.markType}
+          onMarkToolActivate={onMarkToolActivate}
+          onMarkToolClick={onMarkToolClick}
+          onSettingsChange={onMarkSettingsChange}
+          onSettingsReset={onMarkSettingsReset}
+        />
 
-        <Tooltip tooltip="Whiteout" disabled={!hasPdf}>
-          <WhiteoutToolButton
-            disabled={!hasPdf}
-            isDefault={isWhiteoutSettingsDefault}
-            isSelected={isWhiteoutToolActive}
-            onSettingsChange={onWhiteoutSettingsChange}
-            onSettingsReset={onWhiteoutSettingsReset}
-            onWhiteoutToolClick={onWhiteoutToolClick}
-            settings={whiteoutSettings}
-          />
-        </Tooltip>
+        <WhiteoutToolButton
+          disabled={!hasPdf}
+          isDefault={isWhiteoutSettingsDefault}
+          isSelected={isWhiteoutToolActive}
+          onSettingsChange={onWhiteoutSettingsChange}
+          onSettingsReset={onWhiteoutSettingsReset}
+          onWhiteoutToolClick={onWhiteoutToolClick}
+          settings={whiteoutSettings}
+        />
 
         <div className="ml-auto flex items-center gap-1">
           <Tooltip tooltip="Undo" disabled={!canUndo}>
