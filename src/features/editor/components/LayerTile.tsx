@@ -101,7 +101,7 @@ function OverlayPreview({
       return asset ? (
         <img
           alt={asset.name}
-          className="size-full min-h-0 min-w-0 object-contain shadow-glow"
+          className="size-full min-h-0 min-w-0 object-contain"
           draggable={false}
           src={asset.objectUrl}
           style={{
