@@ -14,7 +14,8 @@ import {
 } from "@/features/editor/lib/overlay-defaults";
 import { isStandardTextFontId } from "@/features/editor/lib/text-font-id-utils";
 
-type EditorThemeName = "dark" | "light";
+type ResolvedEditorThemeName = "dark" | "light";
+type EditorThemeName = "system" | ResolvedEditorThemeName;
 
 type EditorPreferences = {
   isLayersSidebarOpen: boolean;
@@ -41,7 +42,7 @@ const defaultEditorPreferences: EditorPreferences = {
   isPagesSidebarOpen: true,
   markDefaults: defaultMarkSettings,
   textDefaults: defaultTextOverlay,
-  themeName: "light",
+  themeName: "system",
   whiteoutDefaults: defaultWhiteoutOverlay,
   zoom: 1,
 };
@@ -215,7 +216,20 @@ function asMarkType(value: unknown, fallback: MarkType) {
 }
 
 function asThemeName(value: unknown, fallback: EditorThemeName) {
-  return value === "dark" || value === "light" ? value : fallback;
+  return value === "system" || value === "dark" || value === "light"
+    ? value
+    : fallback;
+}
+
+function resolveEditorThemeName(
+  themeName: EditorThemeName,
+  systemPrefersDark: boolean,
+): ResolvedEditorThemeName {
+  if (themeName === "system") {
+    return systemPrefersDark ? "dark" : "light";
+  }
+
+  return themeName;
 }
 
 export {
@@ -225,6 +239,7 @@ export {
   maxEditorZoom,
   minEditorZoom,
   readEditorPreferences,
+  resolveEditorThemeName,
   writeEditorPreferences,
 };
-export type { EditorPreferences, EditorThemeName };
+export type { EditorPreferences, EditorThemeName, ResolvedEditorThemeName };

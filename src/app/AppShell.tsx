@@ -44,7 +44,10 @@ import { useEditorClipboardActions } from "@/features/editor/hooks/useEditorClip
 import { useEditorOverlays } from "@/features/editor/hooks/useEditorOverlays";
 import { useEditorKeyboardShortcuts } from "@/features/editor/hooks/useEditorKeyboardShortcuts";
 import { useImageAssets } from "@/features/editor/hooks/useImageAssets";
-import { useEditorPreferences } from "@/features/editor/hooks/useEditorPreferences";
+import {
+  useEditorPreferences,
+  useResolvedEditorTheme,
+} from "@/features/editor/hooks/useEditorPreferences";
 import { useLocalDraftPersistence } from "@/features/editor/hooks/useLocalDraftPersistence";
 import {
   supportedImageAcceptValue,
@@ -173,7 +176,8 @@ function AppShell() {
     whiteoutDefaults,
     zoom,
   } = editorPreferences;
-  const isDark = themeName === "dark";
+  const resolvedThemeName = useResolvedEditorTheme(themeName);
+  const isDark = resolvedThemeName === "dark";
   const {
     addOverlay,
     canRedo,

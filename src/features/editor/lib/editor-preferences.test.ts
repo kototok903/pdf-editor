@@ -5,6 +5,7 @@ import {
   defaultEditorPreferences,
   editorPreferencesStorageKey,
   readEditorPreferences,
+  resolveEditorThemeName,
   writeEditorPreferences,
 } from "@/features/editor/lib/editor-preferences";
 
@@ -140,7 +141,15 @@ describe("editor preferences persistence", () => {
       JSON.stringify({ themeName: "solarized", version: 1 }),
     );
 
-    expect(readEditorPreferences(storage).themeName).toBe("light");
+    expect(readEditorPreferences(storage).themeName).toBe("system");
+  });
+
+  it("accepts the system theme preference", () => {
+    const storage = createMemoryStorage(
+      JSON.stringify({ themeName: "system", version: 1 }),
+    );
+
+    expect(readEditorPreferences(storage).themeName).toBe("system");
   });
 
   it("writes preferences as schema version 1", () => {
@@ -201,5 +210,20 @@ describe("editor preferences persistence", () => {
     });
 
     expect(() => clearEditorPreferences(storage)).not.toThrow();
+  });
+});
+
+describe("editor theme resolution", () => {
+  it("resolves system to dark when the system prefers dark", () => {
+    expect(resolveEditorThemeName("system", true)).toBe("dark");
+  });
+
+  it("resolves system to light when the system does not prefer dark", () => {
+    expect(resolveEditorThemeName("system", false)).toBe("light");
+  });
+
+  it("keeps explicit theme preferences", () => {
+    expect(resolveEditorThemeName("dark", false)).toBe("dark");
+    expect(resolveEditorThemeName("light", true)).toBe("light");
   });
 });

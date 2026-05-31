@@ -1,8 +1,4 @@
-import {
-  MoonIcon,
-  SunIcon,
-  Trash2Icon,
-} from "lucide-react";
+import { MonitorIcon, MoonIcon, SunIcon, Trash2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -51,7 +47,9 @@ function SettingsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="border-b pb-4 px-4 -mx-4">Settings</DialogTitle>
+          <DialogTitle className="border-b pb-4 px-4 -mx-4">
+            Settings
+          </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4">
           <div className="flex items-center justify-between gap-4">
@@ -60,10 +58,14 @@ function SettingsDialog({
               onValueChange={(value) => onThemeChange(value as EditorThemeName)}
               value={themeName}
             >
-              <SelectTrigger className="w-30">
+              <SelectTrigger className="w-34">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="system">
+                  <MonitorIcon aria-hidden="true" />
+                  System
+                </SelectItem>
                 <SelectItem value="light">
                   <SunIcon aria-hidden="true" />
                   Light
