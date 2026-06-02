@@ -35,6 +35,7 @@ interface ColorPickerContextValue {
   mode: string;
   setHue: (hue: number) => void;
   setSaturation: (saturation: number) => void;
+  setSaturationAndLightness: (saturation: number, lightness: number) => void;
   setLightness: (lightness: number) => void;
   setAlpha: (alpha: number) => void;
   setColor: (color: Parameters<typeof Color>[0]) => void;
@@ -82,17 +83,90 @@ export const ColorPicker = ({
   const [mode, setMode] = useState("hex");
   const onChangeRef = useRef(onChange);
 
-  const setColor = useCallback(
-    (colorValue: Parameters<typeof Color>[0]) => {
-      const color = Color(colorValue);
-      const [nextHue, nextSaturation, nextLightness] = color.hsl().array();
+  const emitColorChange = useCallback(
+    ({
+      alpha: nextAlpha = alpha,
+      hue: nextHue = hue,
+      lightness: nextLightness = lightness,
+      saturation: nextSaturation = saturation,
+    }: Partial<HslaColor>) => {
+      const color = Color.hsl(nextHue, nextSaturation, nextLightness).alpha(
+        nextAlpha / 100,
+      );
+      const rgba = color.rgb().array();
 
-      setHue(nextHue);
-      setSaturation(nextSaturation);
-      setLightness(nextLightness);
-      setAlpha(color.alpha() * 100);
+      onChangeRef.current?.([rgba[0], rgba[1], rgba[2], nextAlpha / 100]);
+    },
+    [alpha, hue, lightness, saturation],
+  );
+
+  const syncColor = useCallback(
+    (colorValue: Parameters<typeof Color>[0]) => {
+      const nextColor = getHslaColor(colorValue);
+
+      setHue(nextColor.hue);
+      setSaturation(nextColor.saturation);
+      setLightness(nextColor.lightness);
+      setAlpha(nextColor.alpha);
     },
     [setAlpha, setHue, setLightness, setSaturation],
+  );
+
+  const setHueFromUser = useCallback(
+    (nextHue: number) => {
+      setHue(nextHue);
+      emitColorChange({ hue: nextHue });
+    },
+    [emitColorChange, setHue],
+  );
+
+  const setSaturationFromUser = useCallback(
+    (nextSaturation: number) => {
+      setSaturation(nextSaturation);
+      emitColorChange({ saturation: nextSaturation });
+    },
+    [emitColorChange, setSaturation],
+  );
+
+  const setLightnessFromUser = useCallback(
+    (nextLightness: number) => {
+      setLightness(nextLightness);
+      emitColorChange({ lightness: nextLightness });
+    },
+    [emitColorChange, setLightness],
+  );
+
+  const setSaturationAndLightnessFromUser = useCallback(
+    (nextSaturation: number, nextLightness: number) => {
+      setSaturation(nextSaturation);
+      setLightness(nextLightness);
+      emitColorChange({
+        lightness: nextLightness,
+        saturation: nextSaturation,
+      });
+    },
+    [emitColorChange, setLightness, setSaturation],
+  );
+
+  const setAlphaFromUser = useCallback(
+    (nextAlpha: number) => {
+      setAlpha(nextAlpha);
+      emitColorChange({ alpha: nextAlpha });
+    },
+    [emitColorChange, setAlpha],
+  );
+
+  const setColorFromUser = useCallback(
+    (colorValue: Parameters<typeof Color>[0]) => {
+      const nextColor = getHslaColor(colorValue);
+
+      setHue(nextColor.hue);
+      setSaturation(nextColor.saturation);
+      setLightness(nextColor.lightness);
+      setAlpha(nextColor.alpha);
+      emitColorChange(nextColor);
+    },
+    [emitColorChange, setAlpha, setHue, setLightness, setSaturation],
   );
 
   useEffect(() => {
@@ -105,15 +179,8 @@ export const ColorPicker = ({
     }
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setColor(value);
-  }, [setColor, value]);
-
-  useEffect(() => {
-    const color = Color.hsl(hue, saturation, lightness).alpha(alpha / 100);
-    const rgba = color.rgb().array();
-
-    onChangeRef.current?.([rgba[0], rgba[1], rgba[2], alpha / 100]);
-  }, [hue, saturation, lightness, alpha]);
+    syncColor(value);
+  }, [syncColor, value]);
 
   return (
     <ColorPickerContext.Provider
@@ -123,11 +190,12 @@ export const ColorPicker = ({
         lightness,
         alpha,
         mode,
-        setHue,
-        setSaturation,
-        setLightness,
-        setAlpha,
-        setColor,
+        setHue: setHueFromUser,
+        setSaturation: setSaturationFromUser,
+        setSaturationAndLightness: setSaturationAndLightnessFromUser,
+        setLightness: setLightnessFromUser,
+        setAlpha: setAlphaFromUser,
+        setColor: setColorFromUser,
         setMode,
       }}
     >
@@ -143,13 +211,32 @@ function getFiniteNumber(value: number, fallback: number) {
   return Number.isFinite(value) ? value : fallback;
 }
 
+type HslaColor = {
+  alpha: number;
+  hue: number;
+  lightness: number;
+  saturation: number;
+};
+
+function getHslaColor(colorValue: Parameters<typeof Color>[0]): HslaColor {
+  const color = Color(colorValue);
+  const [hue, saturation, lightness] = color.hsl().array();
+
+  return {
+    alpha: color.alpha() * 100,
+    hue: getFiniteNumber(hue, 0),
+    lightness: getFiniteNumber(lightness, 50),
+    saturation: getFiniteNumber(saturation, 100),
+  };
+}
+
 export type ColorPickerSelectionProps = HTMLAttributes<HTMLDivElement>;
 
 export const ColorPickerSelection = memo(
   ({ className, ...props }: ColorPickerSelectionProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
-    const { hue, lightness, saturation, setSaturation, setLightness } =
+    const { hue, lightness, saturation, setSaturationAndLightness } =
       useColorPicker();
     const positionX = saturation / 100;
     const topLightness = positionX < 0.01 ? 100 : 50 + 50 * (1 - positionX);
@@ -178,12 +265,13 @@ export const ColorPickerSelection = memo(
           Math.min(1, (event.clientY - rect.top) / rect.height),
         );
 
-        setSaturation(x * 100);
-
+        const nextSaturation = x * 100;
         const topLightness = x < 0.01 ? 100 : 50 + 50 * (1 - x);
-        setLightness(topLightness * (1 - y));
+        const nextLightness = topLightness * (1 - y);
+
+        setSaturationAndLightness(nextSaturation, nextLightness);
       },
-      [setSaturation, setLightness],
+      [setSaturationAndLightness],
     );
 
     const handlePointerMove = useCallback(
@@ -303,20 +391,15 @@ export const ColorPickerEyeDropper = ({
   className,
   ...props
 }: ColorPickerEyeDropperProps) => {
-  const { setHue, setSaturation, setLightness, setAlpha } = useColorPicker();
+  const { setColor } = useColorPicker();
 
   const handleEyeDropper = async () => {
     try {
       // @ts-expect-error EyeDropper API is experimental and not in TS DOM types.
       const eyeDropper = new EyeDropper();
       const result = await eyeDropper.open();
-      const color = Color(result.sRGBHex);
-      const [nextHue, nextSaturation, nextLightness] = color.hsl().array();
 
-      setHue(nextHue);
-      setSaturation(nextSaturation);
-      setLightness(nextLightness);
-      setAlpha(100);
+      setColor(result.sRGBHex);
     } catch (error) {
       console.error("EyeDropper failed:", error);
     }

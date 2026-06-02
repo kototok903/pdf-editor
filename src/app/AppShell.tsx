@@ -1494,37 +1494,76 @@ function AppShell() {
   };
 
   const handleMarkSettingsChange = (patch: MarkOverlayPatch) => {
-    setEditorPreferences((currentPreferences) => ({
-      ...currentPreferences,
-      markDefaults: {
-        ...currentPreferences.markDefaults,
-        ...patch,
-      },
-    }));
+    setEditorPreferences((currentPreferences) => {
+      const nextMarkDefaults = getNextMarkSettings(
+        currentPreferences.markDefaults,
+        patch,
+      );
 
-    if (selectedMarkOverlay) {
+      if (nextMarkDefaults === currentPreferences.markDefaults) {
+        return currentPreferences;
+      }
+
+      return {
+        ...currentPreferences,
+        markDefaults: nextMarkDefaults,
+      };
+    });
+
+    if (
+      selectedMarkOverlay &&
+      !isMarkSettingsPatchNoop(selectedMarkOverlay, patch)
+    ) {
       updateMarkOverlay(selectedMarkOverlay.id, patch);
     }
   };
 
   const handleMarkSettingsReset = () => {
-    updateEditorPreferences({ markDefaults: defaultMarkSettings });
+    setEditorPreferences((currentPreferences) => {
+      if (
+        areMarkSettingsEqual(
+          currentPreferences.markDefaults,
+          defaultMarkSettings,
+        )
+      ) {
+        return currentPreferences;
+      }
 
-    if (selectedMarkOverlay) {
+      return {
+        ...currentPreferences,
+        markDefaults: defaultMarkSettings,
+      };
+    });
+
+    if (
+      selectedMarkOverlay &&
+      !areMarkSettingsEqual(selectedMarkOverlay, defaultMarkSettings)
+    ) {
       updateMarkOverlay(selectedMarkOverlay.id, defaultMarkSettings);
     }
   };
 
   const handleTextSettingsChange = (patch: TextOverlayPatch) => {
-    setEditorPreferences((currentPreferences) => ({
-      ...currentPreferences,
-      textDefaults: {
-        ...currentPreferences.textDefaults,
-        ...patch,
-      },
-    }));
+    setEditorPreferences((currentPreferences) => {
+      const nextTextDefaults = getNextTextSettings(
+        currentPreferences.textDefaults,
+        patch,
+      );
 
-    if (selectedTextOverlay) {
+      if (nextTextDefaults === currentPreferences.textDefaults) {
+        return currentPreferences;
+      }
+
+      return {
+        ...currentPreferences,
+        textDefaults: nextTextDefaults,
+      };
+    });
+
+    if (
+      selectedTextOverlay &&
+      !isTextSettingsPatchNoop(selectedTextOverlay, patch)
+    ) {
       commitPendingTextEdit();
       updateTextOverlay(selectedTextOverlay.id, patch);
     }
@@ -1537,38 +1576,77 @@ function AppShell() {
       fontSize: defaultTextOverlay.fontSize,
     };
 
-    setEditorPreferences((currentPreferences) => ({
-      ...currentPreferences,
-      textDefaults: {
-        ...currentPreferences.textDefaults,
-        ...defaultTextPatch,
-      },
-    }));
+    setEditorPreferences((currentPreferences) => {
+      const nextTextDefaults = getNextTextSettings(
+        currentPreferences.textDefaults,
+        defaultTextPatch,
+      );
 
-    if (selectedTextOverlay) {
+      if (nextTextDefaults === currentPreferences.textDefaults) {
+        return currentPreferences;
+      }
+
+      return {
+        ...currentPreferences,
+        textDefaults: nextTextDefaults,
+      };
+    });
+
+    if (
+      selectedTextOverlay &&
+      !isTextSettingsPatchNoop(selectedTextOverlay, defaultTextPatch)
+    ) {
       commitPendingTextEdit();
       updateTextOverlay(selectedTextOverlay.id, defaultTextPatch);
     }
   };
 
   const handleWhiteoutSettingsChange = (patch: WhiteoutOverlayPatch) => {
-    setEditorPreferences((currentPreferences) => ({
-      ...currentPreferences,
-      whiteoutDefaults: {
-        ...currentPreferences.whiteoutDefaults,
-        ...patch,
-      },
-    }));
+    setEditorPreferences((currentPreferences) => {
+      const nextWhiteoutDefaults = getNextWhiteoutSettings(
+        currentPreferences.whiteoutDefaults,
+        patch,
+      );
 
-    if (selectedWhiteoutOverlay) {
+      if (nextWhiteoutDefaults === currentPreferences.whiteoutDefaults) {
+        return currentPreferences;
+      }
+
+      return {
+        ...currentPreferences,
+        whiteoutDefaults: nextWhiteoutDefaults,
+      };
+    });
+
+    if (
+      selectedWhiteoutOverlay &&
+      !isWhiteoutSettingsPatchNoop(selectedWhiteoutOverlay, patch)
+    ) {
       updateWhiteoutOverlay(selectedWhiteoutOverlay.id, patch);
     }
   };
 
   const handleWhiteoutSettingsReset = () => {
-    updateEditorPreferences({ whiteoutDefaults: defaultWhiteoutOverlay });
+    setEditorPreferences((currentPreferences) => {
+      if (
+        areWhiteoutSettingsEqual(
+          currentPreferences.whiteoutDefaults,
+          defaultWhiteoutOverlay,
+        )
+      ) {
+        return currentPreferences;
+      }
 
-    if (selectedWhiteoutOverlay) {
+      return {
+        ...currentPreferences,
+        whiteoutDefaults: defaultWhiteoutOverlay,
+      };
+    });
+
+    if (
+      selectedWhiteoutOverlay &&
+      !areWhiteoutSettingsEqual(selectedWhiteoutOverlay, defaultWhiteoutOverlay)
+    ) {
       updateWhiteoutOverlay(selectedWhiteoutOverlay.id, defaultWhiteoutOverlay);
     }
   };
@@ -1932,6 +2010,77 @@ function createProjectFromPersistedRecord(
     pageCount: record.pageCount,
     pdfBytes: record.pdfBytes,
   };
+}
+
+type MarkSettings = Pick<MarkOverlay, "color" | "markType">;
+type TextSettings = Pick<TextOverlay, "color" | "fontId" | "fontSize" | "text">;
+type WhiteoutSettings = Pick<WhiteoutOverlay, "color">;
+
+function getNextMarkSettings<T extends MarkSettings>(
+  currentSettings: T,
+  patch: MarkOverlayPatch,
+) {
+  return isMarkSettingsPatchNoop(currentSettings, patch)
+    ? currentSettings
+    : ({ ...currentSettings, ...patch } as T);
+}
+
+function isMarkSettingsPatchNoop(
+  settings: MarkSettings,
+  patch: MarkOverlayPatch,
+) {
+  return (
+    (patch.color === undefined || patch.color === settings.color) &&
+    (patch.markType === undefined || patch.markType === settings.markType)
+  );
+}
+
+function areMarkSettingsEqual(left: MarkSettings, right: MarkSettings) {
+  return left.color === right.color && left.markType === right.markType;
+}
+
+function getNextTextSettings(
+  currentSettings: TextOverlayDefaults,
+  patch: TextOverlayPatch,
+) {
+  return isTextSettingsPatchNoop(currentSettings, patch)
+    ? currentSettings
+    : { ...currentSettings, ...patch };
+}
+
+function isTextSettingsPatchNoop(
+  settings: TextSettings,
+  patch: TextOverlayPatch,
+) {
+  return (
+    (patch.color === undefined || patch.color === settings.color) &&
+    (patch.fontId === undefined || patch.fontId === settings.fontId) &&
+    (patch.fontSize === undefined || patch.fontSize === settings.fontSize) &&
+    (patch.text === undefined || patch.text === settings.text)
+  );
+}
+
+function getNextWhiteoutSettings<T extends WhiteoutSettings>(
+  currentSettings: T,
+  patch: WhiteoutOverlayPatch,
+) {
+  return isWhiteoutSettingsPatchNoop(currentSettings, patch)
+    ? currentSettings
+    : ({ ...currentSettings, ...patch } as T);
+}
+
+function isWhiteoutSettingsPatchNoop(
+  settings: WhiteoutSettings,
+  patch: WhiteoutOverlayPatch,
+) {
+  return patch.color === undefined || patch.color === settings.color;
+}
+
+function areWhiteoutSettingsEqual(
+  left: WhiteoutSettings,
+  right: WhiteoutSettings,
+) {
+  return left.color === right.color;
 }
 
 export { AppShell };
