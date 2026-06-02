@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ImageAsset } from "@/features/editor/editor-types";
 import {
@@ -144,11 +144,19 @@ function useImageAssets() {
     );
   }, []);
 
-  const recentImageAssets = imageAssets.filter(
-    (asset) => asset.source !== "signature" && !asset.isHiddenFromRecents,
+  const recentImageAssets = useMemo(
+    () =>
+      imageAssets.filter(
+        (asset) => asset.source !== "signature" && !asset.isHiddenFromRecents,
+      ),
+    [imageAssets],
   );
-  const recentSignatureAssets = imageAssets.filter(
-    (asset) => asset.source === "signature" && !asset.isHiddenFromRecents,
+  const recentSignatureAssets = useMemo(
+    () =>
+      imageAssets.filter(
+        (asset) => asset.source === "signature" && !asset.isHiddenFromRecents,
+      ),
+    [imageAssets],
   );
 
   return {

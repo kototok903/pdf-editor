@@ -1,4 +1,4 @@
-import { forwardRef, type CSSProperties } from "react";
+import { forwardRef, memo, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import {
@@ -16,16 +16,16 @@ const TYPE_ICON_STROKE_WIDTH = 2.5;
 
 type LayerTileProps = {
   className?: string;
-  imageAssets: ImageAsset[];
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
   isSelected: boolean;
   onClick: () => void;
   overlay: EditorOverlay;
   style?: CSSProperties;
 };
 
-const LayerTile = forwardRef<HTMLButtonElement, LayerTileProps>(
-  function LayerTile(
-    { className, imageAssets, isSelected, onClick, overlay, style },
+const LayerTile = memo(
+  forwardRef<HTMLButtonElement, LayerTileProps>(function LayerTile(
+    { className, imageAssetById, isSelected, onClick, overlay, style },
     ref,
   ) {
     return (
@@ -44,7 +44,7 @@ const LayerTile = forwardRef<HTMLButtonElement, LayerTileProps>(
       >
         <div className="grid size-full place-items-center">
           <OverlayPreview
-            imageAssets={imageAssets}
+            imageAssetById={imageAssetById}
             overlay={overlay}
             side={64}
           />
@@ -61,19 +61,21 @@ const LayerTile = forwardRef<HTMLButtonElement, LayerTileProps>(
         </span>
       </button>
     );
-  },
+  }),
 );
+
+LayerTile.displayName = "LayerTile";
 
 function getLayerTileLabel(overlay: EditorOverlay) {
   return `Select ${overlay.type} overlay`;
 }
 
 function OverlayPreview({
-  imageAssets,
+  imageAssetById,
   overlay,
   side,
 }: {
-  imageAssets: ImageAsset[];
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
   overlay: EditorOverlay;
   side: number;
 }) {
@@ -95,9 +97,7 @@ function OverlayPreview({
     }
     case "image":
     case "signature": {
-      const asset = imageAssets.find(
-        (imageAsset) => imageAsset.id === overlay.assetId,
-      );
+      const asset = imageAssetById.get(overlay.assetId);
       return asset ? (
         <img
           alt={asset.name}

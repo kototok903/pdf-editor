@@ -43,7 +43,7 @@ type OverlayLayerProps = {
   activeImageAsset: ImageAsset | null;
   activeSignatureAsset: ImageAsset | null;
   editingOverlayId: string | null;
-  imageAssets: ImageAsset[];
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
   isSignatureToolActive: boolean;
@@ -61,7 +61,7 @@ type OverlayLayerProps = {
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
   onUpdateOverlayRotation: (overlayId: string, rotationDegrees: number) => void;
-  overlays: EditorOverlay[];
+  pageOverlays: EditorOverlay[];
   pageNumber: number;
   scale: number;
   selectedOverlayId: string | null;
@@ -91,7 +91,7 @@ function OverlayLayer({
   activeImageAsset,
   activeSignatureAsset,
   editingOverlayId,
-  imageAssets,
+  imageAssetById,
   isImageToolActive,
   isMarkToolActive,
   isSignatureToolActive,
@@ -109,7 +109,7 @@ function OverlayLayer({
   onUpdateTextOverlay,
   onUpdateOverlayRect,
   onUpdateOverlayRotation,
-  overlays,
+  pageOverlays,
   pageNumber,
   scale,
   selectedOverlayId,
@@ -123,9 +123,6 @@ function OverlayLayer({
   const moveableRef = useRef<Moveable | null>(null);
   const overlayLayerRef = useRef<HTMLDivElement | null>(null);
   const transformDraftRef = useRef<TransformDraft | null>(null);
-  const pageOverlays = overlays.filter(
-    (overlay) => overlay.pageNumber === pageNumber,
-  );
   const selectedOverlay =
     pageOverlays.find((overlay) => overlay.id === selectedOverlayId) ?? null;
   const isPlacingOverlay =
@@ -196,6 +193,12 @@ function OverlayLayer({
       setSelectedOverlayElement(element);
     },
     [],
+  );
+  const handleTextChange = useCallback(
+    (overlayId: string, text: string) => {
+      onUpdateTextOverlay(overlayId, { text });
+    },
+    [onUpdateTextOverlay],
   );
 
   useEffect(() => {
@@ -439,12 +442,10 @@ function OverlayLayer({
             }}
           >
             <OverlayBox
-              imageAssets={imageAssets}
+              imageAssetById={imageAssetById}
               isEditing={isEditing}
               isSelected={isSelected}
-              onTextChange={(overlayId, text) => {
-                onUpdateTextOverlay(overlayId, { text });
-              }}
+              onTextChange={handleTextChange}
               overlay={overlay}
               scale={scale}
             />

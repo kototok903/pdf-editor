@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 
 import { MarkGlyph } from "@/features/editor/components/MarkGlyph";
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
@@ -13,8 +13,8 @@ import {
 import type { PDFDocumentProxy, PDFPageProxy } from "@/features/pdf/pdf-types";
 
 type PdfPageThumbnailProps = {
-  imageAssets: ImageAsset[];
-  overlays: EditorOverlay[];
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
+  pageOverlays: EditorOverlay[];
   pageNumber: number;
   pdfDocument: PDFDocumentProxy;
   shouldRender: boolean;
@@ -32,9 +32,9 @@ type RenderState = {
   status: "error" | "rendered";
 };
 
-function PdfPageThumbnail({
-  imageAssets,
-  overlays,
+const PdfPageThumbnail = memo(function PdfPageThumbnail({
+  imageAssetById,
+  pageOverlays,
   pageNumber,
   pdfDocument,
   shouldRender,
@@ -166,9 +166,8 @@ function PdfPageThumbnail({
       <canvas className="block" ref={canvasRef} />
       {thumbnailState && (
         <ThumbnailOverlayLayer
-          imageAssets={imageAssets}
-          overlays={overlays}
-          pageNumber={pageNumber}
+          imageAssetById={imageAssetById}
+          pageOverlays={pageOverlays}
           scale={thumbnailState.scale}
         />
       )}
@@ -184,47 +183,45 @@ function PdfPageThumbnail({
       )}
     </div>
   );
-}
+});
+
+PdfPageThumbnail.displayName = "PdfPageThumbnail";
 
 function ThumbnailOverlayLayer({
-  imageAssets,
-  overlays,
-  pageNumber,
+  imageAssetById,
+  pageOverlays,
   scale,
 }: {
-  imageAssets: ImageAsset[];
-  overlays: EditorOverlay[];
-  pageNumber: number;
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
+  pageOverlays: EditorOverlay[];
   scale: number;
 }) {
   return (
     <div className="pointer-events-none absolute inset-0">
-      {overlays
-        .filter((overlay) => overlay.pageNumber === pageNumber)
-        .map((overlay) => {
-          const viewportRect = pdfRectToViewportRect(overlay.rect, scale);
+      {pageOverlays.map((overlay) => {
+        const viewportRect = pdfRectToViewportRect(overlay.rect, scale);
 
-          return (
-            <div
-              className="absolute overflow-hidden"
-              key={overlay.id}
-              style={{
-                height: viewportRect.height,
-                left: viewportRect.x,
-                top: viewportRect.y,
-                transform: getOverlayTransform(overlay),
-                transformOrigin: "center center",
-                width: viewportRect.width,
-              }}
-            >
-              <ThumbnailOverlay
-                imageAssets={imageAssets}
-                overlay={overlay}
-                scale={scale}
-              />
-            </div>
-          );
-        })}
+        return (
+          <div
+            className="absolute overflow-hidden"
+            key={overlay.id}
+            style={{
+              height: viewportRect.height,
+              left: viewportRect.x,
+              top: viewportRect.y,
+              transform: getOverlayTransform(overlay),
+              transformOrigin: "center center",
+              width: viewportRect.width,
+            }}
+          >
+            <ThumbnailOverlay
+              imageAssetById={imageAssetById}
+              overlay={overlay}
+              scale={scale}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -236,11 +233,11 @@ function getOverlayTransform(overlay: EditorOverlay) {
 }
 
 function ThumbnailOverlay({
-  imageAssets,
+  imageAssetById,
   overlay,
   scale,
 }: {
-  imageAssets: ImageAsset[];
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
   overlay: EditorOverlay;
   scale: number;
 }) {
@@ -261,9 +258,7 @@ function ThumbnailOverlay({
       );
     }
     case "image": {
-      const asset = imageAssets.find(
-        (imageAsset) => imageAsset.id === overlay.assetId,
-      );
+      const asset = imageAssetById.get(overlay.assetId);
       return asset ? (
         <img
           alt=""

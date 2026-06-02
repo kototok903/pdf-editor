@@ -14,7 +14,7 @@ type PdfDocumentViewProps = {
   currentPage: number;
   document: LoadedPdfDocument;
   editingOverlayId: string | null;
-  imageAssets: ImageAsset[];
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
   isSignatureToolActive: boolean;
@@ -37,7 +37,7 @@ type PdfDocumentViewProps = {
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
   onUpdateOverlayRotation: (overlayId: string, rotationDegrees: number) => void;
-  overlays: EditorOverlay[];
+  overlaysByPage: ReadonlyMap<number, EditorOverlay[]>;
   pageSizes: Record<number, PageSize>;
   scale: number;
   selectedOverlayId: string | null;
@@ -50,7 +50,7 @@ function PdfDocumentView({
   currentPage,
   document,
   editingOverlayId,
-  imageAssets,
+  imageAssetById,
   isImageToolActive,
   isMarkToolActive,
   isSignatureToolActive,
@@ -70,7 +70,7 @@ function PdfDocumentView({
   onUpdateTextOverlay,
   onUpdateOverlayRect,
   onUpdateOverlayRotation,
-  overlays,
+  overlaysByPage,
   pageSizes,
   scale,
   selectedOverlayId,
@@ -83,7 +83,7 @@ function PdfDocumentView({
           activeImageAsset={activeImageAsset}
           activeSignatureAsset={activeSignatureAsset}
           editingOverlayId={editingOverlayId}
-          imageAssets={imageAssets}
+          imageAssetById={imageAssetById}
           isImageToolActive={isImageToolActive}
           isMarkToolActive={isMarkToolActive}
           isSignatureToolActive={isSignatureToolActive}
@@ -104,7 +104,7 @@ function PdfDocumentView({
           onUpdateTextOverlay={onUpdateTextOverlay}
           onUpdateOverlayRect={onUpdateOverlayRect}
           onUpdateOverlayRotation={onUpdateOverlayRotation}
-          overlays={overlays}
+          pageOverlays={overlaysByPage.get(index + 1) ?? emptyPageOverlays}
           pageSize={pageSizes[index + 1] ?? getDefaultPageSize(scale)}
           pageNumber={index + 1}
           pdfDocument={document.pdfDocument}
@@ -125,6 +125,7 @@ function PdfDocumentView({
 const workspacePageRenderOverscan = 5;
 const defaultPageWidth = 612;
 const defaultPageHeight = 792;
+const emptyPageOverlays: EditorOverlay[] = [];
 
 function getDefaultPageSize(scale: number): PageSize {
   return {

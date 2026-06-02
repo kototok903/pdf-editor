@@ -1,28 +1,23 @@
-import { useCallback } from "react";
+import { memo, useCallback } from "react";
 import { useSortable } from "@dnd-kit/react/sortable";
 
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
-import { getPageLayerOverlays } from "@/features/editor/lib/layer-sidebar-utils";
 import { LayerTile } from "@/features/editor/components/LayerTile";
 import { overlayLayerDragType } from "@/features/editor/components/sidebar-dnd";
 
 type LayersSidebarProps = {
-  currentPage: number;
-  imageAssets: ImageAsset[];
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
   onSelectOverlay: (overlayId: string) => void;
-  overlays: EditorOverlay[];
+  pageOverlays: EditorOverlay[];
   selectedOverlayId: string | null;
 };
 
-function LayersSidebar({
-  currentPage,
-  imageAssets,
+const LayersSidebar = memo(function LayersSidebar({
+  imageAssetById,
   onSelectOverlay,
-  overlays,
+  pageOverlays,
   selectedOverlayId,
 }: LayersSidebarProps) {
-  const pageOverlays = getPageLayerOverlays(overlays, currentPage);
-
   return (
     <aside className="flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <div className="shrink-0 border-b border-sidebar-border p-2">
@@ -36,7 +31,7 @@ function LayersSidebar({
           <>
             {pageOverlays.map((overlay, index) => (
               <SortableLayerTile
-                imageAssets={imageAssets}
+                imageAssetById={imageAssetById}
                 index={index}
                 isSelected={overlay.id === selectedOverlayId}
                 key={overlay.id}
@@ -51,16 +46,18 @@ function LayersSidebar({
       </div>
     </aside>
   );
-}
+});
+
+LayersSidebar.displayName = "LayersSidebar";
 
 function SortableLayerTile({
-  imageAssets,
+  imageAssetById,
   index,
   isSelected,
   onSelectOverlay,
   overlay,
 }: {
-  imageAssets: ImageAsset[];
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
   index: number;
   isSelected: boolean;
   onSelectOverlay: (overlayId: string) => void;
@@ -84,7 +81,7 @@ function SortableLayerTile({
   return (
     <LayerTile
       className={isDragging ? "cursor-grabbing opacity-80" : "cursor-grab"}
-      imageAssets={imageAssets}
+      imageAssetById={imageAssetById}
       isSelected={isSelected}
       onClick={() => onSelectOverlay(overlay.id)}
       overlay={overlay}

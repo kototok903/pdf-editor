@@ -1,10 +1,12 @@
+import { memo } from "react";
+
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import { MarkGlyph } from "@/features/editor/components/MarkGlyph";
 import { TextOverlayContent } from "@/features/editor/components/TextOverlayContent";
 import { cn } from "@/lib/utils";
 
 type OverlayBoxProps = {
-  imageAssets: ImageAsset[];
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
   isEditing: boolean;
   isSelected: boolean;
   onTextChange: (overlayId: string, text: string) => void;
@@ -12,8 +14,8 @@ type OverlayBoxProps = {
   scale: number;
 };
 
-function OverlayBox({
-  imageAssets,
+const OverlayBox = memo(function OverlayBox({
+  imageAssetById,
   isEditing,
   isSelected,
   onTextChange,
@@ -33,9 +35,7 @@ function OverlayBox({
   }
 
   if (overlay.type === "image" || overlay.type === "signature") {
-    const asset = imageAssets.find(
-      (imageAsset) => imageAsset.id === overlay.assetId,
-    );
+    const asset = imageAssetById.get(overlay.assetId);
 
     return (
       <div
@@ -90,6 +90,8 @@ function OverlayBox({
   }
 
   return null;
-}
+});
+
+OverlayBox.displayName = "OverlayBox";
 
 export { OverlayBox };

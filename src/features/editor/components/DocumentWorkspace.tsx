@@ -38,7 +38,7 @@ type DocumentWorkspaceProps = {
   document: LoadedPdfDocument | null;
   editingOverlayId: string | null;
   error: string | null;
-  imageAssets: ImageAsset[];
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
   missingProjectId: string | null;
@@ -62,7 +62,7 @@ type DocumentWorkspaceProps = {
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
   onUpdateOverlayRotation: (overlayId: string, rotationDegrees: number) => void;
-  overlays: EditorOverlay[];
+  overlaysByPage: ReadonlyMap<number, EditorOverlay[]>;
   pageSizes: Record<number, PageSize>;
   selectedOverlayId: string | null;
   status: PdfLoadStatus;
@@ -84,7 +84,7 @@ function DocumentWorkspace({
   document,
   editingOverlayId,
   error,
-  imageAssets,
+  imageAssetById,
   isImageToolActive,
   isMarkToolActive,
   missingProjectId,
@@ -108,7 +108,7 @@ function DocumentWorkspace({
   onUpdateTextOverlay,
   onUpdateOverlayRect,
   onUpdateOverlayRotation,
-  overlays,
+  overlaysByPage,
   pageSizes,
   selectedOverlayId,
   status,
@@ -432,7 +432,7 @@ function DocumentWorkspace({
           currentPage={currentPage}
           document={document}
           editingOverlayId={editingOverlayId}
-          imageAssets={imageAssets}
+          imageAssetById={imageAssetById}
           isImageToolActive={isImageToolActive}
           isMarkToolActive={isMarkToolActive}
           isSignatureToolActive={isSignatureToolActive}
@@ -452,7 +452,7 @@ function DocumentWorkspace({
           onUpdateTextOverlay={onUpdateTextOverlay}
           onUpdateOverlayRect={onUpdateOverlayRect}
           onUpdateOverlayRotation={onUpdateOverlayRotation}
-          overlays={overlays}
+          overlaysByPage={overlaysByPage}
           pageSizes={pageSizes}
           scale={zoom}
           selectedOverlayId={selectedOverlayId}

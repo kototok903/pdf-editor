@@ -23,7 +23,7 @@ type PdfPageViewProps = {
   activeImageAsset: ImageAsset | null;
   activeSignatureAsset: ImageAsset | null;
   editingOverlayId: string | null;
-  imageAssets: ImageAsset[];
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
   isSignatureToolActive: boolean;
@@ -46,7 +46,7 @@ type PdfPageViewProps = {
   onUpdateTextOverlay: (overlayId: string, patch: TextOverlayPatch) => void;
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
   onUpdateOverlayRotation: (overlayId: string, rotationDegrees: number) => void;
-  overlays: EditorOverlay[];
+  pageOverlays: EditorOverlay[];
   pageSize: PageSize;
   pageNumber: number;
   pdfDocument: PDFDocumentProxy;
@@ -60,7 +60,7 @@ function PdfPageView({
   activeImageAsset,
   activeSignatureAsset,
   editingOverlayId,
-  imageAssets,
+  imageAssetById,
   isImageToolActive,
   isMarkToolActive,
   isSignatureToolActive,
@@ -80,7 +80,7 @@ function PdfPageView({
   onUpdateTextOverlay,
   onUpdateOverlayRect,
   onUpdateOverlayRotation,
-  overlays,
+  pageOverlays,
   pageSize,
   pageNumber,
   pdfDocument,
@@ -250,7 +250,7 @@ function PdfPageView({
           activeImageAsset={activeImageAsset}
           activeSignatureAsset={activeSignatureAsset}
           editingOverlayId={editingOverlayId}
-          imageAssets={imageAssets}
+          imageAssetById={imageAssetById}
           isImageToolActive={isImageToolActive}
           isMarkToolActive={isMarkToolActive}
           isSignatureToolActive={isSignatureToolActive}
@@ -268,7 +268,7 @@ function PdfPageView({
           onUpdateTextOverlay={onUpdateTextOverlay}
           onUpdateOverlayRect={onUpdateOverlayRect}
           onUpdateOverlayRotation={onUpdateOverlayRotation}
-          overlays={overlays}
+          pageOverlays={pageOverlays}
           pageNumber={pageNumber}
           scale={scale}
           selectedOverlayId={selectedOverlayId}

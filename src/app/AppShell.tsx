@@ -30,7 +30,9 @@ import {
   SettingsDialog,
 } from "@/features/editor/components/SettingsDialog";
 import type {
+  EditorOverlay,
   EditorOverlayInput,
+  ImageAsset,
   MarkOverlay,
   MarkOverlayPatch,
   PdfRect,
@@ -55,6 +57,7 @@ import {
 } from "@/features/editor/lib/image-asset-utils";
 import { createImageOverlayRectAtPoint } from "@/features/editor/lib/overlay-coordinate-utils";
 import { readPasteIntentFromAsyncClipboard } from "@/features/editor/lib/editor-clipboard";
+import { getPageLayerOverlays } from "@/features/editor/lib/layer-sidebar-utils";
 import { defaultMarkSettings } from "@/features/editor/lib/mark-definitions";
 import {
   defaultTextOverlay,
@@ -234,6 +237,20 @@ function AppShell() {
     recentSignatureAssets,
     showImageAssetInRecents,
   } = useImageAssets();
+  const overlaysByPage = useMemo(
+    () => groupOverlaysByPage(overlays),
+    [overlays],
+  );
+  const imageAssetById = useMemo(
+    () => createImageAssetMap(imageAssets),
+    [imageAssets],
+  );
+  const currentPageOverlays =
+    overlaysByPage.get(currentPage) ?? emptyEditorOverlays;
+  const currentPageLayerOverlays = useMemo(
+    () => getPageLayerOverlays(currentPageOverlays, currentPage),
+    [currentPage, currentPageOverlays],
+  );
   const { clearStoredDraft, hydrateLocalDraft, persistLocalDraftNow } =
     useLocalDraftPersistence({
       activeProjectId,
@@ -1651,16 +1668,19 @@ function AppShell() {
     }
   };
 
-  const handleSelectOverlay = (overlayId: string) => {
-    selectOverlay(overlayId);
+  const handleSelectOverlay = useCallback(
+    (overlayId: string) => {
+      selectOverlay(overlayId);
 
-    if (
-      editingOverlayIdRef.current &&
-      editingOverlayIdRef.current !== overlayId
-    ) {
-      handleEditOverlay(null);
-    }
-  };
+      if (
+        editingOverlayIdRef.current &&
+        editingOverlayIdRef.current !== overlayId
+      ) {
+        handleEditOverlay(null);
+      }
+    },
+    [handleEditOverlay, selectOverlay],
+  );
 
   const handleStopEditingOverlay = useCallback(() => {
     handleEditOverlay(null);
@@ -1744,10 +1764,13 @@ function AppShell() {
     [],
   );
 
-  const handleSelectSidebarPage = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
-    handleRequestWorkspacePageScroll(pageNumber);
-  };
+  const handleSelectSidebarPage = useCallback(
+    (pageNumber: number) => {
+      setCurrentPage(pageNumber);
+      handleRequestWorkspacePageScroll(pageNumber);
+    },
+    [handleRequestWorkspacePageScroll],
+  );
 
   return (
     <TooltipProvider delayDuration={700}>
@@ -1863,18 +1886,17 @@ function AppShell() {
               <PagesSidebar
                 currentPage={currentPage}
                 document={loadedDocument}
-                imageAssets={imageAssets}
+                imageAssetById={imageAssetById}
                 onSelectPage={handleSelectSidebarPage}
-                overlays={overlays}
+                overlaysByPage={overlaysByPage}
                 pageCount={loadedDocument?.pageCount ?? 0}
               />
             )}
             {editorPreferences.isLayersSidebarOpen && (
               <LayersSidebar
-                currentPage={currentPage}
-                imageAssets={imageAssets}
+                imageAssetById={imageAssetById}
                 onSelectOverlay={handleSelectOverlay}
-                overlays={overlays}
+                pageOverlays={currentPageLayerOverlays}
                 selectedOverlayId={selectedOverlayId}
               />
             )}
@@ -1886,7 +1908,7 @@ function AppShell() {
             error={error}
             activeImageAsset={activeImageAsset}
             activeSignatureAsset={activeSignatureAsset}
-            imageAssets={imageAssets}
+            imageAssetById={imageAssetById}
             isImageToolActive={activeTool?.type === "image"}
             isMarkToolActive={activeTool?.type === "mark"}
             missingProjectId={missingProjectId}
@@ -1910,7 +1932,7 @@ function AppShell() {
             onUpdateTextOverlay={updateTextOverlayDraft}
             onUpdateOverlayRect={updateOverlayRect}
             onUpdateOverlayRotation={updateOverlayRotation}
-            overlays={overlays}
+            overlaysByPage={overlaysByPage}
             pageSizes={pageSizes}
             selectedOverlayId={selectedOverlayId}
             status={displayStatus}
@@ -2010,6 +2032,30 @@ function createProjectFromPersistedRecord(
     pageCount: record.pageCount,
     pdfBytes: record.pdfBytes,
   };
+}
+
+const emptyEditorOverlays: EditorOverlay[] = [];
+
+function groupOverlaysByPage(overlays: EditorOverlay[]) {
+  const overlaysByPage = new Map<number, EditorOverlay[]>();
+
+  for (const overlay of overlays) {
+    const pageOverlays = overlaysByPage.get(overlay.pageNumber);
+
+    if (pageOverlays) {
+      pageOverlays.push(overlay);
+    } else {
+      overlaysByPage.set(overlay.pageNumber, [overlay]);
+    }
+  }
+
+  return overlaysByPage;
+}
+
+function createImageAssetMap(imageAssets: ImageAsset[]) {
+  return new Map(
+    imageAssets.map((imageAsset) => [imageAsset.id, imageAsset] as const),
+  );
 }
 
 type MarkSettings = Pick<MarkOverlay, "color" | "markType">;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDroppable } from "@dnd-kit/react";
 
 import { PdfPageThumbnail } from "@/features/editor/components/PdfPageThumbnail";
@@ -15,18 +15,18 @@ import { cn } from "@/lib/utils";
 type PagesSidebarProps = {
   currentPage: number;
   document: LoadedPdfDocument | null;
-  imageAssets: ImageAsset[];
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
   onSelectPage: (pageNumber: number) => void;
-  overlays: EditorOverlay[];
+  overlaysByPage: ReadonlyMap<number, EditorOverlay[]>;
   pageCount: number;
 };
 
 function PagesSidebar({
   currentPage,
   document,
-  imageAssets,
+  imageAssetById,
   onSelectPage,
-  overlays,
+  overlaysByPage,
   pageCount,
 }: PagesSidebarProps) {
   const pageButtonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
@@ -152,11 +152,11 @@ function PagesSidebar({
         {pages.length > 0 && document ? (
           pages.map((page) => (
             <SidebarPageButton
-              imageAssets={imageAssets}
+              imageAssetById={imageAssetById}
               isActive={page === currentPage}
               key={page}
-              onClick={() => onSelectPage(page)}
-              overlays={overlays}
+              onSelectPage={onSelectPage}
+              pageOverlays={overlaysByPage.get(page) ?? emptyPageOverlays}
               pageNumber={page}
               pdfDocument={document.pdfDocument}
               registerPageButton={registerPageButton}
@@ -171,20 +171,20 @@ function PagesSidebar({
   );
 }
 
-function SidebarPageButton({
-  imageAssets,
+const SidebarPageButton = memo(function SidebarPageButton({
+  imageAssetById,
   isActive,
-  onClick,
-  overlays,
+  onSelectPage,
+  pageOverlays,
   pageNumber,
   pdfDocument,
   registerPageButton,
   shouldRenderThumbnail,
 }: {
-  imageAssets: ImageAsset[];
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
   isActive: boolean;
-  onClick: () => void;
-  overlays: EditorOverlay[];
+  onSelectPage: (pageNumber: number) => void;
+  pageOverlays: EditorOverlay[];
   pageNumber: number;
   pdfDocument: LoadedPdfDocument["pdfDocument"];
   registerPageButton: (
@@ -217,13 +217,13 @@ function SidebarPageButton({
       )}
       data-active={isActive}
       data-page-number={pageNumber}
-      onClick={onClick}
+      onClick={() => onSelectPage(pageNumber)}
       ref={setButtonRef}
       type="button"
     >
       <PdfPageThumbnail
-        imageAssets={imageAssets}
-        overlays={overlays}
+        imageAssetById={imageAssetById}
+        pageOverlays={pageOverlays}
         pageNumber={pageNumber}
         pdfDocument={pdfDocument}
         shouldRender={shouldRenderThumbnail}
@@ -240,9 +240,12 @@ function SidebarPageButton({
       </span>
     </button>
   );
-}
+});
+
+SidebarPageButton.displayName = "SidebarPageButton";
 
 const emptyPageSet = new Set<number>();
+const emptyPageOverlays: EditorOverlay[] = [];
 const sidebarCurrentPageThumbnailOverscan = 2;
 
 export { PagesSidebar };
