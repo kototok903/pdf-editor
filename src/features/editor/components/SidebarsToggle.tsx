@@ -1,8 +1,9 @@
+import { memo } from "react";
+
 import {
   FileTextDashedIcon,
   Layers2DashedIcon,
 } from "@/components/ui/custom-icons";
-
 import { Button } from "@/components/ui/button";
 import { FileTextIcon, Layers2Icon } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -14,7 +15,7 @@ type SidebarsToggleProps = {
   onToggleLayersSidebar: () => void;
 };
 
-function SidebarsToggle({
+const SidebarsToggle = memo(function SidebarsToggle({
   isPagesSidebarOpen,
   isLayersSidebarOpen,
   onTogglePagesSidebar,
@@ -58,6 +59,6 @@ function SidebarsToggle({
       </Tooltip>
     </div>
   );
-}
+});
 
 export { SidebarsToggle };

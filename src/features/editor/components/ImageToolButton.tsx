@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import {
   ClipboardIcon,
   ChevronDownIcon,
@@ -32,7 +32,7 @@ type ImageToolDropdownProps = {
   onUploadImage: () => void;
 };
 
-function ImageToolDropdown({
+const ImageToolButton = memo(function ImageToolButton({
   activeImageAssetId,
   disabled,
   imageAssets,
@@ -137,6 +137,6 @@ function ImageToolDropdown({
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+});
 
-export { ImageToolDropdown };
+export { ImageToolButton };

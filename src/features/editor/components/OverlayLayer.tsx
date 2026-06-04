@@ -1,4 +1,5 @@
 import {
+  memo,
   useCallback,
   useEffect,
   useRef,
@@ -87,7 +88,7 @@ type MoveableEventData = {
   startRotationDegrees?: number;
 };
 
-function OverlayLayer({
+const OverlayLayer = memo(function OverlayLayer({
   activeImageAsset,
   activeSignatureAsset,
   editingOverlayId,
@@ -615,7 +616,9 @@ function OverlayLayer({
       />
     </div>
   );
-}
+});
+
+OverlayLayer.displayName = "OverlayLayer";
 
 function getOverlayLayerClassName({
   isImageToolActive,

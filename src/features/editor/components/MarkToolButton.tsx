@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ChevronDownIcon, RotateCcwIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ type MarkToolDropdownProps = {
   onSettingsChange: (patch: MarkOverlayPatch) => void;
 };
 
-function MarkToolDropdown({
+const MarkToolButton = memo(function MarkToolButton({
   color,
   disabled,
   isDefault,
@@ -145,6 +146,6 @@ function MarkToolDropdown({
       </div>
     </Tooltip>
   );
-}
+});
 
-export { MarkToolDropdown };
+export { MarkToolButton };

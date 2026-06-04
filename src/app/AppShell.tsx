@@ -237,10 +237,7 @@ function AppShell() {
     recentSignatureAssets,
     showImageAssetInRecents,
   } = useImageAssets();
-  const overlaysByPage = useMemo(
-    () => groupOverlaysByPage(overlays),
-    [overlays],
-  );
+  const overlaysByPage = useStableOverlaysByPage(overlays);
   const imageAssetById = useMemo(
     () => createImageAssetMap(imageAssets),
     [imageAssets],
@@ -291,6 +288,7 @@ function AppShell() {
     () => overlays.find((overlay) => overlay.id === selectedOverlayId) ?? null,
     [overlays, selectedOverlayId],
   );
+  const selectedOverlayPageNumber = selectedOverlay?.pageNumber ?? null;
 
   const currentTextSettings = selectedTextOverlay ?? textDefaults;
   const currentMarkSettings = selectedMarkOverlay ?? markDefaults;
@@ -731,9 +729,9 @@ function AppShell() {
     selectedOverlay,
   });
 
-  const handleOpenFileDialog = () => {
+  const handleOpenFileDialog = useCallback(() => {
     fileInputRef.current?.click();
-  };
+  }, []);
 
   const resetProjectRuntimeState = useCallback(() => {
     clearClipboardHistory();
@@ -1438,77 +1436,92 @@ function AppShell() {
     handleEditOverlay(null);
   };
 
-  const handlePlaceTextOverlay = (pageNumber: number, rect: PdfRect) => {
-    setCurrentPage(pageNumber);
-    const overlay = addOverlay({
-      ...textDefaults,
-      pageNumber,
-      rect,
-      type: "text",
-    });
-    setActiveTool(null);
-    handleEditOverlay(overlay.id);
-  };
+  const handlePlaceTextOverlay = useCallback(
+    (pageNumber: number, rect: PdfRect) => {
+      setCurrentPage(pageNumber);
+      const overlay = addOverlay({
+        ...textDefaults,
+        pageNumber,
+        rect,
+        type: "text",
+      });
+      setActiveTool(null);
+      handleEditOverlay(overlay.id);
+    },
+    [addOverlay, handleEditOverlay, textDefaults],
+  );
 
-  const handlePlaceMarkOverlay = (pageNumber: number, rect: PdfRect) => {
-    setCurrentPage(pageNumber);
-    addOverlay({
-      ...markDefaults,
-      pageNumber,
-      rect,
-      type: "mark",
-    });
-    setActiveTool(null);
-    handleEditOverlay(null);
-  };
+  const handlePlaceMarkOverlay = useCallback(
+    (pageNumber: number, rect: PdfRect) => {
+      setCurrentPage(pageNumber);
+      addOverlay({
+        ...markDefaults,
+        pageNumber,
+        rect,
+        type: "mark",
+      });
+      setActiveTool(null);
+      handleEditOverlay(null);
+    },
+    [addOverlay, handleEditOverlay, markDefaults],
+  );
 
-  const handlePlaceImageOverlay = (pageNumber: number, rect: PdfRect) => {
-    if (!activeImageAsset) {
-      return;
-    }
+  const handlePlaceImageOverlay = useCallback(
+    (pageNumber: number, rect: PdfRect) => {
+      if (!activeImageAsset) {
+        return;
+      }
 
-    setCurrentPage(pageNumber);
-    addOverlay({
-      assetId: activeImageAsset.id,
-      pageNumber,
-      rect,
-      rotationDegrees: 0,
-      sha256Signature: activeImageAsset.sha256Signature,
-      type: "image",
-    });
-    setActiveTool(null);
-    handleEditOverlay(null);
-  };
+      setCurrentPage(pageNumber);
+      addOverlay({
+        assetId: activeImageAsset.id,
+        pageNumber,
+        rect,
+        rotationDegrees: 0,
+        sha256Signature: activeImageAsset.sha256Signature,
+        type: "image",
+      });
+      setActiveTool(null);
+      handleEditOverlay(null);
+    },
+    [activeImageAsset, addOverlay, handleEditOverlay],
+  );
 
-  const handlePlaceSignatureOverlay = (pageNumber: number, rect: PdfRect) => {
-    if (!activeSignatureAsset) {
-      return;
-    }
+  const handlePlaceSignatureOverlay = useCallback(
+    (pageNumber: number, rect: PdfRect) => {
+      if (!activeSignatureAsset) {
+        return;
+      }
 
-    setCurrentPage(pageNumber);
-    addOverlay({
-      assetId: activeSignatureAsset.id,
-      pageNumber,
-      rect,
-      rotationDegrees: 0,
-      sha256Signature: activeSignatureAsset.sha256Signature,
-      type: "signature",
-    });
-    setActiveTool(null);
-    handleEditOverlay(null);
-  };
+      setCurrentPage(pageNumber);
+      addOverlay({
+        assetId: activeSignatureAsset.id,
+        pageNumber,
+        rect,
+        rotationDegrees: 0,
+        sha256Signature: activeSignatureAsset.sha256Signature,
+        type: "signature",
+      });
+      setActiveTool(null);
+      handleEditOverlay(null);
+    },
+    [activeSignatureAsset, addOverlay, handleEditOverlay],
+  );
 
-  const handlePlaceWhiteoutOverlay = (pageNumber: number, rect: PdfRect) => {
-    setCurrentPage(pageNumber);
-    addOverlay({
-      color: currentWhiteoutSettings.color,
-      pageNumber,
-      rect,
-      type: "whiteout",
-    });
-    setActiveTool(null);
-    handleEditOverlay(null);
-  };
+  const handlePlaceWhiteoutOverlay = useCallback(
+    (pageNumber: number, rect: PdfRect) => {
+      setCurrentPage(pageNumber);
+      addOverlay({
+        color: currentWhiteoutSettings.color,
+        pageNumber,
+        rect,
+        type: "whiteout",
+      });
+      setActiveTool(null);
+      handleEditOverlay(null);
+    },
+    [addOverlay, currentWhiteoutSettings.color, handleEditOverlay],
+  );
 
   const handleMarkSettingsChange = (patch: MarkOverlayPatch) => {
     setEditorPreferences((currentPreferences) => {
@@ -1935,6 +1948,7 @@ function AppShell() {
             overlaysByPage={overlaysByPage}
             pageSizes={pageSizes}
             selectedOverlayId={selectedOverlayId}
+            selectedOverlayPageNumber={selectedOverlayPageNumber}
             status={displayStatus}
             scrollToPageRequest={scrollToPageRequest}
             whiteoutColor={currentWhiteoutSettings.color}
@@ -2036,20 +2050,65 @@ function createProjectFromPersistedRecord(
 
 const emptyEditorOverlays: EditorOverlay[] = [];
 
-function groupOverlaysByPage(overlays: EditorOverlay[]) {
-  const overlaysByPage = new Map<number, EditorOverlay[]>();
+function useStableOverlaysByPage(overlays: EditorOverlay[]) {
+  const previousOverlaysByPageRef =
+    useRef<ReadonlyMap<number, EditorOverlay[]>>(emptyOverlaysByPage);
+
+  return useMemo(() => {
+    // eslint-disable-next-line react-hooks/refs -- This hook intentionally compares against the previous render's page arrays to preserve stable child props.
+    const previousOverlaysByPage = previousOverlaysByPageRef.current;
+    const nextOverlaysByPage = groupOverlaysByPage(
+      overlays,
+      previousOverlaysByPage,
+    );
+
+    // eslint-disable-next-line react-hooks/refs -- This is a memo cache update for the next render, not render data.
+    previousOverlaysByPageRef.current = nextOverlaysByPage;
+    return nextOverlaysByPage;
+  }, [overlays]);
+}
+
+const emptyOverlaysByPage = new Map<number, EditorOverlay[]>();
+
+function groupOverlaysByPage(
+  overlays: EditorOverlay[],
+  previousOverlaysByPage: ReadonlyMap<number, EditorOverlay[]>,
+) {
+  const nextOverlaysByPage = new Map<number, EditorOverlay[]>();
 
   for (const overlay of overlays) {
-    const pageOverlays = overlaysByPage.get(overlay.pageNumber);
+    const pageOverlays = nextOverlaysByPage.get(overlay.pageNumber);
 
     if (pageOverlays) {
       pageOverlays.push(overlay);
     } else {
-      overlaysByPage.set(overlay.pageNumber, [overlay]);
+      nextOverlaysByPage.set(overlay.pageNumber, [overlay]);
     }
   }
 
-  return overlaysByPage;
+  for (const [pageNumber, pageOverlays] of nextOverlaysByPage) {
+    const previousPageOverlays = previousOverlaysByPage.get(pageNumber);
+
+    if (
+      previousPageOverlays &&
+      areOverlayArrayReferencesEqual(pageOverlays, previousPageOverlays)
+    ) {
+      nextOverlaysByPage.set(pageNumber, previousPageOverlays);
+    }
+  }
+
+  return nextOverlaysByPage;
+}
+
+function areOverlayArrayReferencesEqual(
+  left: EditorOverlay[],
+  right: EditorOverlay[] | undefined,
+) {
+  return (
+    right !== undefined &&
+    left.length === right.length &&
+    left.every((overlay, index) => overlay === right[index])
+  );
 }
 
 function createImageAssetMap(imageAssets: ImageAsset[]) {

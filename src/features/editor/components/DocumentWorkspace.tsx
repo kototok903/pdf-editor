@@ -1,4 +1,5 @@
 import {
+  memo,
   useCallback,
   useEffect,
   useRef,
@@ -65,6 +66,7 @@ type DocumentWorkspaceProps = {
   overlaysByPage: ReadonlyMap<number, EditorOverlay[]>;
   pageSizes: Record<number, PageSize>;
   selectedOverlayId: string | null;
+  selectedOverlayPageNumber: number | null;
   status: PdfLoadStatus;
   scrollToPageRequest: ScrollToPageRequest | null;
   whiteoutColor: string;
@@ -77,7 +79,7 @@ type ScrollToPageRequest = {
   requestId: number;
 };
 
-function DocumentWorkspace({
+const DocumentWorkspace = memo(function DocumentWorkspace({
   activeImageAsset,
   activeSignatureAsset,
   currentPage,
@@ -111,6 +113,7 @@ function DocumentWorkspace({
   overlaysByPage,
   pageSizes,
   selectedOverlayId,
+  selectedOverlayPageNumber,
   status,
   scrollToPageRequest,
   whiteoutColor,
@@ -456,12 +459,15 @@ function DocumentWorkspace({
           pageSizes={pageSizes}
           scale={zoom}
           selectedOverlayId={selectedOverlayId}
+          selectedOverlayPageNumber={selectedOverlayPageNumber}
           whiteoutColor={whiteoutColor}
         />
       )}
     </section>
   );
-}
+});
+
+DocumentWorkspace.displayName = "DocumentWorkspace";
 
 const pageScrollTopSpacing = 24;
 const programmaticScrollEndDelayMs = 120;

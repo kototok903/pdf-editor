@@ -10,10 +10,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { TextToolButton } from "@/features/editor/components/TextToolButton";
-import { ImageToolDropdown } from "@/features/editor/components/ImageToolDropdown";
+import { ImageToolButton } from "@/features/editor/components/ImageToolButton";
 import { ImageUrlDialog } from "@/features/editor/components/ImageUrlDialog";
-import { MarkToolDropdown } from "@/features/editor/components/MarkToolDropdown";
-import { SignatureToolDropdown } from "@/features/editor/components/SignatureToolDropdown";
+import { MarkToolButton } from "@/features/editor/components/MarkToolButton";
+import { SignatureToolButton } from "@/features/editor/components/SignatureToolButton";
 import type { SignatureCreateInput } from "@/features/editor/components/SignatureCreateDialog";
 import type {
   ImageAsset,
@@ -200,7 +200,7 @@ function EditorToolbar({
           settings={textSettings}
         />
 
-        <ImageToolDropdown
+        <ImageToolButton
           activeImageAssetId={activeImageAssetId}
           disabled={!hasPdf}
           imageAssets={imageAssets}
@@ -211,7 +211,7 @@ function EditorToolbar({
           onSelectImageAsset={onSelectImageAsset}
           onUploadImage={onOpenImageDialog}
         />
-        <SignatureToolDropdown
+        <SignatureToolButton
           activeSignatureAssetId={activeSignatureAssetId}
           disabled={!hasPdf}
           isSelected={isSignatureToolActive}
@@ -221,7 +221,7 @@ function EditorToolbar({
           signatureAssets={signatureAssets}
         />
 
-        <MarkToolDropdown
+        <MarkToolButton
           color={markSettings.color}
           disabled={!hasPdf}
           isDefault={isMarkSettingsDefault}

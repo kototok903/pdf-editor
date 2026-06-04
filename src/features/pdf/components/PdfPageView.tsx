@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 import { OverlayLayer } from "@/features/editor/components/OverlayLayer";
 import type {
@@ -56,7 +56,7 @@ type PdfPageViewProps = {
   whiteoutColor: string;
 };
 
-function PdfPageView({
+const PdfPageView = memo(function PdfPageView({
   activeImageAsset,
   activeSignatureAsset,
   editingOverlayId,
@@ -277,7 +277,9 @@ function PdfPageView({
       )}
     </article>
   );
-}
+});
+
+PdfPageView.displayName = "PdfPageView";
 
 type RenderState = {
   pageNumber: number;

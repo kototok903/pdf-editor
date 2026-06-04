@@ -33,7 +33,7 @@ function createHistoryEntry(
   selectedOverlayId: string | null,
 ): EditorHistoryEntry {
   return {
-    overlays: cloneOverlays(overlays),
+    overlays,
     selectedOverlayId: getValidSelectedOverlayId(overlays, selectedOverlayId),
   };
 }
@@ -53,9 +53,7 @@ function commitEditorHistory(
 
   return {
     future: [],
-    past: [...history.past, cloneHistoryEntry(history.present)].slice(
-      -editorHistoryLimit,
-    ),
+    past: [...history.past, history.present].slice(-editorHistoryLimit),
     present: sanitizedEntry,
   };
 }
@@ -89,12 +87,18 @@ function replaceEditorHistoryPresent(
   history: EditorHistoryState,
   nextEntry: EditorHistoryEntry,
 ): EditorHistoryState {
+  const sanitizedEntry = createHistoryEntry(
+    nextEntry.overlays,
+    nextEntry.selectedOverlayId,
+  );
+
+  if (areHistoryEntriesEqual(history.present, sanitizedEntry)) {
+    return history;
+  }
+
   return {
     ...history,
-    present: createHistoryEntry(
-      nextEntry.overlays,
-      nextEntry.selectedOverlayId,
-    ),
+    present: sanitizedEntry,
   };
 }
 
@@ -109,9 +113,11 @@ function restoreEditorHistory(
   history: Pick<EditorHistoryState, "future" | "past" | "present">,
 ): EditorHistoryState {
   return {
-    future: history.future.map(cloneHistoryEntry),
-    past: history.past.map(cloneHistoryEntry).slice(-editorHistoryLimit),
-    present: cloneHistoryEntry(history.present),
+    future: history.future.map(cloneRestoredHistoryEntry),
+    past: history.past
+      .map(cloneRestoredHistoryEntry)
+      .slice(-editorHistoryLimit),
+    present: cloneRestoredHistoryEntry(history.present),
   };
 }
 
@@ -123,9 +129,9 @@ function undoEditorHistory(history: EditorHistoryState): EditorHistoryState {
   }
 
   return {
-    future: [cloneHistoryEntry(history.present), ...history.future],
+    future: [history.present, ...history.future],
     past: history.past.slice(0, -1),
-    present: cloneHistoryEntry(previousEntry),
+    present: previousEntry,
   };
 }
 
@@ -138,10 +144,8 @@ function redoEditorHistory(history: EditorHistoryState): EditorHistoryState {
 
   return {
     future: history.future.slice(1),
-    past: [...history.past, cloneHistoryEntry(history.present)].slice(
-      -editorHistoryLimit,
-    ),
-    present: cloneHistoryEntry(nextEntry),
+    past: [...history.past, history.present].slice(-editorHistoryLimit),
+    present: nextEntry,
   };
 }
 
@@ -163,6 +167,15 @@ function cloneHistoryEntry(entry: EditorHistoryEntry): EditorHistoryEntry {
   return createHistoryEntry(entry.overlays, entry.selectedOverlayId);
 }
 
+function cloneRestoredHistoryEntry(
+  entry: EditorHistoryEntry,
+): EditorHistoryEntry {
+  return createHistoryEntry(
+    cloneOverlays(entry.overlays),
+    entry.selectedOverlayId,
+  );
+}
+
 function cloneOverlays(overlays: EditorOverlay[]) {
   return overlays.map((overlay) => ({
     ...overlay,
@@ -174,7 +187,74 @@ function areHistoryEntriesEqual(
   left: EditorHistoryEntry,
   right: EditorHistoryEntry,
 ) {
-  return JSON.stringify(left) === JSON.stringify(right);
+  return areOverlayListsEqual(left.overlays, right.overlays);
+}
+
+function areOverlayListsEqual(left: EditorOverlay[], right: EditorOverlay[]) {
+  if (left === right) {
+    return true;
+  }
+
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((overlay, index) =>
+    areOverlaysEqual(overlay, right[index]),
+  );
+}
+
+function areOverlaysEqual(left: EditorOverlay, right: EditorOverlay) {
+  return (
+    left === right ||
+    (left.type === right.type &&
+      left.id === right.id &&
+      left.pageNumber === right.pageNumber &&
+      arePdfRectsEqual(left.rect, right.rect) &&
+      areOverlayTypeFieldsEqual(left, right))
+  );
+}
+
+function arePdfRectsEqual(
+  left: EditorOverlay["rect"],
+  right: EditorOverlay["rect"],
+) {
+  return (
+    left === right ||
+    (left.height === right.height &&
+      left.width === right.width &&
+      left.x === right.x &&
+      left.y === right.y)
+  );
+}
+
+function areOverlayTypeFieldsEqual(left: EditorOverlay, right: EditorOverlay) {
+  switch (left.type) {
+    case "image":
+    case "signature":
+      return (
+        right.type === left.type &&
+        left.assetId === right.assetId &&
+        left.rotationDegrees === right.rotationDegrees &&
+        left.sha256Signature === right.sha256Signature
+      );
+    case "mark":
+      return (
+        right.type === "mark" &&
+        left.color === right.color &&
+        left.markType === right.markType
+      );
+    case "text":
+      return (
+        right.type === "text" &&
+        left.color === right.color &&
+        left.fontId === right.fontId &&
+        left.fontSize === right.fontSize &&
+        left.text === right.text
+      );
+    case "whiteout":
+      return right.type === "whiteout" && left.color === right.color;
+  }
 }
 
 function getValidSelectedOverlayId(

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   ChevronDownIcon,
   RotateCcwIcon,
@@ -56,7 +57,7 @@ type TextToolButtonProps = {
   settings: TextOverlayDefaults;
 };
 
-function TextToolButton({
+const TextToolButton = memo(function TextToolButton({
   disabled,
   documentFontOptions,
   isDefault,
@@ -210,7 +211,7 @@ function TextToolButton({
       </div>
     </Tooltip>
   );
-}
+});
 
 function DocumentFontReasonTooltip({
   icon,

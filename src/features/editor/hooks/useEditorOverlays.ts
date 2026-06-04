@@ -34,26 +34,33 @@ function useEditorOverlays() {
   const [history, setHistory] = useState<EditorHistoryState>(() =>
     createEditorHistory(),
   );
+  const [selectedOverlayId, setSelectedOverlayId] = useState<string | null>(
+    null,
+  );
   const historyRef = useRef(history);
+  const selectedOverlayIdRef = useRef(selectedOverlayId);
 
   useEffect(() => {
     historyRef.current = history;
   }, [history]);
 
+  useEffect(() => {
+    selectedOverlayIdRef.current = selectedOverlayId;
+  }, [selectedOverlayId]);
+
   const overlays = history.present.overlays;
-  const selectedOverlayId = history.present.selectedOverlayId;
 
   const commitOverlayState = useCallback(
     (
       update: (currentOverlays: EditorOverlay[]) => EditorOverlay[],
-      selectedOverlayId: string | null,
+      nextSelectedOverlayId = selectedOverlayIdRef.current,
     ) => {
       setHistory((currentHistory) => {
         const nextOverlays = update(currentHistory.present.overlays);
 
         return commitEditorHistory(
           currentHistory,
-          createHistoryEntry(nextOverlays, selectedOverlayId),
+          createHistoryEntry(nextOverlays, nextSelectedOverlayId),
         );
       });
     },
@@ -61,12 +68,33 @@ function useEditorOverlays() {
   );
 
   const replacePresent = useCallback(
-    (nextOverlays: EditorOverlay[], nextSelectedOverlayId: string | null) => {
+    (
+      nextOverlays: EditorOverlay[],
+      nextSelectedOverlayId = selectedOverlayIdRef.current,
+    ) => {
       setHistory((currentHistory) =>
         replaceEditorHistoryPresent(
           currentHistory,
           createHistoryEntry(nextOverlays, nextSelectedOverlayId),
         ),
+      );
+    },
+    [],
+  );
+
+  const setValidSelectedOverlayId = useCallback(
+    (nextSelectedOverlayId: string | null, nextOverlays?: EditorOverlay[]) => {
+      const overlaysToValidate =
+        nextOverlays ?? historyRef.current.present.overlays;
+      const validSelectedOverlayId = getValidSelectedOverlayId(
+        overlaysToValidate,
+        nextSelectedOverlayId,
+      );
+
+      setSelectedOverlayId((currentSelectedOverlayId) =>
+        currentSelectedOverlayId === validSelectedOverlayId
+          ? currentSelectedOverlayId
+          : validSelectedOverlayId,
       );
     },
     [],
@@ -80,19 +108,24 @@ function useEditorOverlays() {
         (currentOverlays) => [...currentOverlays, overlay],
         overlay.id,
       );
+      setValidSelectedOverlayId(overlay.id, [
+        ...historyRef.current.present.overlays,
+        overlay,
+      ]);
 
       return overlay;
     },
-    [commitOverlayState],
+    [commitOverlayState, setValidSelectedOverlayId],
   );
 
   const clearSelection = useCallback(() => {
-    replacePresent(historyRef.current.present.overlays, null);
-  }, [replacePresent]);
+    setValidSelectedOverlayId(null);
+  }, [setValidSelectedOverlayId]);
 
   const clearOverlays = useCallback(() => {
     setHistory(resetEditorHistory());
-  }, []);
+    setValidSelectedOverlayId(null, []);
+  }, [setValidSelectedOverlayId]);
 
   const replaceOverlays = useCallback(
     (
@@ -100,8 +133,9 @@ function useEditorOverlays() {
       nextSelectedOverlayId: string | null = null,
     ) => {
       replacePresent(nextOverlays, nextSelectedOverlayId);
+      setValidSelectedOverlayId(nextSelectedOverlayId, nextOverlays);
     },
-    [replacePresent],
+    [replacePresent, setValidSelectedOverlayId],
   );
 
   const resetHistory = useCallback(
@@ -112,25 +146,37 @@ function useEditorOverlays() {
     ) => {
       if (nextHistory) {
         setHistory(restoreEditorHistory(nextHistory));
+        setValidSelectedOverlayId(
+          nextHistory.present.selectedOverlayId ?? nextSelectedOverlayId,
+          nextHistory.present.overlays,
+        );
       } else {
         setHistory(resetEditorHistory(nextOverlays, nextSelectedOverlayId));
+        setValidSelectedOverlayId(nextSelectedOverlayId, nextOverlays);
       }
     },
-    [],
+    [setValidSelectedOverlayId],
   );
 
   const removeOverlay = useCallback(
     (overlayId: string) => {
       const nextSelectedOverlayId =
-        selectedOverlayId === overlayId ? null : selectedOverlayId;
+        selectedOverlayIdRef.current === overlayId
+          ? null
+          : selectedOverlayIdRef.current;
 
       commitOverlayState(
         (currentOverlays) =>
           currentOverlays.filter((overlay) => overlay.id !== overlayId),
         nextSelectedOverlayId,
       );
+      setSelectedOverlayId((currentSelectedOverlayId) =>
+        currentSelectedOverlayId === overlayId
+          ? null
+          : currentSelectedOverlayId,
+      );
     },
-    [commitOverlayState, selectedOverlayId],
+    [commitOverlayState],
   );
 
   const moveOverlayLayer = useCallback(
@@ -156,119 +202,128 @@ function useEditorOverlays() {
         });
 
       if (!trackHistory) {
-        replacePresent(
-          updateOverlays(historyRef.current.present.overlays),
-          overlayId,
+        const nextOverlays = updateOverlays(
+          historyRef.current.present.overlays,
         );
+        replacePresent(nextOverlays, overlayId);
+        setValidSelectedOverlayId(overlayId, nextOverlays);
         return;
       }
 
       commitOverlayState(updateOverlays, overlayId);
+      setValidSelectedOverlayId(overlayId);
     },
-    [commitOverlayState, replacePresent],
+    [commitOverlayState, replacePresent, setValidSelectedOverlayId],
   );
 
   const selectOverlay = useCallback(
     (overlayId: string) => {
-      replacePresent(historyRef.current.present.overlays, overlayId);
+      setValidSelectedOverlayId(overlayId);
     },
-    [replacePresent],
+    [setValidSelectedOverlayId],
   );
 
   const updateOverlayRect = useCallback(
     (overlayId: string, rect: PdfRect) => {
-      commitOverlayState(
-        (currentOverlays) =>
-          currentOverlays.map((overlay) =>
-            overlay.id === overlayId ? { ...overlay, rect } : overlay,
-          ),
-        selectedOverlayId,
+      commitOverlayState((currentOverlays) =>
+        updateOverlayById(currentOverlays, overlayId, (overlay) =>
+          arePdfRectsEqual(overlay.rect, rect) ? overlay : { ...overlay, rect },
+        ),
       );
     },
-    [commitOverlayState, selectedOverlayId],
+    [commitOverlayState],
   );
 
   const updateOverlayRotation = useCallback(
     (overlayId: string, rotationDegrees: number) => {
-      commitOverlayState(
-        (currentOverlays) =>
-          currentOverlays.map((overlay) =>
-            overlay.id === overlayId && isRotatableOverlay(overlay)
-              ? { ...overlay, rotationDegrees }
-              : overlay,
-          ),
-        selectedOverlayId,
+      commitOverlayState((currentOverlays) =>
+        updateOverlayById(currentOverlays, overlayId, (overlay) =>
+          isRotatableOverlay(overlay) &&
+          overlay.rotationDegrees !== rotationDegrees
+            ? { ...overlay, rotationDegrees }
+            : overlay,
+        ),
       );
     },
-    [commitOverlayState, selectedOverlayId],
+    [commitOverlayState],
   );
 
   const updateTextOverlay = useCallback(
     (overlayId: string, patch: TextOverlayPatch) => {
-      commitOverlayState(
-        (currentOverlays) =>
-          currentOverlays.map((overlay) =>
-            overlay.id === overlayId && overlay.type === "text"
-              ? { ...overlay, ...patch }
-              : overlay,
-          ),
-        selectedOverlayId,
+      commitOverlayState((currentOverlays) =>
+        updateOverlayById(currentOverlays, overlayId, (overlay) =>
+          overlay.type === "text" && !isOverlayPatchNoop(overlay, patch)
+            ? { ...overlay, ...patch }
+            : overlay,
+        ),
       );
     },
-    [commitOverlayState, selectedOverlayId],
+    [commitOverlayState],
   );
 
   const updateTextOverlayDraft = useCallback(
     (overlayId: string, patch: TextOverlayPatch) => {
       replacePresent(
-        historyRef.current.present.overlays.map((overlay) =>
-          overlay.id === overlayId && overlay.type === "text"
-            ? { ...overlay, ...patch }
-            : overlay,
+        updateOverlayById(
+          historyRef.current.present.overlays,
+          overlayId,
+          (overlay) =>
+            overlay.type === "text" && !isOverlayPatchNoop(overlay, patch)
+              ? { ...overlay, ...patch }
+              : overlay,
         ),
-        selectedOverlayId,
       );
     },
-    [replacePresent, selectedOverlayId],
+    [replacePresent],
   );
 
   const updateMarkOverlay = useCallback(
     (overlayId: string, patch: MarkOverlayPatch) => {
-      commitOverlayState(
-        (currentOverlays) =>
-          currentOverlays.map((overlay) =>
-            overlay.id === overlayId && overlay.type === "mark"
-              ? { ...overlay, ...patch }
-              : overlay,
-          ),
-        selectedOverlayId,
+      commitOverlayState((currentOverlays) =>
+        updateOverlayById(currentOverlays, overlayId, (overlay) =>
+          overlay.type === "mark" && !isOverlayPatchNoop(overlay, patch)
+            ? { ...overlay, ...patch }
+            : overlay,
+        ),
       );
     },
-    [commitOverlayState, selectedOverlayId],
+    [commitOverlayState],
   );
 
   const updateWhiteoutOverlay = useCallback(
     (overlayId: string, patch: WhiteoutOverlayPatch) => {
-      commitOverlayState(
-        (currentOverlays) =>
-          currentOverlays.map((overlay) =>
-            overlay.id === overlayId && overlay.type === "whiteout"
-              ? { ...overlay, ...patch }
-              : overlay,
-          ),
-        selectedOverlayId,
+      commitOverlayState((currentOverlays) =>
+        updateOverlayById(currentOverlays, overlayId, (overlay) =>
+          overlay.type === "whiteout" && !isOverlayPatchNoop(overlay, patch)
+            ? { ...overlay, ...patch }
+            : overlay,
+        ),
       );
     },
-    [commitOverlayState, selectedOverlayId],
+    [commitOverlayState],
   );
 
   const undo = useCallback(() => {
-    setHistory((currentHistory) => undoEditorHistory(currentHistory));
-  }, []);
+    setHistory((currentHistory) => {
+      const nextHistory = undoEditorHistory(currentHistory);
+      setValidSelectedOverlayId(
+        nextHistory.present.selectedOverlayId,
+        nextHistory.present.overlays,
+      );
+      return nextHistory;
+    });
+  }, [setValidSelectedOverlayId]);
 
   const redo = useCallback(() => {
-    setHistory((currentHistory) => redoEditorHistory(currentHistory));
-  }, []);
+    setHistory((currentHistory) => {
+      const nextHistory = redoEditorHistory(currentHistory);
+      setValidSelectedOverlayId(
+        nextHistory.present.selectedOverlayId,
+        nextHistory.present.overlays,
+      );
+      return nextHistory;
+    });
+  }, [setValidSelectedOverlayId]);
 
   const getHistoryEntrySnapshot = useCallback(
     () => cloneHistoryEntry(historyRef.current.present),
@@ -328,6 +383,57 @@ function createOverlayFromInput(input: EditorOverlayInput): EditorOverlay {
     case "whiteout":
       return { ...input, id };
   }
+}
+
+function updateOverlayById(
+  overlays: EditorOverlay[],
+  overlayId: string,
+  update: (overlay: EditorOverlay) => EditorOverlay,
+) {
+  let didChange = false;
+  const nextOverlays = overlays.map((overlay) => {
+    if (overlay.id !== overlayId) {
+      return overlay;
+    }
+
+    const nextOverlay = update(overlay);
+    didChange ||= nextOverlay !== overlay;
+    return nextOverlay;
+  });
+
+  return didChange ? nextOverlays : overlays;
+}
+
+function getValidSelectedOverlayId(
+  overlays: EditorOverlay[],
+  selectedOverlayId: string | null,
+) {
+  if (!selectedOverlayId) {
+    return null;
+  }
+
+  return overlays.some((overlay) => overlay.id === selectedOverlayId)
+    ? selectedOverlayId
+    : null;
+}
+
+function isOverlayPatchNoop(
+  overlay: EditorOverlay,
+  patch: MarkOverlayPatch | TextOverlayPatch | WhiteoutOverlayPatch,
+) {
+  return Object.entries(patch).every(
+    ([key, value]) => overlay[key as keyof EditorOverlay] === value,
+  );
+}
+
+function arePdfRectsEqual(left: PdfRect, right: PdfRect) {
+  return (
+    left === right ||
+    (left.height === right.height &&
+      left.width === right.width &&
+      left.x === right.x &&
+      left.y === right.y)
+  );
 }
 
 export { useEditorOverlays };

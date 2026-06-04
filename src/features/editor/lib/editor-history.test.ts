@@ -94,6 +94,55 @@ describe("editor history", () => {
     expect(nextHistory.past).toHaveLength(0);
   });
 
+  it("does not update history for selection-only changes", () => {
+    const firstOverlay = createTextOverlay();
+    const secondOverlay = createTextOverlay({
+      id: "text-2",
+      rect: { height: 40, width: 120, x: 50, y: 60 },
+    });
+    const history = createEditorHistory(
+      [firstOverlay, secondOverlay],
+      firstOverlay.id,
+    );
+    const nextHistory = commitEditorHistory(
+      history,
+      createHistoryEntry([firstOverlay, secondOverlay], secondOverlay.id),
+    );
+
+    expect(nextHistory).toBe(history);
+    expect(nextHistory.past).toHaveLength(0);
+  });
+
+  it("preserves unchanged overlay references when committing changes", () => {
+    const firstOverlay = createTextOverlay();
+    const secondOverlay = createTextOverlay({
+      id: "text-2",
+      rect: { height: 40, width: 120, x: 50, y: 60 },
+    });
+    const updatedSecondOverlay = {
+      ...secondOverlay,
+      rect: { ...secondOverlay.rect, x: 75 },
+    };
+    const committedHistory = commitEditorHistory(
+      createEditorHistory([firstOverlay, secondOverlay], secondOverlay.id),
+      createHistoryEntry(
+        [firstOverlay, updatedSecondOverlay],
+        secondOverlay.id,
+      ),
+    );
+
+    expect(committedHistory.present.overlays[0]).toBe(firstOverlay);
+    expect(committedHistory.present.overlays[1]).toBe(updatedSecondOverlay);
+  });
+
+  it("preserves overlay object references in new history entries", () => {
+    const overlay = createTextOverlay();
+    const entry = createHistoryEntry([overlay], overlay.id);
+
+    expect(entry.overlays[0]).toBe(overlay);
+    expect(entry.overlays[0]?.rect).toBe(overlay.rect);
+  });
+
   it("limits past entries to the configured stack size", () => {
     let history = createEditorHistory();
 

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,7 +29,7 @@ type WhiteoutToolButtonProps = {
   settings: WhiteoutOverlayDefaults;
 };
 
-function WhiteoutToolButton({
+const WhiteoutToolButton = memo(function WhiteoutToolButton({
   disabled,
   isDefault,
   isSelected,
@@ -104,6 +105,6 @@ function WhiteoutToolButton({
       </div>
     </Tooltip>
   );
-}
+});
 
 export { WhiteoutToolButton };

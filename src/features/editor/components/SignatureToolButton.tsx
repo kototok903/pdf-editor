@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { ChevronDownIcon, PlusIcon, SignatureIcon, XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ type SignatureToolDropdownProps = {
   signatureAssets: ImageAsset[];
 };
 
-function SignatureToolDropdown({
+const SignatureToolButton = memo(function SignatureToolButton({
   activeSignatureAssetId,
   disabled,
   isSelected,
@@ -128,6 +128,6 @@ function SignatureToolDropdown({
       />
     </>
   );
-}
+});
 
-export { SignatureToolDropdown };
+export { SignatureToolButton };

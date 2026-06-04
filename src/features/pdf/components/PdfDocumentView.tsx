@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 import { PdfPageView } from "@/features/pdf/components/PdfPageView";
 import type {
   EditorOverlay,
@@ -41,10 +43,11 @@ type PdfDocumentViewProps = {
   pageSizes: Record<number, PageSize>;
   scale: number;
   selectedOverlayId: string | null;
+  selectedOverlayPageNumber: number | null;
   whiteoutColor: string;
 };
 
-function PdfDocumentView({
+const PdfDocumentView = memo(function PdfDocumentView({
   activeImageAsset,
   activeSignatureAsset,
   currentPage,
@@ -74,6 +77,7 @@ function PdfDocumentView({
   pageSizes,
   scale,
   selectedOverlayId,
+  selectedOverlayPageNumber,
   whiteoutColor,
 }: PdfDocumentViewProps) {
   return (
@@ -109,7 +113,9 @@ function PdfDocumentView({
           pageNumber={index + 1}
           pdfDocument={document.pdfDocument}
           scale={scale}
-          selectedOverlayId={selectedOverlayId}
+          selectedOverlayId={
+            selectedOverlayPageNumber === index + 1 ? selectedOverlayId : null
+          }
           shouldRender={isPageInRenderWindow({
             currentPage,
             overscan: workspacePageRenderOverscan,
@@ -120,7 +126,9 @@ function PdfDocumentView({
       ))}
     </div>
   );
-}
+});
+
+PdfDocumentView.displayName = "PdfDocumentView";
 
 const workspacePageRenderOverscan = 5;
 const defaultPageWidth = 612;
