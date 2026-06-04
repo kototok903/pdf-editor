@@ -50,7 +50,7 @@ const LayersSidebar = memo(function LayersSidebar({
 
 LayersSidebar.displayName = "LayersSidebar";
 
-function SortableLayerTile({
+const SortableLayerTile = memo(function SortableLayerTile({
   imageAssetById,
   index,
   isSelected,
@@ -77,17 +77,22 @@ function SortableLayerTile({
     },
     [handleRef, ref],
   );
+  const handleClick = useCallback(() => {
+    onSelectOverlay(overlay.id);
+  }, [onSelectOverlay, overlay.id]);
 
   return (
     <LayerTile
       className={isDragging ? "cursor-grabbing opacity-80" : "cursor-grab"}
       imageAssetById={imageAssetById}
       isSelected={isSelected}
-      onClick={() => onSelectOverlay(overlay.id)}
+      onClick={handleClick}
       overlay={overlay}
       ref={setTileRef}
     />
   );
-}
+});
+
+SortableLayerTile.displayName = "SortableLayerTile";
 
 export { LayersSidebar };

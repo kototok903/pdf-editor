@@ -21,7 +21,7 @@ type PagesSidebarProps = {
   pageCount: number;
 };
 
-function PagesSidebar({
+const PagesSidebar = memo(function PagesSidebar({
   currentPage,
   document,
   imageAssetById,
@@ -169,7 +169,9 @@ function PagesSidebar({
       </div>
     </aside>
   );
-}
+});
+
+PagesSidebar.displayName = "PagesSidebar";
 
 const SidebarPageButton = memo(function SidebarPageButton({
   imageAssetById,
@@ -206,6 +208,9 @@ const SidebarPageButton = memo(function SidebarPageButton({
     },
     [pageNumber, ref, registerPageButton],
   );
+  const handleClick = useCallback(() => {
+    onSelectPage(pageNumber);
+  }, [onSelectPage, pageNumber]);
 
   return (
     <button
@@ -217,7 +222,7 @@ const SidebarPageButton = memo(function SidebarPageButton({
       )}
       data-active={isActive}
       data-page-number={pageNumber}
-      onClick={() => onSelectPage(pageNumber)}
+      onClick={handleClick}
       ref={setButtonRef}
       type="button"
     >

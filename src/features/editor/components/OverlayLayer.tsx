@@ -123,6 +123,7 @@ const OverlayLayer = memo(function OverlayLayer({
     useState<HTMLDivElement | null>(null);
   const moveableRef = useRef<Moveable | null>(null);
   const overlayLayerRef = useRef<HTMLDivElement | null>(null);
+  const skipClickSelectionOverlayIdRef = useRef<string | null>(null);
   const transformDraftRef = useRef<TransformDraft | null>(null);
   const selectedOverlay =
     pageOverlays.find((overlay) => overlay.id === selectedOverlayId) ?? null;
@@ -398,7 +399,15 @@ const OverlayLayer = memo(function OverlayLayer({
             key={overlay.id}
             onClick={(event) => {
               event.stopPropagation();
-              onSelectOverlay(overlay.id);
+              if (skipClickSelectionOverlayIdRef.current === overlay.id) {
+                skipClickSelectionOverlayIdRef.current = null;
+                return;
+              }
+
+              if (!isSelected) {
+                onSelectOverlay(overlay.id);
+              }
+
               if (editingOverlayId && editingOverlayId !== overlay.id) {
                 onEditOverlay(null);
               }
@@ -423,6 +432,7 @@ const OverlayLayer = memo(function OverlayLayer({
               const target = event.currentTarget;
               const nativeEvent = event.nativeEvent;
 
+              skipClickSelectionOverlayIdRef.current = overlay.id;
               onSelectOverlay(overlay.id);
               onEditOverlay(null);
               setSelectedOverlayElement(target);

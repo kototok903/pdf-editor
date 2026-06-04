@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useCallback, useState } from "react";
 import {
   Redo2Icon,
   SettingsIcon,
@@ -96,7 +96,7 @@ type EditorToolbarProps = {
   zoomPercent: number;
 };
 
-function EditorToolbar({
+const EditorToolbar = memo(function EditorToolbar({
   activeProjectId,
   activeImageAssetId,
   activeSignatureAssetId,
@@ -160,6 +160,9 @@ function EditorToolbar({
   const hasPdf = pageCount > 0;
   const isLoading = status === "loading";
   const [isImageUrlDialogOpen, setIsImageUrlDialogOpen] = useState(false);
+  const handleOpenImageUrlDialog = useCallback(() => {
+    setIsImageUrlDialogOpen(true);
+  }, []);
 
   return (
     <header className="sticky top-0 z-20 border-b bg-toolbar text-toolbar-foreground">
@@ -206,7 +209,7 @@ function EditorToolbar({
           imageAssets={imageAssets}
           isSelected={isImageToolActive}
           onImportImageFromClipboard={onImportImageFromClipboard}
-          onOpenUrlDialog={() => setIsImageUrlDialogOpen(true)}
+          onOpenUrlDialog={handleOpenImageUrlDialog}
           onRemoveImageAssetFromRecents={onRemoveImageAssetFromRecents}
           onSelectImageAsset={onSelectImageAsset}
           onUploadImage={onOpenImageDialog}
@@ -321,6 +324,8 @@ function EditorToolbar({
       />
     </header>
   );
-}
+});
+
+EditorToolbar.displayName = "EditorToolbar";
 
 export { EditorToolbar };

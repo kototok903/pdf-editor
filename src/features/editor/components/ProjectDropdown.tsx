@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   ChevronDownIcon,
   ExternalLinkIcon,
@@ -36,7 +37,7 @@ type ProjectDropdownProps = {
   onRemoveProject: (projectId: string) => void;
 };
 
-function ProjectDropdown({
+const ProjectDropdown = memo(function ProjectDropdown({
   hasPdf,
   fileName,
   projects,
@@ -184,7 +185,9 @@ function ProjectDropdown({
       )}
     </div>
   );
-}
+});
+
+ProjectDropdown.displayName = "ProjectDropdown";
 
 function formatProjectLastModified(lastModifiedAt: number) {
   const elapsedMs = Math.max(0, Date.now() - lastModifiedAt);

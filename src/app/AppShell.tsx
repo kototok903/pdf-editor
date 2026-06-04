@@ -1211,7 +1211,7 @@ function AppShell() {
     void openPdfAsProject(file);
   };
 
-  const handleExportPdf = async () => {
+  const handleExportPdf = useCallback(async () => {
     if (!loadedDocument || isExporting) {
       return;
     }
@@ -1250,11 +1250,18 @@ function AppShell() {
     } finally {
       setIsExporting(false);
     }
-  };
+  }, [
+    commitPendingTextEdit,
+    documentFontOptions,
+    imageAssets,
+    isExporting,
+    loadedDocument,
+    overlays,
+  ]);
 
-  const handleOpenImageDialog = () => {
+  const handleOpenImageDialog = useCallback(() => {
     imageInputRef.current?.click();
-  };
+  }, []);
 
   const handleImageFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1270,47 +1277,49 @@ function AppShell() {
     });
   };
 
-  const handleImportImageUrl = async (url: string) => {
-    const asset = await addImageUrl(url);
+  const handleImportImageUrl = useCallback(
+    async (url: string) => {
+      const asset = await addImageUrl(url);
 
-    setActiveTool({ assetId: asset.id, type: "image" });
-    handleEditOverlay(null);
-  };
-
-  const handleCreateSignature = async ({
-    color,
-    fontId,
-    text,
-  }: SignatureCreateInput) => {
-    try {
-      const rasterizedSignature = await rasterizeTypedSignature({
-        color,
-        font: getSignatureFontOption(fontId),
-        text,
-      });
-      const asset = await addSignatureBlob(
-        rasterizedSignature.blob,
-        `${text}.png`,
-      );
-
-      setActiveTool({ assetId: asset.id, type: "signature" });
+      setActiveTool({ assetId: asset.id, type: "image" });
       handleEditOverlay(null);
-      toast.success("Created signature", {
-        description: "Click a page to place it.",
-      });
+    },
+    [addImageUrl, handleEditOverlay],
+  );
 
-      return true;
-    } catch (error) {
-      toast.error("Unable to create signature", {
-        description:
-          error instanceof Error ? error.message : "Please try again.",
-      });
+  const handleCreateSignature = useCallback(
+    async ({ color, fontId, text }: SignatureCreateInput) => {
+      try {
+        const rasterizedSignature = await rasterizeTypedSignature({
+          color,
+          font: getSignatureFontOption(fontId),
+          text,
+        });
+        const asset = await addSignatureBlob(
+          rasterizedSignature.blob,
+          `${text}.png`,
+        );
 
-      return false;
-    }
-  };
+        setActiveTool({ assetId: asset.id, type: "signature" });
+        handleEditOverlay(null);
+        toast.success("Created signature", {
+          description: "Click a page to place it.",
+        });
 
-  const handleImportImageFromClipboard = () => {
+        return true;
+      } catch (error) {
+        toast.error("Unable to create signature", {
+          description:
+            error instanceof Error ? error.message : "Please try again.",
+        });
+
+        return false;
+      }
+    },
+    [addSignatureBlob, handleEditOverlay],
+  );
+
+  const handleImportImageFromClipboard = useCallback(() => {
     const importImageFromClipboard = async () => {
       try {
         const intent = await readPasteIntentFromAsyncClipboard();
@@ -1343,7 +1352,7 @@ function AppShell() {
     };
 
     void importImageFromClipboard();
-  };
+  }, [addImageBlob, handleEditOverlay]);
 
   const handleDropPdfFile = useCallback(
     (file: File) => {
@@ -1410,31 +1419,31 @@ function AppShell() {
     [zoom],
   );
 
-  const handleTextToolClick = () => {
+  const handleTextToolClick = useCallback(() => {
     setActiveTool((currentTool) =>
       currentTool?.type === "text" ? null : { type: "text" },
     );
     handleEditOverlay(null);
-  };
+  }, [handleEditOverlay]);
 
-  const handleMarkToolClick = () => {
+  const handleMarkToolClick = useCallback(() => {
     setActiveTool((currentTool) =>
       currentTool?.type === "mark" ? null : { type: "mark" },
     );
     handleEditOverlay(null);
-  };
+  }, [handleEditOverlay]);
 
-  const handleMarkToolActivate = () => {
+  const handleMarkToolActivate = useCallback(() => {
     setActiveTool({ type: "mark" });
     handleEditOverlay(null);
-  };
+  }, [handleEditOverlay]);
 
-  const handleWhiteoutToolClick = () => {
+  const handleWhiteoutToolClick = useCallback(() => {
     setActiveTool((currentTool) =>
       currentTool?.type === "whiteout" ? null : { type: "whiteout" },
     );
     handleEditOverlay(null);
-  };
+  }, [handleEditOverlay]);
 
   const handlePlaceTextOverlay = useCallback(
     (pageNumber: number, rect: PdfRect) => {
@@ -1523,32 +1532,35 @@ function AppShell() {
     [addOverlay, currentWhiteoutSettings.color, handleEditOverlay],
   );
 
-  const handleMarkSettingsChange = (patch: MarkOverlayPatch) => {
-    setEditorPreferences((currentPreferences) => {
-      const nextMarkDefaults = getNextMarkSettings(
-        currentPreferences.markDefaults,
-        patch,
-      );
+  const handleMarkSettingsChange = useCallback(
+    (patch: MarkOverlayPatch) => {
+      setEditorPreferences((currentPreferences) => {
+        const nextMarkDefaults = getNextMarkSettings(
+          currentPreferences.markDefaults,
+          patch,
+        );
 
-      if (nextMarkDefaults === currentPreferences.markDefaults) {
-        return currentPreferences;
+        if (nextMarkDefaults === currentPreferences.markDefaults) {
+          return currentPreferences;
+        }
+
+        return {
+          ...currentPreferences,
+          markDefaults: nextMarkDefaults,
+        };
+      });
+
+      if (
+        selectedMarkOverlay &&
+        !isMarkSettingsPatchNoop(selectedMarkOverlay, patch)
+      ) {
+        updateMarkOverlay(selectedMarkOverlay.id, patch);
       }
+    },
+    [selectedMarkOverlay, setEditorPreferences, updateMarkOverlay],
+  );
 
-      return {
-        ...currentPreferences,
-        markDefaults: nextMarkDefaults,
-      };
-    });
-
-    if (
-      selectedMarkOverlay &&
-      !isMarkSettingsPatchNoop(selectedMarkOverlay, patch)
-    ) {
-      updateMarkOverlay(selectedMarkOverlay.id, patch);
-    }
-  };
-
-  const handleMarkSettingsReset = () => {
+  const handleMarkSettingsReset = useCallback(() => {
     setEditorPreferences((currentPreferences) => {
       if (
         areMarkSettingsEqual(
@@ -1571,35 +1583,43 @@ function AppShell() {
     ) {
       updateMarkOverlay(selectedMarkOverlay.id, defaultMarkSettings);
     }
-  };
+  }, [selectedMarkOverlay, setEditorPreferences, updateMarkOverlay]);
 
-  const handleTextSettingsChange = (patch: TextOverlayPatch) => {
-    setEditorPreferences((currentPreferences) => {
-      const nextTextDefaults = getNextTextSettings(
-        currentPreferences.textDefaults,
-        patch,
-      );
+  const handleTextSettingsChange = useCallback(
+    (patch: TextOverlayPatch) => {
+      setEditorPreferences((currentPreferences) => {
+        const nextTextDefaults = getNextTextSettings(
+          currentPreferences.textDefaults,
+          patch,
+        );
 
-      if (nextTextDefaults === currentPreferences.textDefaults) {
-        return currentPreferences;
+        if (nextTextDefaults === currentPreferences.textDefaults) {
+          return currentPreferences;
+        }
+
+        return {
+          ...currentPreferences,
+          textDefaults: nextTextDefaults,
+        };
+      });
+
+      if (
+        selectedTextOverlay &&
+        !isTextSettingsPatchNoop(selectedTextOverlay, patch)
+      ) {
+        commitPendingTextEdit();
+        updateTextOverlay(selectedTextOverlay.id, patch);
       }
+    },
+    [
+      commitPendingTextEdit,
+      selectedTextOverlay,
+      setEditorPreferences,
+      updateTextOverlay,
+    ],
+  );
 
-      return {
-        ...currentPreferences,
-        textDefaults: nextTextDefaults,
-      };
-    });
-
-    if (
-      selectedTextOverlay &&
-      !isTextSettingsPatchNoop(selectedTextOverlay, patch)
-    ) {
-      commitPendingTextEdit();
-      updateTextOverlay(selectedTextOverlay.id, patch);
-    }
-  };
-
-  const handleTextSettingsReset = () => {
+  const handleTextSettingsReset = useCallback(() => {
     const defaultTextPatch = {
       color: defaultTextOverlay.color,
       fontId: defaultTextOverlay.fontId,
@@ -1629,34 +1649,42 @@ function AppShell() {
       commitPendingTextEdit();
       updateTextOverlay(selectedTextOverlay.id, defaultTextPatch);
     }
-  };
+  }, [
+    commitPendingTextEdit,
+    selectedTextOverlay,
+    setEditorPreferences,
+    updateTextOverlay,
+  ]);
 
-  const handleWhiteoutSettingsChange = (patch: WhiteoutOverlayPatch) => {
-    setEditorPreferences((currentPreferences) => {
-      const nextWhiteoutDefaults = getNextWhiteoutSettings(
-        currentPreferences.whiteoutDefaults,
-        patch,
-      );
+  const handleWhiteoutSettingsChange = useCallback(
+    (patch: WhiteoutOverlayPatch) => {
+      setEditorPreferences((currentPreferences) => {
+        const nextWhiteoutDefaults = getNextWhiteoutSettings(
+          currentPreferences.whiteoutDefaults,
+          patch,
+        );
 
-      if (nextWhiteoutDefaults === currentPreferences.whiteoutDefaults) {
-        return currentPreferences;
+        if (nextWhiteoutDefaults === currentPreferences.whiteoutDefaults) {
+          return currentPreferences;
+        }
+
+        return {
+          ...currentPreferences,
+          whiteoutDefaults: nextWhiteoutDefaults,
+        };
+      });
+
+      if (
+        selectedWhiteoutOverlay &&
+        !isWhiteoutSettingsPatchNoop(selectedWhiteoutOverlay, patch)
+      ) {
+        updateWhiteoutOverlay(selectedWhiteoutOverlay.id, patch);
       }
+    },
+    [selectedWhiteoutOverlay, setEditorPreferences, updateWhiteoutOverlay],
+  );
 
-      return {
-        ...currentPreferences,
-        whiteoutDefaults: nextWhiteoutDefaults,
-      };
-    });
-
-    if (
-      selectedWhiteoutOverlay &&
-      !isWhiteoutSettingsPatchNoop(selectedWhiteoutOverlay, patch)
-    ) {
-      updateWhiteoutOverlay(selectedWhiteoutOverlay.id, patch);
-    }
-  };
-
-  const handleWhiteoutSettingsReset = () => {
+  const handleWhiteoutSettingsReset = useCallback(() => {
     setEditorPreferences((currentPreferences) => {
       if (
         areWhiteoutSettingsEqual(
@@ -1679,7 +1707,7 @@ function AppShell() {
     ) {
       updateWhiteoutOverlay(selectedWhiteoutOverlay.id, defaultWhiteoutOverlay);
     }
-  };
+  }, [selectedWhiteoutOverlay, setEditorPreferences, updateWhiteoutOverlay]);
 
   const handleSelectOverlay = useCallback(
     (overlayId: string) => {
@@ -1699,7 +1727,7 @@ function AppShell() {
     handleEditOverlay(null);
   }, [handleEditOverlay]);
 
-  const handleZoomIn = () => {
+  const handleZoomIn = useCallback(() => {
     setEditorPreferences((currentPreferences) => ({
       ...currentPreferences,
       zoom: Math.min(
@@ -1707,9 +1735,9 @@ function AppShell() {
         Number((currentPreferences.zoom + zoomStep).toFixed(2)),
       ),
     }));
-  };
+  }, [setEditorPreferences]);
 
-  const handleZoomOut = () => {
+  const handleZoomOut = useCallback(() => {
     setEditorPreferences((currentPreferences) => ({
       ...currentPreferences,
       zoom: Math.max(
@@ -1717,7 +1745,43 @@ function AppShell() {
         Number((currentPreferences.zoom - zoomStep).toFixed(2)),
       ),
     }));
-  };
+  }, [setEditorPreferences]);
+
+  const handleOpenSettings = useCallback(() => {
+    setIsSettingsDialogOpen(true);
+  }, []);
+
+  const handleSelectImageAsset = useCallback(
+    (assetId: string) => {
+      showImageAssetInRecents(assetId);
+      setActiveTool({ assetId, type: "image" });
+      setEditingOverlayId(null);
+    },
+    [showImageAssetInRecents],
+  );
+
+  const handleSelectSignatureAsset = useCallback(
+    (assetId: string) => {
+      showImageAssetInRecents(assetId);
+      setActiveTool({ assetId, type: "signature" });
+      setEditingOverlayId(null);
+    },
+    [showImageAssetInRecents],
+  );
+
+  const handleToggleLayersSidebar = useCallback(() => {
+    setEditorPreferences((currentPreferences) => ({
+      ...currentPreferences,
+      isLayersSidebarOpen: !currentPreferences.isLayersSidebarOpen,
+    }));
+  }, [setEditorPreferences]);
+
+  const handleTogglePagesSidebar = useCallback(() => {
+    setEditorPreferences((currentPreferences) => ({
+      ...currentPreferences,
+      isPagesSidebarOpen: !currentPreferences.isPagesSidebarOpen,
+    }));
+  }, [setEditorPreferences]);
 
   const handleClearLocalAppData = useCallback(async () => {
     if (isClearingLocalData) {
@@ -1835,38 +1899,20 @@ function AppShell() {
           onImportImageFromClipboard={handleImportImageFromClipboard}
           onOpenFile={handleOpenFileDialog}
           onOpenImageDialog={handleOpenImageDialog}
-          onOpenSettings={() => setIsSettingsDialogOpen(true)}
+          onOpenSettings={handleOpenSettings}
           onRedo={handleRedo}
           onRemoveImageAssetFromRecents={hideImageAssetFromRecents}
           onRemoveSignatureAssetFromRecents={hideImageAssetFromRecents}
           onOpenProjectInNewTab={handleOpenProjectInNewTab}
           onRemoveProject={handleRemoveProject}
           onSelectProject={handleSelectProject}
-          onSelectImageAsset={(assetId) => {
-            showImageAssetInRecents(assetId);
-            setActiveTool({ assetId, type: "image" });
-            setEditingOverlayId(null);
-          }}
-          onSelectSignatureAsset={(assetId) => {
-            showImageAssetInRecents(assetId);
-            setActiveTool({ assetId, type: "signature" });
-            setEditingOverlayId(null);
-          }}
+          onSelectImageAsset={handleSelectImageAsset}
+          onSelectSignatureAsset={handleSelectSignatureAsset}
           onTextSettingsChange={handleTextSettingsChange}
           onTextSettingsReset={handleTextSettingsReset}
           onTextToolClick={handleTextToolClick}
-          onToggleLayersSidebar={() =>
-            setEditorPreferences((currentPreferences) => ({
-              ...currentPreferences,
-              isLayersSidebarOpen: !currentPreferences.isLayersSidebarOpen,
-            }))
-          }
-          onTogglePagesSidebar={() =>
-            setEditorPreferences((currentPreferences) => ({
-              ...currentPreferences,
-              isPagesSidebarOpen: !currentPreferences.isPagesSidebarOpen,
-            }))
-          }
+          onToggleLayersSidebar={handleToggleLayersSidebar}
+          onTogglePagesSidebar={handleTogglePagesSidebar}
           onUndo={handleUndo}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
