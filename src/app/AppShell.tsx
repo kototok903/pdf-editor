@@ -1288,17 +1288,19 @@ function AppShell() {
   );
 
   const handleCreateSignature = useCallback(
-    async ({ color, fontId, text }: SignatureCreateInput) => {
+    async (input: SignatureCreateInput) => {
       try {
-        const rasterizedSignature = await rasterizeTypedSignature({
-          color,
-          font: getSignatureFontOption(fontId),
-          text,
-        });
-        const asset = await addSignatureBlob(
-          rasterizedSignature.blob,
-          `${text}.png`,
-        );
+        const signatureBlob =
+          input.type === "typed"
+            ? await rasterizeTypedSignature({
+                color: input.color,
+                font: getSignatureFontOption(input.fontId),
+                text: input.text,
+              }).then(({ blob }) => blob)
+            : input.blob;
+        const signatureName =
+          input.type === "typed" ? `${input.text}.png` : "Signature.png";
+        const asset = await addSignatureBlob(signatureBlob, signatureName);
 
         setActiveTool({ assetId: asset.id, type: "signature" });
         handleEditOverlay(null);

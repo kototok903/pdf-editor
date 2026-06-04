@@ -102,7 +102,7 @@ const ImageToolButton = memo(function ImageToolButton({
                 role="button"
                 tabIndex={0}
               >
-                <span className="grid size-10 place-items-center overflow-hidden rounded-md border bg-background">
+                <span className="grid size-10 place-items-center overflow-hidden rounded-md border bg-page/70">
                   <img
                     alt={asset.name}
                     className="size-full min-h-0 min-w-0 object-contain"

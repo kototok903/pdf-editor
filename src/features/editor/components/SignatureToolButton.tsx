@@ -94,7 +94,7 @@ const SignatureToolButton = memo(function SignatureToolButton({
                   role="button"
                   tabIndex={0}
                 >
-                  <span className="grid min-h-12 min-w-0 place-items-center overflow-hidden rounded-md border bg-background/70 px-2">
+                  <span className="grid min-h-12 min-w-0 place-items-center overflow-hidden rounded-md border bg-page/70 px-2">
                     <img
                       alt={asset.name}
                       className="max-h-12 w-full min-w-0 object-contain"
