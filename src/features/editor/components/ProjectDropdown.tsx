@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import {
   ChevronDownIcon,
   ExternalLinkIcon,
@@ -52,12 +52,14 @@ const ProjectDropdown = memo(function ProjectDropdown({
   onSelectProject,
   onRemoveProject,
 }: ProjectDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <div>
       {isLoading ? (
         <Skeleton className="h-7.5 w-19.5" />
       ) : (
-        <DropdownMenu>
+        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
           <Tooltip tooltip={fileName ?? ""} disabled={!fileName}>
             <DropdownMenuTrigger asChild>
               <Button
@@ -80,6 +82,7 @@ const ProjectDropdown = memo(function ProjectDropdown({
           <DropdownMenuContent align="start" className="w-72 p-1.5">
             <DropdownMenuItem
               onSelect={() => {
+                setIsOpen(false);
                 onOpenFile();
               }}
             >
@@ -117,10 +120,14 @@ const ProjectDropdown = memo(function ProjectDropdown({
                         className="grid grid-cols-[1fr_auto] items-center gap-2 rounded-md border border-transparent p-1.5 text-left outline-none hover:border-border hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 data-[active=true]:border-primary/50 data-[active=true]:bg-primary/10"
                         data-active={isActive}
                         key={project.id}
-                        onClick={() => onSelectProject(project.id)}
+                        onClick={() => {
+                          setIsOpen(false);
+                          onSelectProject(project.id);
+                        }}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
+                            setIsOpen(false);
                             onSelectProject(project.id);
                           }
                         }}
@@ -144,6 +151,7 @@ const ProjectDropdown = memo(function ProjectDropdown({
                               className="size-7 p-0"
                               onClick={(event) => {
                                 event.stopPropagation();
+                                setIsOpen(false);
                                 onOpenProjectInNewTab(project.id);
                               }}
                               onKeyDown={(event) => event.stopPropagation()}
@@ -160,6 +168,7 @@ const ProjectDropdown = memo(function ProjectDropdown({
                             className="size-7 p-0"
                             onClick={(event) => {
                               event.stopPropagation();
+                              setIsOpen(false);
                               onRemoveProject(project.id);
                             }}
                             onKeyDown={(event) => event.stopPropagation()}

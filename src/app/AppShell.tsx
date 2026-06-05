@@ -68,7 +68,6 @@ import { getSignatureFontOption } from "@/features/editor/lib/signature-fonts";
 import { rasterizeTypedSignature } from "@/features/editor/lib/signature-rasterizer";
 import {
   createProject,
-  getNextActiveProjectAfterClose,
   removeProject,
   sortProjectsForSwitcher,
   updateProjectFromDocument,
@@ -933,42 +932,14 @@ function AppShell() {
   );
 
   const handleCloseActiveProject = useCallback(() => {
-    commitPendingTextEdit();
-    const activeSnapshot = getActiveProjectSnapshot();
-
-    if (activeSnapshot) {
-      setProjects((currentProjects) =>
-        upsertProject(currentProjects, activeSnapshot),
-      );
-    }
-
-    setActiveProjectId(null);
-    pushProjectPath(null);
-    setCurrentPage(1);
-    clearFile();
-    resetHistory();
-    resetProjectRuntimeState();
-  }, [
-    clearFile,
-    commitPendingTextEdit,
-    getActiveProjectSnapshot,
-    pushProjectPath,
-    resetHistory,
-    resetProjectRuntimeState,
-  ]);
+    handleRequestCloseProject();
+  }, [handleRequestCloseProject]);
 
   const handleRemoveProject = useCallback(
     (projectId: string) => {
-      if (projectId === activeProjectId) {
-        handleRequestCloseProject(projectId);
-        return;
-      }
-
-      setProjects((currentProjects) =>
-        removeProject(currentProjects, projectId),
-      );
+      handleRequestCloseProject(projectId);
     },
-    [activeProjectId, handleRequestCloseProject],
+    [handleRequestCloseProject],
   );
 
   const handleConfirmCloseProject = useCallback(() => {
@@ -986,19 +957,11 @@ function AppShell() {
       : currentProjects;
     const isClosingActiveProject =
       Boolean(projectIdToClose) && projectIdToClose === activeProjectId;
-    const nextProject = isClosingActiveProject
-      ? getNextActiveProjectAfterClose(currentProjects, projectIdToClose)
-      : null;
 
     setProjects(nextProjects);
     setPendingCloseProjectId(null);
 
     if (!isClosingActiveProject) {
-      return;
-    }
-
-    if (nextProject) {
-      void activateProject(nextProject, { pathUpdate: "replace" });
       return;
     }
 
@@ -1008,12 +971,14 @@ function AppShell() {
     clearFile();
     resetHistory();
     resetProjectRuntimeState();
-    void clearStoredDraft().catch(() => {
-      // Closing the visible project should not be blocked by storage errors.
-    });
+
+    if (nextProjects.length === 0) {
+      void clearStoredDraft().catch(() => {
+        // Closing the visible project should not be blocked by storage errors.
+      });
+    }
   }, [
     activeProjectId,
-    activateProject,
     clearFile,
     clearStoredDraft,
     commitPendingTextEdit,
@@ -1027,6 +992,10 @@ function AppShell() {
 
   useEffect(() => {
     if (!isLocalDraftReady) {
+      return;
+    }
+
+    if (status === "loading") {
       return;
     }
 
@@ -1093,6 +1062,7 @@ function AppShell() {
     projects,
     routePathname,
     routeProjectId,
+    status,
   ]);
 
   const toolbarProjects = useMemo(() => {
@@ -1122,6 +1092,17 @@ function AppShell() {
       activeProjectId,
     );
   }, [activeProjectId, currentPage, history, loadedDocument, projects]);
+
+  const pendingCloseProjectFileName = useMemo(() => {
+    if (!pendingCloseProjectId) {
+      return null;
+    }
+
+    return (
+      toolbarProjects.find((project) => project.id === pendingCloseProjectId)
+        ?.fileName ?? null
+    );
+  }, [pendingCloseProjectId, toolbarProjects]);
 
   const handleSelectProject = useCallback(
     (projectId: string) => {
@@ -2035,9 +2016,13 @@ function AppShell() {
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Close current project?</DialogTitle>
+              <DialogTitle>
+                {pendingCloseProjectFileName
+                  ? `Close project ${pendingCloseProjectFileName}?`
+                  : "Close project?"}
+              </DialogTitle>
               <DialogDescription>
-                This will remove the open PDF and local edits from this browser.
+                This will remove the PDF and local edits from this browser.
                 Your original file will not be deleted.
               </DialogDescription>
             </DialogHeader>
