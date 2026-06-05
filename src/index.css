@@ -245,6 +245,11 @@ body {
   height: 1px;
 }
 
+.editor-moveable-controls.editor-moveable-controls.editor-text-moveable-controls
+  .moveable-line {
+  display: none;
+}
+
 .editor-moveable-controls.editor-moveable-controls
   .moveable-control.moveable-control {
   width: 8px;
@@ -292,13 +297,6 @@ body {
 .editor-moveable-controls.editor-moveable-controls
   .moveable-direction.moveable-direction.moveable-w {
   cursor: col-resize;
-}
-
-.editor-moveable-controls.editor-moveable-controls.editor-text-moveable-controls
-  .moveable-direction.moveable-direction.moveable-e,
-.editor-moveable-controls.editor-moveable-controls.editor-text-moveable-controls
-  .moveable-direction.moveable-direction.moveable-w {
-  margin-top: calc(-4px + var(--text-resize-handle-y-offset, 0px));
 }
 
 .editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-0
