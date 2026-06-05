@@ -5,6 +5,7 @@ import {
   FileDownIcon,
   FileIcon,
   FileTextIcon,
+  InfoIcon,
   XIcon,
 } from "lucide-react";
 
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Project } from "@/features/editor/lib/editor-projects";
+import { ProjectDetailsDialog } from "@/features/editor/components/ProjectDetailsDialog";
 import { Tooltip } from "@/components/ui/tooltip";
 
 type ProjectDropdownProps = {
@@ -53,6 +55,9 @@ const ProjectDropdown = memo(function ProjectDropdown({
   onRemoveProject,
 }: ProjectDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const activeProject =
+    projects.find((project) => project.id === activeProjectId) ?? null;
 
   return (
     <div>
@@ -94,6 +99,15 @@ const ProjectDropdown = memo(function ProjectDropdown({
             >
               <FileDownIcon aria-hidden="true" />{" "}
               {isExporting ? "Exporting..." : "Export PDF"}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={!activeProject}
+              onSelect={() => {
+                setIsOpen(false);
+                setIsDetailsDialogOpen(true);
+              }}
+            >
+              <InfoIcon aria-hidden="true" /> Details
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={!canCloseProject}
@@ -192,6 +206,11 @@ const ProjectDropdown = memo(function ProjectDropdown({
           </DropdownMenuContent>
         </DropdownMenu>
       )}
+      <ProjectDetailsDialog
+        onOpenChange={setIsDetailsDialogOpen}
+        open={isDetailsDialogOpen}
+        project={activeProject}
+      />
     </div>
   );
 });
