@@ -512,15 +512,16 @@ const DrawSignatureTab = forwardRef<
         </Button>
       </div>
       <div className="relative min-h-72 overflow-hidden rounded-lg border bg-page/70">
+        <div className="pointer-events-none absolute inset-x-[10%] top-2/3 border-t border-page-foreground/20" />
         <canvas
           aria-label="Draw your signature here"
-          className="block h-72 w-full touch-none"
+          className="relative block h-72 w-full touch-none"
           ref={canvasRef}
         />
         {!hasInk && (
-          <div className="pointer-events-none absolute inset-0 grid place-items-center text-sm font-medium text-page-foreground/70">
+          <span className="absolute -translate-x-1/2 -translate-y-1/2 left-1/2 top-3/5 text-sm font-medium text-page-foreground/70">
             Draw your signature here
-          </div>
+          </span>
         )}
       </div>
     </div>
