@@ -83,6 +83,7 @@ type TransformDraft = {
 
 type MoveableEventData = {
   overlayId?: string;
+  overlayType?: EditorOverlay["type"];
   rotationDegrees?: number;
   startRect?: ViewportRect;
   startRotationDegrees?: number;
@@ -201,6 +202,34 @@ const OverlayLayer = memo(function OverlayLayer({
       onUpdateTextOverlay(overlayId, { text });
     },
     [onUpdateTextOverlay],
+  );
+  const handleTextHeightChange = useCallback(
+    (overlayId: string, viewportHeight: number) => {
+      const overlay = pageOverlays.find(
+        (pageOverlay) => pageOverlay.id === overlayId,
+      );
+
+      if (overlay?.type !== "text" || viewportHeight <= 0) {
+        return;
+      }
+
+      const nextHeight = viewportHeight / scale;
+
+      if (Math.abs(overlay.rect.height - nextHeight) < 0.5 / scale) {
+        return;
+      }
+
+      onUpdateTextOverlay(overlayId, {
+        rect: {
+          ...overlay.rect,
+          height: nextHeight,
+        },
+      });
+      requestAnimationFrame(() => {
+        moveableRef.current?.updateRect();
+      });
+    },
+    [onUpdateTextOverlay, pageOverlays, scale],
   );
 
   useEffect(() => {
@@ -456,6 +485,7 @@ const OverlayLayer = memo(function OverlayLayer({
               imageAssetById={imageAssetById}
               isEditing={isEditing}
               isSelected={isSelected}
+              onTextHeightChange={handleTextHeightChange}
               onTextChange={handleTextChange}
               overlay={overlay}
               scale={scale}
@@ -574,7 +604,10 @@ const OverlayLayer = memo(function OverlayLayer({
 
           const nextRect = clampViewportOverlayRect(
             {
-              height: event.height,
+              height:
+                datas.overlayType === "text"
+                  ? datas.startRect.height
+                  : event.height,
               width: event.width,
               x: datas.startRect.x + event.drag.beforeDist[0],
               y: datas.startRect.y + event.drag.beforeDist[1],
@@ -603,8 +636,14 @@ const OverlayLayer = memo(function OverlayLayer({
 
           onSelectOverlay(selectedOverlay.id);
           onEditOverlay(null);
-          event.setMin([minMoveableSideSize, minMoveableSideSize]);
+          event.setMin([
+            minMoveableSideSize,
+            selectedOverlay.type === "text"
+              ? selectedRect.height
+              : minMoveableSideSize,
+          ]);
           event.datas.overlayId = selectedOverlay.id;
+          event.datas.overlayType = selectedOverlay.type;
           event.datas.rotationDegrees =
             getOverlayRotationDegrees(selectedOverlay);
           event.datas.startRect = selectedRect;
@@ -711,6 +750,10 @@ function getMoveableRenderDirections(overlay: EditorOverlay) {
   }
 
   if (overlay.type === "text" || overlay.type === "whiteout") {
+    if (overlay.type === "text") {
+      return ["e", "w"];
+    }
+
     return ["n", "nw", "ne", "s", "se", "sw", "e", "w"];
   }
 

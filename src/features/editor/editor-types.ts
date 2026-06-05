@@ -94,7 +94,7 @@ type EditorOverlayInput =
     };
 
 type TextOverlayPatch = Partial<
-  Pick<TextOverlay, "color" | "fontId" | "fontSize" | "text">
+  Pick<TextOverlay, "color" | "fontId" | "fontSize" | "rect" | "text">
 >;
 type MarkOverlayPatch = Partial<Pick<MarkOverlay, "color" | "markType">>;
 type WhiteoutOverlayPatch = Partial<Pick<WhiteoutOverlay, "color">>;

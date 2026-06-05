@@ -4,6 +4,7 @@ import {
   getTextBaselineOffset,
   getTextLineHeight,
   splitTextOverlayLines,
+  wrapTextOverlayLines,
 } from "@/features/pdf-export/lib/export-text-utils";
 
 describe("export text utils", () => {
@@ -27,5 +28,35 @@ describe("export text utils", () => {
         fontSize: 16,
       }),
     ).toBeCloseTo(14.088);
+  });
+
+  it("wraps text lines at whitespace before exceeding the overlay width", () => {
+    expect(
+      wrapTextOverlayLines({
+        measureTextWidth: (text) => text.length,
+        text: "hello world",
+        width: 6,
+      }),
+    ).toEqual(["hello", "world"]);
+  });
+
+  it("hard-wraps words that are wider than the overlay width", () => {
+    expect(
+      wrapTextOverlayLines({
+        measureTextWidth: (text) => text.length,
+        text: "abcdef",
+        width: 3,
+      }),
+    ).toEqual(["abc", "def"]);
+  });
+
+  it("preserves explicit empty lines while wrapping long lines", () => {
+    expect(
+      wrapTextOverlayLines({
+        measureTextWidth: (text) => text.length,
+        text: "abcd\n\nhello world",
+        width: 6,
+      }),
+    ).toEqual(["abcd", "", "hello", "world"]);
   });
 });

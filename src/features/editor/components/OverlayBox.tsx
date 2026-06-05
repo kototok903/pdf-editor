@@ -9,6 +9,7 @@ type OverlayBoxProps = {
   imageAssetById: ReadonlyMap<string, ImageAsset>;
   isEditing: boolean;
   isSelected: boolean;
+  onTextHeightChange: (overlayId: string, height: number) => void;
   onTextChange: (overlayId: string, text: string) => void;
   overlay: EditorOverlay;
   scale: number;
@@ -18,6 +19,7 @@ const OverlayBox = memo(function OverlayBox({
   imageAssetById,
   isEditing,
   isSelected,
+  onTextHeightChange,
   onTextChange,
   overlay,
   scale,
@@ -27,6 +29,7 @@ const OverlayBox = memo(function OverlayBox({
       <TextOverlayContent
         isEditing={isEditing}
         isSelected={isSelected}
+        onHeightChange={(height) => onTextHeightChange(overlay.id, height)}
         onTextChange={(text) => onTextChange(overlay.id, text)}
         overlay={overlay}
         scale={scale}

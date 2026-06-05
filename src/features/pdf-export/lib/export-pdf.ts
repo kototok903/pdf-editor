@@ -31,7 +31,7 @@ import {
 import {
   getTextBaselineOffset,
   getTextLineHeight,
-  splitTextOverlayLines,
+  wrapTextOverlayLines,
 } from "@/features/pdf-export/lib/export-text-utils";
 
 type ExportPdfOptions = {
@@ -118,7 +118,11 @@ async function drawTextOverlay(
     baselineOffset,
   );
   const lineHeight = getTextLineHeight(overlay.fontSize);
-  const lines = splitTextOverlayLines(overlay.text);
+  const lines = wrapTextOverlayLines({
+    measureTextWidth: (text) => font.widthOfTextAtSize(text, overlay.fontSize),
+    text: overlay.text,
+    width: overlay.rect.width,
+  });
 
   for (const [index, line] of lines.entries()) {
     if (!line) {
@@ -162,7 +166,27 @@ async function drawDocumentTextOverlay(
     baselineOffset,
   );
   const lineHeight = getTextLineHeight(overlay.fontSize);
-  const lines = splitTextOverlayLines(overlay.text);
+  const documentFontSourceFonts = new Map<string, PDFFont>();
+
+  for (const source of fontOption.sources) {
+    documentFontSourceFonts.set(
+      source.fontName,
+      await getPdfDocumentFontSource(context, fontOption, source),
+    );
+  }
+
+  const lines = wrapTextOverlayLines({
+    measureTextWidth: (text) =>
+      getDocumentTextWidth({
+        fallbackFont,
+        fontOption,
+        fontSize: overlay.fontSize,
+        sourceFonts: documentFontSourceFonts,
+        text,
+      }),
+    text: overlay.text,
+    width: overlay.rect.width,
+  });
 
   for (const [lineIndex, line] of lines.entries()) {
     if (!line) {
@@ -189,6 +213,28 @@ async function drawDocumentTextOverlay(
       x += font.widthOfTextAtSize(run.text, overlay.fontSize);
     }
   }
+}
+
+function getDocumentTextWidth({
+  fallbackFont,
+  fontOption,
+  fontSize,
+  sourceFonts,
+  text,
+}: {
+  fallbackFont: PDFFont;
+  fontOption: DocumentTextFontOption;
+  fontSize: number;
+  sourceFonts: ReadonlyMap<string, PDFFont>;
+  text: string;
+}) {
+  return splitDocumentFontTextRuns(text, fontOption).reduce((width, run) => {
+    const font = run.source
+      ? (sourceFonts.get(run.source.fontName) ?? fallbackFont)
+      : fallbackFont;
+
+    return width + font.widthOfTextAtSize(run.text, fontSize);
+  }, 0);
 }
 
 async function drawImageOverlay(
