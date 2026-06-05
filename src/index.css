@@ -294,6 +294,13 @@ body {
   cursor: col-resize;
 }
 
+.editor-moveable-controls.editor-moveable-controls.editor-text-moveable-controls
+  .moveable-direction.moveable-direction.moveable-e,
+.editor-moveable-controls.editor-moveable-controls.editor-text-moveable-controls
+  .moveable-direction.moveable-direction.moveable-w {
+  margin-top: calc(-4px + var(--text-resize-handle-y-offset, 0px));
+}
+
 .editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-0
   .moveable-direction.moveable-direction.moveable-nw,
 .editor-moveable-controls.editor-moveable-controls.editor-moveable-cursor-180

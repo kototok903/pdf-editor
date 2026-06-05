@@ -11,6 +11,7 @@ type TextOverlayContentProps = {
   onTextChange: (text: string) => void;
   overlay: TextOverlay;
   scale: number;
+  viewportWidth: number;
 };
 
 function TextOverlayContent({
@@ -20,6 +21,7 @@ function TextOverlayContent({
   onTextChange,
   overlay,
   scale,
+  viewportWidth,
 }: TextOverlayContentProps) {
   const displayRef = useRef<HTMLDivElement | null>(null);
   const measureRef = useRef<HTMLDivElement | null>(null);
@@ -72,10 +74,10 @@ function TextOverlayContent({
     onHeightChange,
     overlay.fontId,
     overlay.fontSize,
-    overlay.rect.width,
     overlay.text,
     scale,
     style.minHeight,
+    viewportWidth,
   ]);
 
   useEffect(() => {

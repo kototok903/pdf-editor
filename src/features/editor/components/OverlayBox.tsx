@@ -1,6 +1,10 @@
 import { memo } from "react";
 
-import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
+import type {
+  EditorOverlay,
+  ImageAsset,
+  ViewportRect,
+} from "@/features/editor/editor-types";
 import { MarkGlyph } from "@/features/editor/components/MarkGlyph";
 import { TextOverlayContent } from "@/features/editor/components/TextOverlayContent";
 import { cn } from "@/lib/utils";
@@ -13,6 +17,7 @@ type OverlayBoxProps = {
   onTextChange: (overlayId: string, text: string) => void;
   overlay: EditorOverlay;
   scale: number;
+  viewportRect: ViewportRect;
 };
 
 const OverlayBox = memo(function OverlayBox({
@@ -23,6 +28,7 @@ const OverlayBox = memo(function OverlayBox({
   onTextChange,
   overlay,
   scale,
+  viewportRect,
 }: OverlayBoxProps) {
   if (overlay.type === "text") {
     return (
@@ -33,6 +39,7 @@ const OverlayBox = memo(function OverlayBox({
         onTextChange={(text) => onTextChange(overlay.id, text)}
         overlay={overlay}
         scale={scale}
+        viewportWidth={viewportRect.width}
       />
     );
   }

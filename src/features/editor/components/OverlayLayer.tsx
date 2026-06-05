@@ -120,6 +120,9 @@ const OverlayLayer = memo(function OverlayLayer({
   const [whiteoutDraft, setWhiteoutDraft] = useState<WhiteoutDraft | null>(
     null,
   );
+  const [liveTextResizeRects, setLiveTextResizeRects] = useState<
+    Record<string, ViewportRect>
+  >({});
   const [selectedOverlayElement, setSelectedOverlayElement] =
     useState<HTMLDivElement | null>(null);
   const moveableRef = useRef<Moveable | null>(null);
@@ -128,6 +131,10 @@ const OverlayLayer = memo(function OverlayLayer({
   const transformDraftRef = useRef<TransformDraft | null>(null);
   const selectedOverlay =
     pageOverlays.find((overlay) => overlay.id === selectedOverlayId) ?? null;
+  const selectedViewportRect = selectedOverlay
+    ? (liveTextResizeRects[selectedOverlay.id] ??
+      pdfRectToViewportRect(selectedOverlay.rect, scale))
+    : null;
   const isPlacingOverlay =
     isImageToolActive ||
     isMarkToolActive ||
@@ -158,6 +165,11 @@ const OverlayLayer = memo(function OverlayLayer({
   const selectedRotationDegrees = getOverlayRotationDegrees(selectedOverlay);
   const canRotateSelectedOverlay =
     canTransformSelectedOverlay && isRotatableOverlay(selectedOverlay);
+  const selectedMoveableStyle = getSelectedMoveableStyle({
+    rotationDegrees: selectedRotationDegrees,
+    scale,
+    selectedOverlay,
+  });
 
   function commitTransformDraft() {
     const draft = transformDraftRef.current;
@@ -188,7 +200,7 @@ const OverlayLayer = memo(function OverlayLayer({
       return null;
     }
 
-    return pdfRectToViewportRect(selectedOverlay.rect, scale);
+    return selectedViewportRect;
   }
 
   const setSelectedOverlayRef = useCallback(
@@ -213,6 +225,57 @@ const OverlayLayer = memo(function OverlayLayer({
         return;
       }
 
+      const liveRect = liveTextResizeRects[overlayId];
+
+      if (liveRect) {
+        if (Math.abs(liveRect.height - viewportHeight) < 0.5) {
+          return;
+        }
+
+        if (transformDraftRef.current?.overlayId === overlayId) {
+          transformDraftRef.current = {
+            ...transformDraftRef.current,
+            rect: {
+              ...transformDraftRef.current.rect,
+              height: viewportHeight,
+            },
+          };
+        }
+
+        const nextLiveRect = {
+          ...liveRect,
+          height: viewportHeight,
+        };
+
+        flushSync(() => {
+          setLiveTextResizeRects((currentRects) => {
+            const currentRect = currentRects[overlayId];
+
+            if (!currentRect) {
+              return currentRects;
+            }
+
+            if (Math.abs(currentRect.height - viewportHeight) < 0.5) {
+              return currentRects;
+            }
+
+            return {
+              ...currentRects,
+              [overlayId]: nextLiveRect,
+            };
+          });
+        });
+        applyViewportRectToElement(selectedOverlayElement, nextLiveRect);
+        moveableRef.current?.updateRect();
+        applyTextResizeHandleOffsetStyle(
+          overlayLayerRef.current,
+          overlay.fontSize,
+          scale,
+          nextLiveRect.height,
+        );
+        return;
+      }
+
       const nextHeight = viewportHeight / scale;
 
       if (Math.abs(overlay.rect.height - nextHeight) < 0.5 / scale) {
@@ -229,7 +292,13 @@ const OverlayLayer = memo(function OverlayLayer({
         moveableRef.current?.updateRect();
       });
     },
-    [onUpdateTextOverlay, pageOverlays, scale],
+    [
+      liveTextResizeRects,
+      onUpdateTextOverlay,
+      pageOverlays,
+      scale,
+      selectedOverlayElement,
+    ],
   );
 
   useEffect(() => {
@@ -264,7 +333,7 @@ const OverlayLayer = memo(function OverlayLayer({
         isWhiteoutToolActive,
       })}
       ref={overlayLayerRef}
-      style={getMoveableHandleOffsetStyle(selectedRotationDegrees)}
+      style={selectedMoveableStyle}
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) {
           const bounds = event.currentTarget.getBoundingClientRect();
@@ -417,7 +486,9 @@ const OverlayLayer = memo(function OverlayLayer({
         />
       )}
       {pageOverlays.map((overlay) => {
-        const viewportRect = pdfRectToViewportRect(overlay.rect, scale);
+        const viewportRect =
+          liveTextResizeRects[overlay.id] ??
+          pdfRectToViewportRect(overlay.rect, scale);
         const isSelected = overlay.id === selectedOverlayId;
         const isEditing = overlay.id === editingOverlayId;
 
@@ -489,6 +560,7 @@ const OverlayLayer = memo(function OverlayLayer({
               onTextChange={handleTextChange}
               overlay={overlay}
               scale={scale}
+              viewportRect={viewportRect}
             />
           </div>
         );
@@ -496,6 +568,7 @@ const OverlayLayer = memo(function OverlayLayer({
       <Moveable
         className={cn(
           "editor-moveable-controls",
+          selectedOverlay?.type === "text" && "editor-text-moveable-controls",
           getMoveableCursorClassName(selectedRotationDegrees),
         )}
         container={null}
@@ -602,15 +675,20 @@ const OverlayLayer = memo(function OverlayLayer({
             return;
           }
 
+          const isTextResize = datas.overlayType === "text";
+          const currentTextResizeHeight =
+            isTextResize &&
+            transformDraftRef.current?.overlayId === datas.overlayId
+              ? transformDraftRef.current.rect.height
+              : datas.startRect.height;
           const nextRect = clampViewportOverlayRect(
             {
-              height:
-                datas.overlayType === "text"
-                  ? datas.startRect.height
-                  : event.height,
+              height: isTextResize ? currentTextResizeHeight : event.height,
               width: event.width,
               x: datas.startRect.x + event.drag.beforeDist[0],
-              y: datas.startRect.y + event.drag.beforeDist[1],
+              y: isTextResize
+                ? datas.startRect.y
+                : datas.startRect.y + event.drag.beforeDist[1],
             },
             event.target,
             scale,
@@ -622,10 +700,31 @@ const OverlayLayer = memo(function OverlayLayer({
           };
 
           transformDraftRef.current = nextDraft;
+          if (isTextResize) {
+            flushSync(() => {
+              setLiveTextResizeRects((currentRects) => ({
+                ...currentRects,
+                [datas.overlayId!]: nextDraft.rect,
+              }));
+            });
+            applyViewportRectToElement(event.target, nextDraft.rect);
+            moveableRef.current?.updateRect();
+            if (selectedOverlay?.type === "text") {
+              applyTextResizeHandleOffsetStyle(
+                overlayLayerRef.current,
+                selectedOverlay.fontSize,
+                scale,
+                nextDraft.rect.height,
+              );
+            }
+            return;
+          }
+
           applyViewportRectToElement(event.target, nextDraft.rect);
         }}
         onResizeEnd={() => {
           commitTransformDraft();
+          setLiveTextResizeRects({});
         }}
         onResizeStart={(event: OnResizeStart) => {
           const selectedRect = getSelectedViewportRect();
@@ -713,6 +812,7 @@ function getViewportPageSizeFromElement(element: Element | null) {
 
 const minWhiteoutViewportSideSize = 6;
 const minVisibleOverlayViewportSize = 8;
+const textOverlayLineHeightMultiplier = 1.25;
 
 function getPageSizeFromEventTarget(
   element: HTMLElement | null,
@@ -793,6 +893,33 @@ type MoveableHandleOffsetStyle = CSSProperties & {
   "--moveable-sw-offset-y": string;
 };
 
+type SelectedMoveableStyle = MoveableHandleOffsetStyle & {
+  "--text-resize-handle-y-offset"?: string;
+};
+
+function getSelectedMoveableStyle({
+  rotationDegrees,
+  scale,
+  selectedOverlay,
+}: {
+  rotationDegrees: number;
+  scale: number;
+  selectedOverlay: EditorOverlay | null;
+}): SelectedMoveableStyle {
+  const style: SelectedMoveableStyle =
+    getMoveableHandleOffsetStyle(rotationDegrees);
+
+  if (selectedOverlay?.type === "text") {
+    style["--text-resize-handle-y-offset"] = `${getTextResizeHandleYOffset({
+      fontSize: selectedOverlay.fontSize,
+      scale,
+      viewportHeight: selectedOverlay.rect.height * scale,
+    })}px`;
+  }
+
+  return style;
+}
+
 function getMoveableHandleOffsetStyle(
   rotationDegrees: number,
 ): MoveableHandleOffsetStyle {
@@ -830,6 +957,32 @@ function getMoveableHandleOffsetStyle(
   };
 }
 
+function getTextResizeHandleYOffset({
+  fontSize,
+  scale,
+  viewportHeight,
+}: {
+  fontSize: number;
+  scale: number;
+  viewportHeight: number;
+}) {
+  const handleTop = (fontSize * scale * textOverlayLineHeightMultiplier) / 2;
+
+  return handleTop - viewportHeight / 2;
+}
+
+function applyTextResizeHandleOffsetStyle(
+  element: HTMLElement | null,
+  fontSize: number,
+  scale: number,
+  viewportHeight: number,
+) {
+  element?.style.setProperty(
+    "--text-resize-handle-y-offset",
+    `${getTextResizeHandleYOffset({ fontSize, scale, viewportHeight })}px`,
+  );
+}
+
 function applyMoveableHandleOffsetStyle(
   element: HTMLElement | null,
   rotationDegrees: number,
@@ -857,7 +1010,7 @@ function getPageSizeFromElement(element: HTMLElement | null, scale: number) {
 }
 
 function applyViewportRectToElement(
-  element: HTMLElement | SVGElement,
+  element: HTMLElement | SVGElement | null,
   rect: ViewportRect,
 ) {
   if (!(element instanceof HTMLElement)) {
