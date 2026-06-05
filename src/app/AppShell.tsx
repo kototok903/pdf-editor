@@ -140,14 +140,14 @@ function AppShell() {
   const [isExporting, setIsExporting] = useState(false);
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
-  const [isCloseProjectDialogOpen, setIsCloseProjectDialogOpen] =
+  const [isRemoveProjectDialogOpen, setIsRemoveProjectDialogOpen] =
     useState(false);
   const [isClearLocalDataDialogOpen, setIsClearLocalDataDialogOpen] =
     useState(false);
   const [isClearingLocalData, setIsClearingLocalData] = useState(false);
   const [isLocalDraftReady, setIsLocalDraftReady] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
-  const [pendingCloseProjectId, setPendingCloseProjectId] = useState<
+  const [pendingRemoveProjectId, setPendingRemoveProjectId] = useState<
     string | null
   >(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -919,49 +919,62 @@ function AppShell() {
     ],
   );
 
-  const handleRequestCloseProject = useCallback(
-    (projectId: string | null = activeProjectId) => {
-      if (!projectId) {
-        return;
-      }
-
-      setPendingCloseProjectId(projectId);
-      setIsCloseProjectDialogOpen(true);
-    },
-    [activeProjectId],
-  );
+  const handleRequestRemoveProject = useCallback((projectId: string) => {
+    setPendingRemoveProjectId(projectId);
+    setIsRemoveProjectDialogOpen(true);
+  }, []);
 
   const handleCloseActiveProject = useCallback(() => {
-    handleRequestCloseProject();
-  }, [handleRequestCloseProject]);
+    commitPendingTextEdit();
+    const activeSnapshot = getActiveProjectSnapshot();
+
+    if (activeSnapshot) {
+      setProjects((currentProjects) =>
+        upsertProject(currentProjects, activeSnapshot),
+      );
+    }
+
+    setActiveProjectId(null);
+    pushProjectPath(null);
+    setCurrentPage(1);
+    clearFile();
+    resetHistory();
+    resetProjectRuntimeState();
+  }, [
+    clearFile,
+    commitPendingTextEdit,
+    getActiveProjectSnapshot,
+    pushProjectPath,
+    resetHistory,
+    resetProjectRuntimeState,
+  ]);
 
   const handleRemoveProject = useCallback(
     (projectId: string) => {
-      handleRequestCloseProject(projectId);
+      handleRequestRemoveProject(projectId);
     },
-    [handleRequestCloseProject],
+    [handleRequestRemoveProject],
   );
 
-  const handleConfirmCloseProject = useCallback(() => {
-    setIsCloseProjectDialogOpen(false);
+  const handleConfirmRemoveProject = useCallback(() => {
+    setIsRemoveProjectDialogOpen(false);
     commitPendingTextEdit();
 
     const activeSnapshot = getActiveProjectSnapshot();
     const currentProjects = activeSnapshot
       ? upsertProject(projects, activeSnapshot)
       : projects;
-    const projectIdToClose =
-      pendingCloseProjectId ?? activeProjectId ?? activeSnapshot?.id;
-    const nextProjects = projectIdToClose
-      ? removeProject(currentProjects, projectIdToClose)
+    const projectIdToRemove = pendingRemoveProjectId;
+    const nextProjects = projectIdToRemove
+      ? removeProject(currentProjects, projectIdToRemove)
       : currentProjects;
-    const isClosingActiveProject =
-      Boolean(projectIdToClose) && projectIdToClose === activeProjectId;
+    const isRemovingActiveProject =
+      Boolean(projectIdToRemove) && projectIdToRemove === activeProjectId;
 
     setProjects(nextProjects);
-    setPendingCloseProjectId(null);
+    setPendingRemoveProjectId(null);
 
-    if (!isClosingActiveProject) {
+    if (!isRemovingActiveProject) {
       return;
     }
 
@@ -974,7 +987,7 @@ function AppShell() {
 
     if (nextProjects.length === 0) {
       void clearStoredDraft().catch(() => {
-        // Closing the visible project should not be blocked by storage errors.
+        // Removing the visible project should not be blocked by storage errors.
       });
     }
   }, [
@@ -983,7 +996,7 @@ function AppShell() {
     clearStoredDraft,
     commitPendingTextEdit,
     getActiveProjectSnapshot,
-    pendingCloseProjectId,
+    pendingRemoveProjectId,
     projects,
     replaceProjectPath,
     resetHistory,
@@ -1093,16 +1106,16 @@ function AppShell() {
     );
   }, [activeProjectId, currentPage, history, loadedDocument, projects]);
 
-  const pendingCloseProjectFileName = useMemo(() => {
-    if (!pendingCloseProjectId) {
+  const pendingRemoveProjectFileName = useMemo(() => {
+    if (!pendingRemoveProjectId) {
       return null;
     }
 
     return (
-      toolbarProjects.find((project) => project.id === pendingCloseProjectId)
+      toolbarProjects.find((project) => project.id === pendingRemoveProjectId)
         ?.fileName ?? null
     );
-  }, [pendingCloseProjectId, toolbarProjects]);
+  }, [pendingRemoveProjectId, toolbarProjects]);
 
   const handleSelectProject = useCallback(
     (projectId: string) => {
@@ -1788,8 +1801,8 @@ function AppShell() {
       resetHistory();
       resetProjectRuntimeState();
       setEditorPreferences(defaultEditorPreferences);
-      setPendingCloseProjectId(null);
-      setIsCloseProjectDialogOpen(false);
+      setPendingRemoveProjectId(null);
+      setIsRemoveProjectDialogOpen(false);
       setIsClearLocalDataDialogOpen(false);
       setIsSettingsDialogOpen(false);
 
@@ -2005,21 +2018,21 @@ function AppShell() {
           open={isClearLocalDataDialogOpen}
         />
         <Dialog
-          open={isCloseProjectDialogOpen}
+          open={isRemoveProjectDialogOpen}
           onOpenChange={(isOpen) => {
-            setIsCloseProjectDialogOpen(isOpen);
+            setIsRemoveProjectDialogOpen(isOpen);
 
             if (!isOpen) {
-              setPendingCloseProjectId(null);
+              setPendingRemoveProjectId(null);
             }
           }}
         >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {pendingCloseProjectFileName
-                  ? `Close project ${pendingCloseProjectFileName}?`
-                  : "Close project?"}
+                {pendingRemoveProjectFileName
+                  ? `Remove project ${pendingRemoveProjectFileName}?`
+                  : "Remove project?"}
               </DialogTitle>
               <DialogDescription>
                 This will remove the PDF and local edits from this browser.
@@ -2030,8 +2043,8 @@ function AppShell() {
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
-              <Button onClick={handleConfirmCloseProject} type="button">
-                Close Project
+              <Button onClick={handleConfirmRemoveProject} type="button">
+                Remove Project
               </Button>
             </DialogFooter>
           </DialogContent>

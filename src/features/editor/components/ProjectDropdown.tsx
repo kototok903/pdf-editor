@@ -164,7 +164,7 @@ const ProjectDropdown = memo(function ProjectDropdown({
                             </Button>
                           )}
                           <Button
-                            aria-label={`Close ${project.fileName}`}
+                            aria-label={`Remove ${project.fileName}`}
                             className="size-7 p-0"
                             onClick={(event) => {
                               event.stopPropagation();
