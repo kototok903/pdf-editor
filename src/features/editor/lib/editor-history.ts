@@ -190,6 +190,27 @@ function areHistoryEntriesEqual(
   return areOverlayListsEqual(left.overlays, right.overlays);
 }
 
+function areEditorHistoriesEqual(
+  left: EditorHistoryState,
+  right: EditorHistoryState,
+) {
+  return (
+    areHistoryEntryListsEqual(left.past, right.past) &&
+    areHistoryEntriesEqual(left.present, right.present) &&
+    areHistoryEntryListsEqual(left.future, right.future)
+  );
+}
+
+function areHistoryEntryListsEqual(
+  left: EditorHistoryEntry[],
+  right: EditorHistoryEntry[],
+) {
+  return (
+    left.length === right.length &&
+    left.every((entry, index) => areHistoryEntriesEqual(entry, right[index]))
+  );
+}
+
 function areOverlayListsEqual(left: EditorOverlay[], right: EditorOverlay[]) {
   if (left === right) {
     return true;
@@ -277,6 +298,7 @@ function isImageBackedOverlay(
 }
 
 export {
+  areEditorHistoriesEqual,
   areHistoryEntriesEqual,
   cloneHistoryEntry,
   commitEditorHistory,

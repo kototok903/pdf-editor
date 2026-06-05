@@ -59,7 +59,7 @@ function updateProjectFromDocument(
     currentPage,
     document,
     history,
-    lastModifiedAt = Date.now(),
+    lastModifiedAt = project.lastModifiedAt,
   }: {
     currentPage: number;
     document: LoadedPdfDocument;

@@ -95,6 +95,7 @@ import {
   type DocumentTextFontOption,
 } from "@/features/editor/lib/text-fonts";
 import {
+  areEditorHistoriesEqual,
   createEditorHistory,
   type EditorHistoryEntry,
   type EditorHistoryState,
@@ -120,6 +121,11 @@ type ActiveTool =
   | { type: "whiteout" }
   | null;
 
+type ProjectModifiedAtCacheEntry = {
+  history: EditorHistoryState;
+  lastModifiedAt: number;
+};
+
 function isEmptyEditorHistory(history: EditorHistoryState) {
   return (
     history.future.length === 0 &&
@@ -134,6 +140,9 @@ function AppShell() {
   const editingOverlayIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const projectModifiedAtCacheRef = useRef<
+    Map<string, ProjectModifiedAtCacheEntry>
+  >(new Map());
   const textEditHistoryEntryRef = useRef<EditorHistoryEntry | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null);
@@ -150,6 +159,9 @@ function AppShell() {
   const [pendingRemoveProjectId, setPendingRemoveProjectId] = useState<
     string | null
   >(null);
+  const [projectModifiedAtCache, setProjectModifiedAtCache] = useState<
+    Map<string, ProjectModifiedAtCacheEntry>
+  >(() => new Map());
   const [projects, setProjects] = useState<Project[]>([]);
   const [routePathname, setRoutePathname] = useState(
     () => window.location.pathname,
@@ -794,6 +806,32 @@ function AppShell() {
     status,
   ]);
 
+  const getProjectLastModifiedAt = useCallback(
+    (project: Project, nextHistory: EditorHistoryState) => {
+      if (areEditorHistoriesEqual(project.history, nextHistory)) {
+        return project.lastModifiedAt;
+      }
+
+      const cachedModifiedAt = projectModifiedAtCacheRef.current.get(
+        project.id,
+      );
+
+      if (cachedModifiedAt?.history === nextHistory) {
+        return cachedModifiedAt.lastModifiedAt;
+      }
+
+      const lastModifiedAt = Date.now();
+
+      projectModifiedAtCacheRef.current.set(project.id, {
+        history: nextHistory,
+        lastModifiedAt,
+      });
+
+      return lastModifiedAt;
+    },
+    [],
+  );
+
   const getActiveProjectSnapshot = useCallback(() => {
     if (!activeProjectId || !loadedDocument) {
       return null;
@@ -812,8 +850,51 @@ function AppShell() {
       currentPage,
       document: loadedDocument,
       history,
+      lastModifiedAt: getProjectLastModifiedAt(currentProject, history),
     });
-  }, [activeProjectId, currentPage, history, loadedDocument, projects]);
+  }, [
+    activeProjectId,
+    currentPage,
+    getProjectLastModifiedAt,
+    history,
+    loadedDocument,
+    projects,
+  ]);
+
+  useEffect(() => {
+    if (!activeProjectId || !loadedDocument) {
+      return;
+    }
+
+    const currentProject =
+      projects.find((project) => project.id === activeProjectId) ?? null;
+
+    if (
+      !currentProject ||
+      areEditorHistoriesEqual(currentProject.history, history)
+    ) {
+      return;
+    }
+
+    setProjectModifiedAtCache((currentCache) => {
+      const cachedModifiedAt = currentCache.get(activeProjectId);
+
+      if (cachedModifiedAt?.history === history) {
+        return currentCache;
+      }
+
+      const nextCache = new Map(currentCache);
+      const nextEntry = {
+        history,
+        lastModifiedAt: Date.now(),
+      };
+
+      nextCache.set(activeProjectId, nextEntry);
+      projectModifiedAtCacheRef.current.set(activeProjectId, nextEntry);
+
+      return nextCache;
+    });
+  }, [activeProjectId, history, loadedDocument, projects]);
 
   const activateProject = useCallback(
     async (
@@ -1085,26 +1166,37 @@ function AppShell() {
 
     const existingProject =
       projects.find((project) => project.id === activeProjectId) ?? null;
-    const activeProject = updateProjectFromDocument(
+    const baseProject =
       existingProject ??
-        createProject({
-          currentPage,
-          document: loadedDocument,
-          history,
-          id: activeProjectId,
-        }),
-      {
+      createProject({
         currentPage,
         document: loadedDocument,
         history,
-      },
-    );
+        id: activeProjectId,
+      });
+    const cachedModifiedAt = projectModifiedAtCache.get(baseProject.id);
+    const activeProject = updateProjectFromDocument(baseProject, {
+      currentPage,
+      document: loadedDocument,
+      history,
+      lastModifiedAt:
+        cachedModifiedAt?.history === history
+          ? cachedModifiedAt.lastModifiedAt
+          : baseProject.lastModifiedAt,
+    });
 
     return sortProjectsForSwitcher(
       upsertProject(projects, activeProject),
       activeProjectId,
     );
-  }, [activeProjectId, currentPage, history, loadedDocument, projects]);
+  }, [
+    activeProjectId,
+    currentPage,
+    history,
+    loadedDocument,
+    projectModifiedAtCache,
+    projects,
+  ]);
 
   const pendingRemoveProjectFileName = useMemo(() => {
     if (!pendingRemoveProjectId) {
@@ -2035,8 +2127,8 @@ function AppShell() {
                   : "Remove project?"}
               </DialogTitle>
               <DialogDescription>
-                This will remove the PDF and local edits from this browser.
-                Your original file will not be deleted.
+                This will remove the PDF and local edits from this browser. Your
+                original file will not be deleted.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

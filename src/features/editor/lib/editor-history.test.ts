@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { EditorOverlay } from "@/features/editor/editor-types";
 import {
+  areEditorHistoriesEqual,
   commitEditorHistory,
   createEditorHistory,
   createHistoryEntry,
@@ -59,6 +60,30 @@ function createSignatureOverlay(
 }
 
 describe("editor history", () => {
+  it("compares histories by overlay content across undo and redo stacks", () => {
+    const firstOverlay = createTextOverlay();
+    const secondOverlay = createTextOverlay({ id: "text-2" });
+    const initialHistory = createEditorHistory([firstOverlay], firstOverlay.id);
+    const committedHistory = commitEditorHistory(
+      initialHistory,
+      createHistoryEntry([firstOverlay, secondOverlay], secondOverlay.id),
+    );
+    const sameContentHistory = commitEditorHistory(
+      createEditorHistory([firstOverlay], null),
+      createHistoryEntry([firstOverlay, secondOverlay], null),
+    );
+
+    expect(areEditorHistoriesEqual(committedHistory, sameContentHistory)).toBe(
+      true,
+    );
+    expect(
+      areEditorHistoriesEqual(
+        committedHistory,
+        undoEditorHistory(committedHistory),
+      ),
+    ).toBe(false);
+  });
+
   it("commits present changes, clears redo, and restores with undo and redo", () => {
     const firstOverlay = createTextOverlay();
     const secondOverlay = createTextOverlay({

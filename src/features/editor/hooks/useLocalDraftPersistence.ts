@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import {
@@ -11,6 +11,7 @@ import {
   type PersistedEditorDraftRecord,
 } from "@/features/editor/lib/editor-draft-db";
 import {
+  areEditorHistoriesEqual,
   getHistoryImageAssetIds,
   type EditorHistoryState,
 } from "@/features/editor/lib/editor-history";
@@ -27,6 +28,11 @@ type LocalDraftHydrationResult = {
   draft: PersistedEditorDraftRecord | null;
   imageAssets: ImageAsset[];
 };
+
+type ProjectModifiedAtCache = Map<
+  string,
+  { history: EditorHistoryState; lastModifiedAt: number }
+>;
 
 type UseLocalDraftPersistenceOptions = {
   activeProjectId: string | null;
@@ -51,6 +57,7 @@ function useLocalDraftPersistence({
 }: UseLocalDraftPersistenceOptions) {
   const [hydrationState, setHydrationState] =
     useState<LocalDraftHydrationState>("idle");
+  const projectModifiedAtCacheRef = useRef<ProjectModifiedAtCache>(new Map());
 
   const hydrateLocalDraft =
     useCallback(async (): Promise<LocalDraftHydrationResult> => {
@@ -106,6 +113,7 @@ function useLocalDraftPersistence({
         history,
         activeProjectId,
         imageAssets,
+        modifiedAtCache: projectModifiedAtCacheRef.current,
         projects: options.projects ?? projects,
       });
     },
@@ -146,6 +154,7 @@ function useLocalDraftPersistence({
         history,
         activeProjectId,
         imageAssets,
+        modifiedAtCache: projectModifiedAtCacheRef.current,
         projects,
       }).catch(() => {
         // Persistence is best-effort; editing should continue.
@@ -184,6 +193,7 @@ async function persistActiveDraft({
   history,
   activeProjectId,
   imageAssets,
+  modifiedAtCache,
   projects,
 }: {
   activeProjectId: string | null;
@@ -191,6 +201,7 @@ async function persistActiveDraft({
   document: LoadedPdfDocument | null;
   history: EditorHistoryState;
   imageAssets: ImageAsset[];
+  modifiedAtCache: ProjectModifiedAtCache;
   projects: Project[];
 }) {
   const projectsToPersist = getProjectsToPersist({
@@ -198,6 +209,7 @@ async function persistActiveDraft({
     currentPage,
     document,
     history,
+    modifiedAtCache,
     projects,
   });
 
@@ -243,12 +255,14 @@ function getProjectsToPersist({
   currentPage,
   document,
   history,
+  modifiedAtCache,
   projects,
 }: {
   activeProjectId: string | null;
   currentPage: number;
   document: LoadedPdfDocument | null;
   history: EditorHistoryState;
+  modifiedAtCache: ProjectModifiedAtCache;
   projects: Project[];
 }) {
   if (!activeProjectId || !document) {
@@ -263,7 +277,9 @@ function getProjectsToPersist({
     fileName: document.fileName,
     history,
     id: activeProjectId,
-    lastModifiedAt: Date.now(),
+    lastModifiedAt: activeProject
+      ? getProjectLastModifiedAt(activeProject, history, modifiedAtCache)
+      : Date.now(),
     pageCount: document.pageCount,
     pdfBytes: document.bytes,
   };
@@ -275,6 +291,31 @@ function getProjectsToPersist({
   return projects.map((project) =>
     project.id === activeProjectId ? nextActiveProject : project,
   );
+}
+
+function getProjectLastModifiedAt(
+  project: Project,
+  nextHistory: EditorHistoryState,
+  modifiedAtCache: ProjectModifiedAtCache,
+) {
+  if (areEditorHistoriesEqual(project.history, nextHistory)) {
+    return project.lastModifiedAt;
+  }
+
+  const cachedModifiedAt = modifiedAtCache.get(project.id);
+
+  if (cachedModifiedAt?.history === nextHistory) {
+    return cachedModifiedAt.lastModifiedAt;
+  }
+
+  const lastModifiedAt = Date.now();
+
+  modifiedAtCache.set(project.id, {
+    history: nextHistory,
+    lastModifiedAt,
+  });
+
+  return lastModifiedAt;
 }
 
 function getPersistedDraftImageAssetIds(

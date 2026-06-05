@@ -93,6 +93,25 @@ describe("editor projects", () => {
     });
   });
 
+  it("preserves the project last modified timestamp by default", () => {
+    const project = createTestProject({
+      id: "project-a",
+      lastModifiedAt: 400,
+    });
+    const document = createLoadedDocument({
+      fileName: "updated.pdf",
+      pageCount: 2,
+    });
+
+    expect(
+      updateProjectFromDocument(project, {
+        currentPage: 2,
+        document,
+        history: createEditorHistory([]),
+      }).lastModifiedAt,
+    ).toBe(400);
+  });
+
   it("upserts and removes projects by id", () => {
     const projectA = createTestProject({ id: "project-a", fileName: "a.pdf" });
     const projectB = createTestProject({ id: "project-b", fileName: "b.pdf" });
