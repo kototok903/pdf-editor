@@ -31,11 +31,9 @@ import {
 } from "@/features/editor/components/SettingsDialog";
 import type {
   EditorOverlay,
-  EditorOverlayInput,
   ImageAsset,
   MarkOverlay,
   MarkOverlayPatch,
-  PdfRect,
   TextOverlay,
   TextOverlayDefaults,
   TextOverlayPatch,
@@ -45,40 +43,21 @@ import type {
 import { useEditorClipboardActions } from "@/features/editor/hooks/useEditorClipboardActions";
 import { useEditorOverlays } from "@/features/editor/hooks/useEditorOverlays";
 import { useEditorKeyboardShortcuts } from "@/features/editor/hooks/useEditorKeyboardShortcuts";
+import { useEditorProjectSession } from "@/features/editor/hooks/useEditorProjectSession";
+import { useEditorTools } from "@/features/editor/hooks/useEditorTools";
+import { useOverlayEditingSession } from "@/features/editor/hooks/useOverlayEditingSession";
 import { useImageAssets } from "@/features/editor/hooks/useImageAssets";
 import {
   useEditorPreferences,
   useResolvedEditorTheme,
 } from "@/features/editor/hooks/useEditorPreferences";
-import { useLocalDraftPersistence } from "@/features/editor/hooks/useLocalDraftPersistence";
-import {
-  supportedImageAcceptValue,
-  supportedImageTypeListLabel,
-} from "@/features/editor/lib/image-asset-utils";
-import { createImageOverlayRectAtPoint } from "@/features/editor/lib/overlay-coordinate-utils";
-import { readPasteIntentFromAsyncClipboard } from "@/features/editor/lib/editor-clipboard";
+import { supportedImageAcceptValue } from "@/features/editor/lib/image-asset-utils";
 import { getPageLayerOverlays } from "@/features/editor/lib/layer-sidebar-utils";
 import { defaultMarkSettings } from "@/features/editor/lib/mark-definitions";
 import {
   defaultTextOverlay,
   defaultWhiteoutOverlay,
 } from "@/features/editor/lib/overlay-defaults";
-import type { SignatureCreateInput } from "@/features/editor/components/SignatureCreateDialog";
-import { getSignatureFontOption } from "@/features/editor/lib/signature-fonts";
-import { rasterizeTypedSignature } from "@/features/editor/lib/signature-rasterizer";
-import {
-  createProject,
-  removeProject,
-  sortProjectsForSwitcher,
-  updateProjectFromDocument,
-  upsertProject,
-  type Project,
-} from "@/features/editor/lib/editor-projects";
-import {
-  createProjectPath,
-  getProjectIdFromPath,
-  isProjectPath,
-} from "@/features/editor/lib/project-route-utils";
 import {
   clearEditorPreferences,
   defaultEditorPreferences,
@@ -94,16 +73,6 @@ import {
   type DocumentTextFontMenuOption,
   type DocumentTextFontOption,
 } from "@/features/editor/lib/text-fonts";
-import {
-  areEditorHistoriesEqual,
-  createEditorHistory,
-  type EditorHistoryEntry,
-  type EditorHistoryState,
-} from "@/features/editor/lib/editor-history";
-import {
-  clearEditorDraftDatabase,
-  type PersistedEditorProjectRecord,
-} from "@/features/editor/lib/editor-draft-db";
 import { createExportFileName } from "@/features/pdf-export/lib/export-file-name";
 import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
 import { usePdfPageSizes } from "@/features/pdf/hooks/usePdfPageSizes";
@@ -112,64 +81,17 @@ import { scalePageSizes } from "@/features/pdf/lib/pdf-page-size-utils";
 import type { PageSize } from "@/features/pdf/pdf-types";
 
 const zoomStep = 0.1;
-const rootPath = "/";
-type ActiveTool =
-  | { type: "image"; assetId: string }
-  | { type: "mark" }
-  | { type: "signature"; assetId: string }
-  | { type: "text" }
-  | { type: "whiteout" }
-  | null;
-
-type ProjectModifiedAtCacheEntry = {
-  history: EditorHistoryState;
-  lastModifiedAt: number;
-};
-
-function isEmptyEditorHistory(history: EditorHistoryState) {
-  return (
-    history.future.length === 0 &&
-    history.past.length === 0 &&
-    history.present.overlays.length === 0 &&
-    history.present.selectedOverlayId === null
-  );
-}
 
 function AppShell() {
   const exportedFileNamesRef = useRef<Set<string>>(new Set());
-  const editingOverlayIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
-  const projectModifiedAtCacheRef = useRef<
-    Map<string, ProjectModifiedAtCacheEntry>
-  >(new Map());
-  const textEditHistoryEntryRef = useRef<EditorHistoryEntry | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const [activeTool, setActiveTool] = useState<ActiveTool>(null);
-  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
-  const [isRemoveProjectDialogOpen, setIsRemoveProjectDialogOpen] =
-    useState(false);
   const [isClearLocalDataDialogOpen, setIsClearLocalDataDialogOpen] =
     useState(false);
   const [isClearingLocalData, setIsClearingLocalData] = useState(false);
-  const [isLocalDraftReady, setIsLocalDraftReady] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
-  const [pendingRemoveProjectId, setPendingRemoveProjectId] = useState<
-    string | null
-  >(null);
-  const [projectModifiedAtCache, setProjectModifiedAtCache] = useState<
-    Map<string, ProjectModifiedAtCacheEntry>
-  >(() => new Map());
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [routePathname, setRoutePathname] = useState(
-    () => window.location.pathname,
-  );
-  const [routeProjectId, setRouteProjectId] = useState(() =>
-    getProjectIdFromPath(window.location.pathname),
-  );
-  const initialRouteProjectIdRef = useRef(routeProjectId);
   const [renderedBasePageSizes, setRenderedBasePageSizes] = useState<
     Record<number, PageSize>
   >({});
@@ -260,17 +182,6 @@ function AppShell() {
     () => getPageLayerOverlays(currentPageOverlays, currentPage),
     [currentPage, currentPageOverlays],
   );
-  const { clearStoredDraft, hydrateLocalDraft, persistLocalDraftNow } =
-    useLocalDraftPersistence({
-      activeProjectId,
-      currentPage,
-      document: loadedDocument,
-      history,
-      imageAssets,
-      isReadyToPersist: isLocalDraftReady,
-      overlays,
-      projects,
-    });
 
   const selectedTextOverlay = useMemo(
     () =>
@@ -329,49 +240,6 @@ function AppShell() {
     globalThis.document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
 
-  const replaceProjectPath = useCallback((projectId: string | null) => {
-    const nextPath = projectId ? createProjectPath(projectId) : rootPath;
-
-    if (window.location.pathname === nextPath) {
-      setRoutePathname(nextPath);
-      setRouteProjectId(projectId);
-      return;
-    }
-
-    window.history.replaceState(null, "", nextPath);
-    setRoutePathname(nextPath);
-    setRouteProjectId(projectId);
-  }, []);
-
-  const pushProjectPath = useCallback((projectId: string | null) => {
-    const nextPath = projectId ? createProjectPath(projectId) : rootPath;
-
-    if (window.location.pathname === nextPath) {
-      setRoutePathname(nextPath);
-      setRouteProjectId(projectId);
-      return;
-    }
-
-    window.history.pushState(null, "", nextPath);
-    setRoutePathname(nextPath);
-    setRouteProjectId(projectId);
-  }, []);
-
-  useEffect(() => {
-    const handlePopState = () => {
-      const nextPathname = window.location.pathname;
-
-      setRoutePathname(nextPathname);
-      setRouteProjectId(getProjectIdFromPath(nextPathname));
-    };
-
-    window.addEventListener("popstate", handlePopState);
-
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
-  }, []);
-
   useEffect(() => {
     clearDocumentTextFonts();
 
@@ -428,211 +296,23 @@ function AppShell() {
     };
   }, [loadedDocument]);
 
-  useEffect(() => {
-    let isCancelled = false;
-
-    const restoreLocalDraft = async () => {
-      const restoredDraft = await hydrateLocalDraft();
-      const initialRouteProjectId = initialRouteProjectIdRef.current;
-
-      if (isCancelled) {
-        for (const asset of restoredDraft.imageAssets) {
-          URL.revokeObjectURL(asset.objectUrl);
-        }
-
-        return;
-      }
-
-      if (restoredDraft.imageAssets.length > 0) {
-        replaceImageAssets(restoredDraft.imageAssets);
-      }
-
-      if (restoredDraft.draft) {
-        const restoredProjects =
-          restoredDraft.draft.projects?.map(createProjectFromPersistedRecord) ??
-          [];
-
-        if (restoredProjects.length > 0) {
-          setProjects(restoredProjects);
-
-          const targetProject = initialRouteProjectId
-            ? (restoredProjects.find(
-                (project) => project.id === initialRouteProjectId,
-              ) ?? null)
-            : null;
-
-          if (!targetProject) {
-            setActiveProjectId(null);
-            clearFile();
-            resetHistory();
-          } else {
-            const restoredDocument = await openBytes(
-              targetProject.pdfBytes,
-              targetProject.fileName,
-            );
-
-            if (isCancelled) {
-              return;
-            }
-
-            if (restoredDocument) {
-              const restoredCurrentPage = Math.min(
-                restoredDocument.pageCount,
-                Math.max(1, targetProject.currentPage),
-              );
-
-              resetHistory([], null, targetProject.history);
-              setCurrentPage(restoredCurrentPage);
-              setScrollToPageRequest((currentRequest) => ({
-                behavior: "auto",
-                pageNumber: restoredCurrentPage,
-                requestId: (currentRequest?.requestId ?? 0) + 1,
-              }));
-              setActiveProjectId(targetProject.id);
-            } else {
-              toast.error("Unable to restore project", {
-                description: "The saved local project could not be opened.",
-              });
-            }
-          }
-        } else {
-          const restoredDocument = await openBytes(
-            restoredDraft.draft.pdfBytes,
-            restoredDraft.draft.fileName,
-          );
-
-          if (isCancelled) {
-            return;
-          }
-
-          if (restoredDocument) {
-            const restoredHistory =
-              restoredDraft.draft.history ??
-              createEditorHistory(restoredDraft.draft.overlays);
-            resetHistory([], null, restoredHistory);
-            const restoredCurrentPage = Math.min(
-              restoredDocument.pageCount,
-              Math.max(1, restoredDraft.draft.currentPage),
-            );
-            setCurrentPage(restoredCurrentPage);
-            setScrollToPageRequest((currentRequest) => ({
-              behavior: "auto",
-              pageNumber: restoredCurrentPage,
-              requestId: (currentRequest?.requestId ?? 0) + 1,
-            }));
-            const restoredProject = createProject({
-              currentPage: restoredCurrentPage,
-              document: restoredDocument,
-              history: restoredHistory,
-              id:
-                restoredDraft.draft.projectId ??
-                initialRouteProjectId ??
-                undefined,
-              now: restoredDraft.draft.updatedAt,
-            });
-            setProjects([restoredProject]);
-            if (initialRouteProjectId === restoredProject.id) {
-              setActiveProjectId(restoredProject.id);
-            } else {
-              setActiveProjectId(null);
-              clearFile();
-              resetHistory();
-            }
-          } else {
-            try {
-              await clearStoredDraft();
-            } catch {
-              // The restore path already failed; keep the editor usable.
-            }
-
-            toast.error("Unable to restore project", {
-              description: "The saved local project was removed.",
-            });
-          }
-        }
-      }
-
-      if (!isCancelled) {
-        setIsLocalDraftReady(true);
-      }
-    };
-
-    void restoreLocalDraft();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [
-    clearStoredDraft,
-    clearFile,
-    hydrateLocalDraft,
-    openBytes,
-    replaceImageAssets,
-    replaceProjectPath,
-    resetHistory,
-  ]);
-
-  const activeImageAsset =
-    activeTool?.type === "image"
-      ? (imageAssets.find((asset) => asset.id === activeTool.assetId) ?? null)
-      : null;
-  const activeSignatureAsset =
-    activeTool?.type === "signature"
-      ? (imageAssets.find((asset) => asset.id === activeTool.assetId) ?? null)
-      : null;
-  const missingProjectId =
-    isLocalDraftReady &&
-    routeProjectId &&
-    routeProjectId !== activeProjectId &&
-    !projects.some((project) => project.id === routeProjectId)
-      ? routeProjectId
-      : null;
-  const displayStatus =
-    !isLocalDraftReady && status === "empty" ? "loading" : status;
-
-  const handleClearActiveTool = useCallback(() => {
-    setActiveTool(null);
-  }, []);
-
-  useEffect(() => {
-    editingOverlayIdRef.current = editingOverlayId;
-
-    if (editingOverlayId && !textEditHistoryEntryRef.current) {
-      textEditHistoryEntryRef.current = getHistoryEntrySnapshot();
-    }
-  }, [editingOverlayId, getHistoryEntrySnapshot]);
-
-  const commitPendingTextEdit = useCallback(() => {
-    const baseEntry = textEditHistoryEntryRef.current;
-
-    if (!baseEntry) {
-      return;
-    }
-
-    textEditHistoryEntryRef.current = null;
-    commitHistoryFromBase(baseEntry);
-  }, [commitHistoryFromBase]);
-
-  const handleEditOverlay = useCallback(
-    (overlayId: string | null) => {
-      const currentEditingOverlayId = editingOverlayIdRef.current;
-
-      if (currentEditingOverlayId && currentEditingOverlayId !== overlayId) {
-        commitPendingTextEdit();
-      }
-
-      editingOverlayIdRef.current = overlayId;
-      setEditingOverlayId(overlayId);
-    },
-    [commitPendingTextEdit],
-  );
+  const {
+    clearEditing,
+    commitPendingTextEdit,
+    editingOverlayId,
+    editOverlay: handleEditOverlay,
+    isEditingOverlayDifferentFrom,
+    resetEditingSession,
+  } = useOverlayEditingSession({
+    commitHistoryFromBase,
+    getHistoryEntrySnapshot,
+  });
 
   const handleClearSelection = useCallback(() => {
     commitPendingTextEdit();
     clearSelection();
-    editingOverlayIdRef.current = null;
-    setEditingOverlayId(null);
-  }, [clearSelection, commitPendingTextEdit]);
+    clearEditing();
+  }, [clearEditing, clearSelection, commitPendingTextEdit]);
 
   const getCurrentPageSize = useCallback(() => {
     const pageSize = pageSizes[currentPage];
@@ -648,7 +328,7 @@ function AppShell() {
   }, [currentPage, pageSizes, zoom]);
 
   const getCurrentTextDefaults = useCallback(
-    (): TextOverlayDefaults => ({
+    () => ({
       color: currentTextSettings.color,
       fontId: currentTextSettings.fontId,
       fontSize: currentTextSettings.fontSize,
@@ -661,30 +341,45 @@ function AppShell() {
     ],
   );
 
-  const addRenderableOverlay = useCallback(
-    (
-      input: EditorOverlayInput,
-      options?: { additionalRenderableImageAssetIds?: string[] },
-    ) => {
-      if (
-        (input.type === "image" || input.type === "signature") &&
-        !imageAssets.some((asset) => asset.id === input.assetId) &&
-        !options?.additionalRenderableImageAssetIds?.includes(input.assetId)
-      ) {
-        return null;
-      }
-
-      setActiveTool(null);
-      handleEditOverlay(null);
-
-      if (input.type === "image" || input.type === "signature") {
-        showImageAssetInRecents(input.assetId);
-      }
-
-      return addOverlay(input);
-    },
-    [addOverlay, handleEditOverlay, imageAssets, showImageAssetInRecents],
-  );
+  const {
+    activeImageAsset,
+    activeSignatureAsset,
+    activeTool,
+    activateImageAsset: handleSelectImageAsset,
+    activateMarkTool: handleMarkToolActivate,
+    activateSignatureAsset: handleSelectSignatureAsset,
+    addRenderableOverlay,
+    clearActiveTool: handleClearActiveTool,
+    createSignature: handleCreateSignature,
+    dropImageFile: handleDropImageFile,
+    importImageFile,
+    importImageFromClipboard: handleImportImageFromClipboard,
+    importImageUrl: handleImportImageUrl,
+    placeImageOverlay: handlePlaceImageOverlay,
+    placeMarkOverlay: handlePlaceMarkOverlay,
+    placeSignatureOverlay: handlePlaceSignatureOverlay,
+    placeTextOverlay: handlePlaceTextOverlay,
+    placeWhiteoutOverlay: handlePlaceWhiteoutOverlay,
+    resetActiveTool,
+    toggleMarkTool: handleMarkToolClick,
+    toggleTextTool: handleTextToolClick,
+    toggleWhiteoutTool: handleWhiteoutToolClick,
+  } = useEditorTools({
+    addImageBlob,
+    addImageFile,
+    addImageUrl,
+    addOverlay,
+    addSignatureBlob,
+    currentPage,
+    editOverlay: handleEditOverlay,
+    getCurrentPageSize,
+    imageAssets,
+    markDefaults,
+    setCurrentPage,
+    showImageAssetInRecents,
+    textDefaults,
+    whiteoutDefaults: currentWhiteoutSettings,
+  });
 
   const {
     clearClipboardHistory,
@@ -709,18 +404,16 @@ function AppShell() {
   const handleUndo = useCallback(() => {
     commitPendingTextEdit();
     undo();
-    editingOverlayIdRef.current = null;
-    setEditingOverlayId(null);
-    setActiveTool(null);
-  }, [commitPendingTextEdit, undo]);
+    clearEditing();
+    resetActiveTool();
+  }, [clearEditing, commitPendingTextEdit, resetActiveTool, undo]);
 
   const handleRedo = useCallback(() => {
     commitPendingTextEdit();
     redo();
-    editingOverlayIdRef.current = null;
-    setEditingOverlayId(null);
-    setActiveTool(null);
-  }, [commitPendingTextEdit, redo]);
+    clearEditing();
+    resetActiveTool();
+  }, [clearEditing, commitPendingTextEdit, redo, resetActiveTool]);
 
   useEditorKeyboardShortcuts({
     editingOverlayId,
@@ -748,10 +441,8 @@ function AppShell() {
 
   const resetProjectRuntimeState = useCallback(() => {
     clearClipboardHistory();
-    textEditHistoryEntryRef.current = null;
-    editingOverlayIdRef.current = null;
-    setEditingOverlayId(null);
-    setActiveTool(null);
+    resetEditingSession();
+    resetActiveTool();
     setRenderedBasePageSizes({});
     setScrollToPageRequest(null);
     clearDocumentTextFonts();
@@ -768,525 +459,46 @@ function AppShell() {
         : currentPreferences,
     );
     exportedFileNamesRef.current = new Set();
-  }, [clearClipboardHistory, setEditorPreferences]);
-
-  const isProjectViewCleared =
-    !activeProjectId &&
-    !loadedDocument &&
-    status === "empty" &&
-    currentPage === 1 &&
-    isEmptyEditorHistory(history);
-
-  const clearActiveProjectView = useCallback(() => {
-    if (isProjectViewCleared) {
-      return;
-    }
-
-    setActiveProjectId(null);
-
-    if (currentPage !== 1) {
-      setCurrentPage(1);
-    }
-
-    if (loadedDocument || status !== "empty") {
-      clearFile();
-    }
-
-    if (!isEmptyEditorHistory(history)) {
-      resetHistory();
-    }
-
-    resetProjectRuntimeState();
   }, [
-    clearFile,
-    currentPage,
-    history,
-    isProjectViewCleared,
-    loadedDocument,
-    resetHistory,
-    resetProjectRuntimeState,
-    status,
+    clearClipboardHistory,
+    resetActiveTool,
+    resetEditingSession,
+    setEditorPreferences,
   ]);
 
-  const getProjectLastModifiedAt = useCallback(
-    (project: Project, nextHistory: EditorHistoryState) => {
-      if (areEditorHistoriesEqual(project.history, nextHistory)) {
-        return project.lastModifiedAt;
-      }
-
-      const cachedModifiedAt = projectModifiedAtCacheRef.current.get(
-        project.id,
-      );
-
-      if (cachedModifiedAt?.history === nextHistory) {
-        return cachedModifiedAt.lastModifiedAt;
-      }
-
-      const lastModifiedAt = Date.now();
-
-      projectModifiedAtCacheRef.current.set(project.id, {
-        history: nextHistory,
-        lastModifiedAt,
-      });
-
-      return lastModifiedAt;
-    },
-    [],
-  );
-
-  const getActiveProjectSnapshot = useCallback(() => {
-    if (!activeProjectId || !loadedDocument) {
-      return null;
-    }
-
-    const currentProject =
-      projects.find((project) => project.id === activeProjectId) ??
-      createProject({
-        currentPage,
-        document: loadedDocument,
-        history,
-        id: activeProjectId,
-      });
-
-    return updateProjectFromDocument(currentProject, {
-      currentPage,
-      document: loadedDocument,
-      history,
-      lastModifiedAt: getProjectLastModifiedAt(currentProject, history),
-    });
-  }, [
+  const {
     activeProjectId,
-    currentPage,
-    getProjectLastModifiedAt,
-    history,
-    loadedDocument,
-    projects,
-  ]);
-
-  useEffect(() => {
-    if (!activeProjectId || !loadedDocument) {
-      return;
-    }
-
-    const currentProject =
-      projects.find((project) => project.id === activeProjectId) ?? null;
-
-    if (
-      !currentProject ||
-      areEditorHistoriesEqual(currentProject.history, history)
-    ) {
-      return;
-    }
-
-    setProjectModifiedAtCache((currentCache) => {
-      const cachedModifiedAt = currentCache.get(activeProjectId);
-
-      if (cachedModifiedAt?.history === history) {
-        return currentCache;
-      }
-
-      const nextCache = new Map(currentCache);
-      const nextEntry = {
-        history,
-        lastModifiedAt: Date.now(),
-      };
-
-      nextCache.set(activeProjectId, nextEntry);
-      projectModifiedAtCacheRef.current.set(activeProjectId, nextEntry);
-
-      return nextCache;
-    });
-  }, [activeProjectId, history, loadedDocument, projects]);
-
-  const activateProject = useCallback(
-    async (
-      project: Project,
-      options: { pathUpdate?: "none" | "push" | "replace" } = {},
-    ) => {
-      setCurrentPage(1);
-      resetHistory();
-      resetProjectRuntimeState();
-      setActiveProjectId(project.id);
-
-      const restoredDocument = await openBytes(
-        project.pdfBytes,
-        project.fileName,
-      );
-
-      if (!restoredDocument) {
-        setActiveProjectId(null);
-        return false;
-      }
-
-      const restoredCurrentPage = Math.min(
-        restoredDocument.pageCount,
-        Math.max(1, project.currentPage),
-      );
-
-      resetHistory([], null, project.history);
-      setCurrentPage(restoredCurrentPage);
-      setScrollToPageRequest((currentRequest) => ({
-        behavior: "auto",
-        pageNumber: restoredCurrentPage,
-        requestId: (currentRequest?.requestId ?? 0) + 1,
-      }));
-
-      if (options.pathUpdate === "push") {
-        pushProjectPath(project.id);
-      } else if (options.pathUpdate === "replace") {
-        replaceProjectPath(project.id);
-      }
-
-      return true;
-    },
-    [
-      openBytes,
-      pushProjectPath,
-      replaceProjectPath,
-      resetHistory,
-      resetProjectRuntimeState,
-    ],
-  );
-
-  const openPdfAsProject = useCallback(
-    async (file: File) => {
-      commitPendingTextEdit();
-      const previousProject = getActiveProjectSnapshot();
-
-      if (previousProject) {
-        setProjects((currentProjects) =>
-          upsertProject(currentProjects, previousProject),
-        );
-      }
-
-      setCurrentPage(1);
-      resetHistory();
-      resetProjectRuntimeState();
-
-      const openedDocument = await openFile(file);
-
-      if (!openedDocument) {
-        if (previousProject) {
-          await activateProject(previousProject);
-        }
-
-        return;
-      }
-
-      const project = createProject({
-        document: openedDocument,
-        history: createEditorHistory(),
-      });
-
-      setProjects((currentProjects) =>
-        upsertProject(
-          previousProject
-            ? upsertProject(currentProjects, previousProject)
-            : currentProjects,
-          project,
-        ),
-      );
-      setActiveProjectId(project.id);
-      pushProjectPath(project.id);
-      setCurrentPage(1);
-      resetHistory();
-    },
-    [
-      activateProject,
-      commitPendingTextEdit,
-      getActiveProjectSnapshot,
-      openFile,
-      pushProjectPath,
-      resetHistory,
-      resetProjectRuntimeState,
-    ],
-  );
-
-  const handleRequestRemoveProject = useCallback((projectId: string) => {
-    setPendingRemoveProjectId(projectId);
-    setIsRemoveProjectDialogOpen(true);
-  }, []);
-
-  const handleCloseActiveProject = useCallback(() => {
-    commitPendingTextEdit();
-    const activeSnapshot = getActiveProjectSnapshot();
-
-    if (activeSnapshot) {
-      setProjects((currentProjects) =>
-        upsertProject(currentProjects, activeSnapshot),
-      );
-    }
-
-    setActiveProjectId(null);
-    pushProjectPath(null);
-    setCurrentPage(1);
-    clearFile();
-    resetHistory();
-    resetProjectRuntimeState();
-  }, [
+    clearProjectSessionForLocalData,
+    closeActiveProject: handleCloseActiveProject,
+    confirmRemoveProject: handleConfirmRemoveProject,
+    displayStatus,
+    isRemoveProjectDialogOpen,
+    missingProjectId,
+    onRemoveProjectDialogOpenChange: handleRemoveProjectDialogOpenChange,
+    openPdfAsProject,
+    openProjectInNewTab: handleOpenProjectInNewTab,
+    pendingRemoveProjectFileName,
+    removeProject: handleRemoveProject,
+    selectProject: handleSelectProject,
+    setIsLocalDraftReady,
+    toolbarProjects,
+  } = useEditorProjectSession({
     clearFile,
     commitPendingTextEdit,
-    getActiveProjectSnapshot,
-    pushProjectPath,
-    resetHistory,
-    resetProjectRuntimeState,
-  ]);
-
-  const handleRemoveProject = useCallback(
-    (projectId: string) => {
-      handleRequestRemoveProject(projectId);
-    },
-    [handleRequestRemoveProject],
-  );
-
-  const handleConfirmRemoveProject = useCallback(() => {
-    setIsRemoveProjectDialogOpen(false);
-    commitPendingTextEdit();
-
-    const activeSnapshot = getActiveProjectSnapshot();
-    const currentProjects = activeSnapshot
-      ? upsertProject(projects, activeSnapshot)
-      : projects;
-    const projectIdToRemove = pendingRemoveProjectId;
-    const nextProjects = projectIdToRemove
-      ? removeProject(currentProjects, projectIdToRemove)
-      : currentProjects;
-    const isRemovingActiveProject =
-      Boolean(projectIdToRemove) && projectIdToRemove === activeProjectId;
-
-    setProjects(nextProjects);
-    setPendingRemoveProjectId(null);
-
-    if (!isRemovingActiveProject) {
-      return;
-    }
-
-    setActiveProjectId(null);
-    replaceProjectPath(null);
-    setCurrentPage(1);
-    clearFile();
-    resetHistory();
-    resetProjectRuntimeState();
-
-    if (nextProjects.length === 0) {
-      void clearStoredDraft().catch(() => {
-        // Removing the visible project should not be blocked by storage errors.
-      });
-    }
-  }, [
-    activeProjectId,
-    clearFile,
-    clearStoredDraft,
-    commitPendingTextEdit,
-    getActiveProjectSnapshot,
-    pendingRemoveProjectId,
-    projects,
-    replaceProjectPath,
-    resetHistory,
-    resetProjectRuntimeState,
-  ]);
-
-  useEffect(() => {
-    if (!isLocalDraftReady) {
-      return;
-    }
-
-    if (status === "loading") {
-      return;
-    }
-
-    let isCancelled = false;
-
-    queueMicrotask(() => {
-      if (isCancelled) {
-        return;
-      }
-
-      if (!routeProjectId && !isProjectPath(routePathname)) {
-        if (activeProjectId) {
-          const activeSnapshot = getActiveProjectSnapshot();
-
-          if (activeSnapshot) {
-            setProjects((currentProjects) =>
-              upsertProject(currentProjects, activeSnapshot),
-            );
-          }
-        }
-
-        clearActiveProjectView();
-        return;
-      }
-
-      if (routeProjectId === activeProjectId) {
-        return;
-      }
-
-      if (!routeProjectId) {
-        clearActiveProjectView();
-        return;
-      }
-
-      const targetProject = projects.find(
-        (project) => project.id === routeProjectId,
-      );
-
-      if (!targetProject) {
-        clearActiveProjectView();
-        return;
-      }
-
-      const activeSnapshot = getActiveProjectSnapshot();
-
-      if (activeSnapshot) {
-        setProjects((currentProjects) =>
-          upsertProject(currentProjects, activeSnapshot),
-        );
-      }
-
-      void activateProject(targetProject, { pathUpdate: "none" });
-    });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [
-    activeProjectId,
-    activateProject,
-    clearActiveProjectView,
-    getActiveProjectSnapshot,
-    isLocalDraftReady,
-    projects,
-    routePathname,
-    routeProjectId,
-    status,
-  ]);
-
-  const toolbarProjects = useMemo(() => {
-    if (!activeProjectId || !loadedDocument) {
-      return sortProjectsForSwitcher(projects, activeProjectId);
-    }
-
-    const existingProject =
-      projects.find((project) => project.id === activeProjectId) ?? null;
-    const baseProject =
-      existingProject ??
-      createProject({
-        currentPage,
-        document: loadedDocument,
-        history,
-        id: activeProjectId,
-      });
-    const cachedModifiedAt = projectModifiedAtCache.get(baseProject.id);
-    const activeProject = updateProjectFromDocument(baseProject, {
-      currentPage,
-      document: loadedDocument,
-      history,
-      lastModifiedAt:
-        cachedModifiedAt?.history === history
-          ? cachedModifiedAt.lastModifiedAt
-          : baseProject.lastModifiedAt,
-    });
-
-    return sortProjectsForSwitcher(
-      upsertProject(projects, activeProject),
-      activeProjectId,
-    );
-  }, [
-    activeProjectId,
     currentPage,
+    document: loadedDocument,
     history,
-    loadedDocument,
-    projectModifiedAtCache,
-    projects,
-  ]);
-
-  const pendingRemoveProjectFileName = useMemo(() => {
-    if (!pendingRemoveProjectId) {
-      return null;
-    }
-
-    return (
-      toolbarProjects.find((project) => project.id === pendingRemoveProjectId)
-        ?.fileName ?? null
-    );
-  }, [pendingRemoveProjectId, toolbarProjects]);
-
-  const handleSelectProject = useCallback(
-    (projectId: string) => {
-      if (projectId === activeProjectId) {
-        return;
-      }
-
-      commitPendingTextEdit();
-      const activeSnapshot = getActiveProjectSnapshot();
-      const currentProjects = activeSnapshot
-        ? upsertProject(projects, activeSnapshot)
-        : projects;
-      const targetProject = currentProjects.find(
-        (project) => project.id === projectId,
-      );
-
-      if (!targetProject) {
-        return;
-      }
-
-      setProjects(currentProjects);
-      pushProjectPath(projectId);
-    },
-    [
-      activeProjectId,
-      commitPendingTextEdit,
-      getActiveProjectSnapshot,
-      pushProjectPath,
-      projects,
-    ],
-  );
-
-  const handleOpenProjectInNewTab = useCallback(
-    async (projectId: string) => {
-      commitPendingTextEdit();
-
-      const activeSnapshot = getActiveProjectSnapshot();
-      const currentProjects = activeSnapshot
-        ? upsertProject(projects, activeSnapshot)
-        : projects;
-      const targetProject = currentProjects.find(
-        (project) => project.id === projectId,
-      );
-
-      if (!targetProject) {
-        return;
-      }
-
-      const newTab = window.open("about:blank", "_blank");
-
-      if (!newTab) {
-        toast.error("Unable to open project", {
-          description: "Your browser blocked the new tab.",
-        });
-        return;
-      }
-
-      newTab.opener = null;
-      setProjects(currentProjects);
-
-      try {
-        await persistLocalDraftNow({ projects: currentProjects });
-        newTab.location.replace(createProjectPath(projectId));
-      } catch {
-        newTab.close();
-        toast.error("Unable to open project", {
-          description: "The latest local edits could not be saved first.",
-        });
-      }
-    },
-    [
-      commitPendingTextEdit,
-      getActiveProjectSnapshot,
-      persistLocalDraftNow,
-      projects,
-    ],
-  );
+    imageAssets,
+    openBytes,
+    openFile,
+    overlays,
+    replaceImageAssets,
+    resetHistory,
+    resetProjectRuntimeState,
+    setCurrentPage,
+    setScrollToPageRequest,
+    status,
+  });
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1306,8 +518,7 @@ function AppShell() {
 
     commitPendingTextEdit();
     setIsExporting(true);
-    editingOverlayIdRef.current = null;
-    setEditingOverlayId(null);
+    clearEditing();
 
     try {
       const fileName = createExportFileName(
@@ -1339,6 +550,7 @@ function AppShell() {
       setIsExporting(false);
     }
   }, [
+    clearEditing,
     commitPendingTextEdit,
     documentFontOptions,
     imageAssets,
@@ -1359,141 +571,14 @@ function AppShell() {
       return;
     }
 
-    void addImageFile(file).then((asset) => {
-      setActiveTool({ assetId: asset.id, type: "image" });
-      handleEditOverlay(null);
-    });
+    void importImageFile(file);
   };
-
-  const handleImportImageUrl = useCallback(
-    async (url: string) => {
-      const asset = await addImageUrl(url);
-
-      setActiveTool({ assetId: asset.id, type: "image" });
-      handleEditOverlay(null);
-    },
-    [addImageUrl, handleEditOverlay],
-  );
-
-  const handleCreateSignature = useCallback(
-    async (input: SignatureCreateInput) => {
-      try {
-        const signatureBlob =
-          input.type === "typed"
-            ? await rasterizeTypedSignature({
-                color: input.color,
-                font: getSignatureFontOption(input.fontId),
-                text: input.text,
-              }).then(({ blob }) => blob)
-            : input.blob;
-        const signatureName =
-          input.type === "typed" ? `${input.text}.png` : "Signature.png";
-        const asset = await addSignatureBlob(signatureBlob, signatureName);
-
-        setActiveTool({ assetId: asset.id, type: "signature" });
-        handleEditOverlay(null);
-        toast.success("Created signature", {
-          description: "Click a page to place it.",
-        });
-
-        return true;
-      } catch (error) {
-        toast.error("Unable to create signature", {
-          description:
-            error instanceof Error ? error.message : "Please try again.",
-        });
-
-        return false;
-      }
-    },
-    [addSignatureBlob, handleEditOverlay],
-  );
-
-  const handleImportImageFromClipboard = useCallback(() => {
-    const importImageFromClipboard = async () => {
-      try {
-        const intent = await readPasteIntentFromAsyncClipboard();
-        const blob =
-          intent.kind === "external-image"
-            ? intent.blob
-            : intent.kind === "overlay"
-              ? intent.imageBlob
-              : null;
-
-        if (!blob) {
-          toast.error("Copy an image and try again", {
-            description: `Supported types: ${supportedImageTypeListLabel}`,
-          });
-          return;
-        }
-
-        const asset = await addImageBlob(blob);
-
-        setActiveTool({ assetId: asset.id, type: "image" });
-        handleEditOverlay(null);
-      } catch (error) {
-        toast.error("Unable to read clipboard", {
-          description:
-            error instanceof Error
-              ? error.message
-              : "Allow clipboard access and try again.",
-        });
-      }
-    };
-
-    void importImageFromClipboard();
-  }, [addImageBlob, handleEditOverlay]);
 
   const handleDropPdfFile = useCallback(
     (file: File) => {
       void openPdfAsProject(file);
     },
     [openPdfAsProject],
-  );
-
-  const handleDropImageFile = useCallback(
-    (file: File) => {
-      const pageSize = getCurrentPageSize();
-
-      if (!pageSize) {
-        toast.error("Unable to place image", {
-          description: "Open a PDF and wait for the page to finish rendering.",
-        });
-        return;
-      }
-
-      const importAndPlaceImage = async () => {
-        try {
-          const asset = await addImageFile(file);
-
-          addRenderableOverlay(
-            {
-              assetId: asset.id,
-              pageNumber: currentPage,
-              rect: createImageOverlayRectAtPoint(
-                { x: pageSize.width / 2, y: pageSize.height / 2 },
-                pageSize,
-                asset,
-              ),
-              rotationDegrees: 0,
-              sha256Signature: asset.sha256Signature,
-              type: "image",
-            },
-            { additionalRenderableImageAssetIds: [asset.id] },
-          );
-        } catch (error) {
-          toast.error("Unable to import image", {
-            description:
-              error instanceof Error
-                ? error.message
-                : "Please try another image file.",
-          });
-        }
-      };
-
-      void importAndPlaceImage();
-    },
-    [addImageFile, addRenderableOverlay, currentPage, getCurrentPageSize],
   );
 
   const handlePageSizeChange = useCallback(
@@ -1507,119 +592,6 @@ function AppShell() {
       }));
     },
     [zoom],
-  );
-
-  const handleTextToolClick = useCallback(() => {
-    setActiveTool((currentTool) =>
-      currentTool?.type === "text" ? null : { type: "text" },
-    );
-    handleEditOverlay(null);
-  }, [handleEditOverlay]);
-
-  const handleMarkToolClick = useCallback(() => {
-    setActiveTool((currentTool) =>
-      currentTool?.type === "mark" ? null : { type: "mark" },
-    );
-    handleEditOverlay(null);
-  }, [handleEditOverlay]);
-
-  const handleMarkToolActivate = useCallback(() => {
-    setActiveTool({ type: "mark" });
-    handleEditOverlay(null);
-  }, [handleEditOverlay]);
-
-  const handleWhiteoutToolClick = useCallback(() => {
-    setActiveTool((currentTool) =>
-      currentTool?.type === "whiteout" ? null : { type: "whiteout" },
-    );
-    handleEditOverlay(null);
-  }, [handleEditOverlay]);
-
-  const handlePlaceTextOverlay = useCallback(
-    (pageNumber: number, rect: PdfRect) => {
-      setCurrentPage(pageNumber);
-      const overlay = addOverlay({
-        ...textDefaults,
-        pageNumber,
-        rect,
-        type: "text",
-      });
-      setActiveTool(null);
-      handleEditOverlay(overlay.id);
-    },
-    [addOverlay, handleEditOverlay, textDefaults],
-  );
-
-  const handlePlaceMarkOverlay = useCallback(
-    (pageNumber: number, rect: PdfRect) => {
-      setCurrentPage(pageNumber);
-      addOverlay({
-        ...markDefaults,
-        pageNumber,
-        rect,
-        type: "mark",
-      });
-      setActiveTool(null);
-      handleEditOverlay(null);
-    },
-    [addOverlay, handleEditOverlay, markDefaults],
-  );
-
-  const handlePlaceImageOverlay = useCallback(
-    (pageNumber: number, rect: PdfRect) => {
-      if (!activeImageAsset) {
-        return;
-      }
-
-      setCurrentPage(pageNumber);
-      addOverlay({
-        assetId: activeImageAsset.id,
-        pageNumber,
-        rect,
-        rotationDegrees: 0,
-        sha256Signature: activeImageAsset.sha256Signature,
-        type: "image",
-      });
-      setActiveTool(null);
-      handleEditOverlay(null);
-    },
-    [activeImageAsset, addOverlay, handleEditOverlay],
-  );
-
-  const handlePlaceSignatureOverlay = useCallback(
-    (pageNumber: number, rect: PdfRect) => {
-      if (!activeSignatureAsset) {
-        return;
-      }
-
-      setCurrentPage(pageNumber);
-      addOverlay({
-        assetId: activeSignatureAsset.id,
-        pageNumber,
-        rect,
-        rotationDegrees: 0,
-        sha256Signature: activeSignatureAsset.sha256Signature,
-        type: "signature",
-      });
-      setActiveTool(null);
-      handleEditOverlay(null);
-    },
-    [activeSignatureAsset, addOverlay, handleEditOverlay],
-  );
-
-  const handlePlaceWhiteoutOverlay = useCallback(
-    (pageNumber: number, rect: PdfRect) => {
-      setCurrentPage(pageNumber);
-      addOverlay({
-        color: currentWhiteoutSettings.color,
-        pageNumber,
-        rect,
-        type: "whiteout",
-      });
-      setActiveTool(null);
-      handleEditOverlay(null);
-    },
-    [addOverlay, currentWhiteoutSettings.color, handleEditOverlay],
   );
 
   const handleMarkSettingsChange = useCallback(
@@ -1803,14 +775,11 @@ function AppShell() {
     (overlayId: string) => {
       selectOverlay(overlayId);
 
-      if (
-        editingOverlayIdRef.current &&
-        editingOverlayIdRef.current !== overlayId
-      ) {
+      if (isEditingOverlayDifferentFrom(overlayId)) {
         handleEditOverlay(null);
       }
     },
-    [handleEditOverlay, selectOverlay],
+    [handleEditOverlay, isEditingOverlayDifferentFrom, selectOverlay],
   );
 
   const handleStopEditingOverlay = useCallback(() => {
@@ -1841,24 +810,6 @@ function AppShell() {
     setIsSettingsDialogOpen(true);
   }, []);
 
-  const handleSelectImageAsset = useCallback(
-    (assetId: string) => {
-      showImageAssetInRecents(assetId);
-      setActiveTool({ assetId, type: "image" });
-      setEditingOverlayId(null);
-    },
-    [showImageAssetInRecents],
-  );
-
-  const handleSelectSignatureAsset = useCallback(
-    (assetId: string) => {
-      showImageAssetInRecents(assetId);
-      setActiveTool({ assetId, type: "signature" });
-      setEditingOverlayId(null);
-    },
-    [showImageAssetInRecents],
-  );
-
   const handleToggleLayersSidebar = useCallback(() => {
     setEditorPreferences((currentPreferences) => ({
       ...currentPreferences,
@@ -1883,20 +834,10 @@ function AppShell() {
     commitPendingTextEdit();
 
     try {
-      await clearEditorDraftDatabase();
       clearEditorPreferences();
-
+      await clearProjectSessionForLocalData();
       replaceImageAssets([]);
-      setProjects([]);
-      setActiveProjectId(null);
-      replaceProjectPath(null);
-      setCurrentPage(1);
-      clearFile();
-      resetHistory();
-      resetProjectRuntimeState();
       setEditorPreferences(defaultEditorPreferences);
-      setPendingRemoveProjectId(null);
-      setIsRemoveProjectDialogOpen(false);
       setIsClearLocalDataDialogOpen(false);
       setIsSettingsDialogOpen(false);
 
@@ -1910,14 +851,12 @@ function AppShell() {
       setIsClearingLocalData(false);
     }
   }, [
-    clearFile,
+    clearProjectSessionForLocalData,
     commitPendingTextEdit,
     isClearingLocalData,
     replaceImageAssets,
-    replaceProjectPath,
-    resetHistory,
-    resetProjectRuntimeState,
     setEditorPreferences,
+    setIsLocalDraftReady,
   ]);
 
   const handleRequestWorkspacePageScroll = useCallback(
@@ -2113,13 +1052,7 @@ function AppShell() {
         />
         <Dialog
           open={isRemoveProjectDialogOpen}
-          onOpenChange={(isOpen) => {
-            setIsRemoveProjectDialogOpen(isOpen);
-
-            if (!isOpen) {
-              setPendingRemoveProjectId(null);
-            }
-          }}
+          onOpenChange={handleRemoveProjectDialogOpenChange}
         >
           <DialogContent>
             <DialogHeader>
@@ -2171,21 +1104,6 @@ function getExportErrorMessage(error: unknown) {
   }
 
   return "Please try again.";
-}
-
-function createProjectFromPersistedRecord(
-  record: PersistedEditorProjectRecord,
-): Project {
-  return {
-    createdAt: record.createdAt,
-    currentPage: record.currentPage,
-    fileName: record.fileName,
-    history: record.history ?? createEditorHistory(),
-    id: record.id,
-    lastModifiedAt: record.updatedAt,
-    pageCount: record.pageCount,
-    pdfBytes: record.pdfBytes,
-  };
 }
 
 const emptyEditorOverlays: EditorOverlay[] = [];
