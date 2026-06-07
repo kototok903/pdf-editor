@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { EditorOverlay } from "@/features/editor/editor-types";
 import {
   getPageLayerOverlays,
+  moveOverlayLayerRelative,
   moveOverlayToPageLayer,
 } from "@/features/editor/lib/layer-sidebar-utils";
 
@@ -18,6 +19,50 @@ const overlays: EditorOverlay[] = [
     color: "#000000",
     id: "page-2-only",
     markType: "check",
+    pageNumber: 2,
+    rect: { height: 10, width: 10, x: 0, y: 0 },
+    type: "mark",
+  },
+  {
+    color: "#000000",
+    fontId: "helvetica",
+    fontSize: 16,
+    id: "page-1-top",
+    pageNumber: 1,
+    rect: { height: 10, width: 10, x: 0, y: 0 },
+    text: "Hello",
+    type: "text",
+  },
+];
+
+const mixedPageLayerOverlays: EditorOverlay[] = [
+  {
+    color: "#ffffff",
+    id: "page-1-bottom",
+    pageNumber: 1,
+    rect: { height: 10, width: 10, x: 0, y: 0 },
+    type: "whiteout",
+  },
+  {
+    color: "#000000",
+    id: "page-2-first",
+    markType: "check",
+    pageNumber: 2,
+    rect: { height: 10, width: 10, x: 0, y: 0 },
+    type: "mark",
+  },
+  {
+    color: "#000000",
+    id: "page-1-middle",
+    markType: "x",
+    pageNumber: 1,
+    rect: { height: 10, width: 10, x: 0, y: 0 },
+    type: "mark",
+  },
+  {
+    color: "#000000",
+    id: "page-2-second",
+    markType: "dot",
     pageNumber: 2,
     rect: { height: 10, width: 10, x: 0, y: 0 },
     type: "mark",
@@ -149,5 +194,100 @@ describe("layer sidebar utils", () => {
         pageNumber: 1,
       }),
     ).toBe(overlays);
+  });
+
+  it("moves an overlay forward above the nearest same-page overlay", () => {
+    const nextOverlays = moveOverlayLayerRelative(
+      mixedPageLayerOverlays,
+      "page-1-middle",
+      "forward",
+    );
+
+    expect(nextOverlays.map((overlay) => overlay.id)).toEqual([
+      "page-1-bottom",
+      "page-2-first",
+      "page-2-second",
+      "page-1-top",
+      "page-1-middle",
+    ]);
+    expect(
+      getPageLayerOverlays(nextOverlays, 1).map((overlay) => overlay.id),
+    ).toEqual(["page-1-middle", "page-1-top", "page-1-bottom"]);
+  });
+
+  it("moves an overlay to the front of its page", () => {
+    const nextOverlays = moveOverlayLayerRelative(
+      mixedPageLayerOverlays,
+      "page-1-bottom",
+      "front",
+    );
+
+    expect(nextOverlays.map((overlay) => overlay.id)).toEqual([
+      "page-2-first",
+      "page-1-middle",
+      "page-2-second",
+      "page-1-top",
+      "page-1-bottom",
+    ]);
+    expect(
+      getPageLayerOverlays(nextOverlays, 1).map((overlay) => overlay.id),
+    ).toEqual(["page-1-bottom", "page-1-top", "page-1-middle"]);
+  });
+
+  it("moves an overlay backward below the nearest same-page overlay", () => {
+    const nextOverlays = moveOverlayLayerRelative(
+      mixedPageLayerOverlays,
+      "page-1-middle",
+      "backward",
+    );
+
+    expect(nextOverlays.map((overlay) => overlay.id)).toEqual([
+      "page-1-middle",
+      "page-1-bottom",
+      "page-2-first",
+      "page-2-second",
+      "page-1-top",
+    ]);
+    expect(
+      getPageLayerOverlays(nextOverlays, 1).map((overlay) => overlay.id),
+    ).toEqual(["page-1-top", "page-1-bottom", "page-1-middle"]);
+  });
+
+  it("moves an overlay to the back of its page", () => {
+    const nextOverlays = moveOverlayLayerRelative(
+      mixedPageLayerOverlays,
+      "page-1-top",
+      "back",
+    );
+
+    expect(nextOverlays.map((overlay) => overlay.id)).toEqual([
+      "page-1-top",
+      "page-1-bottom",
+      "page-2-first",
+      "page-1-middle",
+      "page-2-second",
+    ]);
+    expect(
+      getPageLayerOverlays(nextOverlays, 1).map((overlay) => overlay.id),
+    ).toEqual(["page-1-middle", "page-1-bottom", "page-1-top"]);
+  });
+
+  it("returns the existing overlays when relative layer movement is a no-op", () => {
+    expect(
+      moveOverlayLayerRelative(mixedPageLayerOverlays, "page-1-top", "front"),
+    ).toBe(mixedPageLayerOverlays);
+    expect(
+      moveOverlayLayerRelative(mixedPageLayerOverlays, "page-1-top", "forward"),
+    ).toBe(mixedPageLayerOverlays);
+    expect(
+      moveOverlayLayerRelative(mixedPageLayerOverlays, "page-1-bottom", "back"),
+    ).toBe(mixedPageLayerOverlays);
+    expect(
+      moveOverlayLayerRelative(
+        mixedPageLayerOverlays,
+        "page-1-bottom",
+        "backward",
+      ),
+    ).toBe(mixedPageLayerOverlays);
   });
 });

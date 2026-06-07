@@ -22,7 +22,11 @@ import {
   type EditorHistoryEntry,
   type EditorHistoryState,
 } from "@/features/editor/lib/editor-history";
-import { moveOverlayToPageLayer } from "@/features/editor/lib/layer-sidebar-utils";
+import {
+  moveOverlayLayerRelative,
+  moveOverlayToPageLayer,
+  type LayerMoveDirection,
+} from "@/features/editor/lib/layer-sidebar-utils";
 import { isRotatableOverlay } from "@/features/editor/lib/overlay-capabilities";
 import { normalizeRotationDegrees } from "@/features/editor/lib/overlay-coordinate-utils";
 
@@ -216,6 +220,18 @@ function useEditorOverlays() {
     [commitOverlayState, replacePresent, setValidSelectedOverlayId],
   );
 
+  const moveOverlayLayerInPage = useCallback(
+    (overlayId: string, direction: LayerMoveDirection) => {
+      commitOverlayState(
+        (currentOverlays) =>
+          moveOverlayLayerRelative(currentOverlays, overlayId, direction),
+        overlayId,
+      );
+      setValidSelectedOverlayId(overlayId);
+    },
+    [commitOverlayState, setValidSelectedOverlayId],
+  );
+
   const selectOverlay = useCallback(
     (overlayId: string) => {
       setValidSelectedOverlayId(overlayId);
@@ -350,6 +366,7 @@ function useEditorOverlays() {
     getHistoryEntrySnapshot,
     history,
     moveOverlayLayer,
+    moveOverlayLayerInPage,
     overlays,
     redo,
     removeOverlay,

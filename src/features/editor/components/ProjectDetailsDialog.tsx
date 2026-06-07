@@ -69,7 +69,9 @@ function ProjectDetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid grid-cols-[minmax(7.5rem,0.45fr)_minmax(0,1fr)] items-baseline gap-4 text-sm">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 text-right font-medium break-words">{value}</dd>
+      <dd className="min-w-0 text-right font-medium wrap-break-word">
+        {value}
+      </dd>
     </div>
   );
 }
