@@ -1,13 +1,47 @@
 import * as React from "react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 
+import {
+  ensureInputModalityTracking,
+  getLastInputModality,
+  shouldRestoreFocusOnMenuClose,
+  type InputModality,
+} from "@/lib/input-modality";
 import { cn } from "@/lib/utils";
 import { CheckIcon, ChevronRightIcon } from "lucide-react";
 
+const DropdownMenuOpenModalityContext =
+  React.createContext<React.RefObject<InputModality> | null>(null);
+
 function DropdownMenu({
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+  const openModalityRef = React.useRef<InputModality>("keyboard");
+
+  React.useEffect(() => {
+    ensureInputModalityTracking();
+  }, []);
+
+  const handleOpenChange = React.useCallback(
+    (open: boolean) => {
+      if (open) {
+        openModalityRef.current = getLastInputModality();
+      }
+      onOpenChange?.(open);
+    },
+    [onOpenChange],
+  );
+
+  return (
+    <DropdownMenuOpenModalityContext.Provider value={openModalityRef}>
+      <DropdownMenuPrimitive.Root
+        data-slot="dropdown-menu"
+        onOpenChange={handleOpenChange}
+        {...props}
+      />
+    </DropdownMenuOpenModalityContext.Provider>
+  );
 }
 
 function DropdownMenuPortal({
@@ -33,12 +67,32 @@ function DropdownMenuContent({
   className,
   align = "start",
   sideOffset = 4,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  const openModalityRef = React.useContext(DropdownMenuOpenModalityContext);
+
+  const handleCloseAutoFocus = React.useCallback(
+    (event: Event) => {
+      onCloseAutoFocus?.(event);
+      if (event.defaultPrevented) {
+        return;
+      }
+      const openModality = openModalityRef?.current ?? "keyboard";
+      if (
+        !shouldRestoreFocusOnMenuClose(openModality, getLastInputModality())
+      ) {
+        event.preventDefault();
+      }
+    },
+    [onCloseAutoFocus, openModalityRef],
+  );
+
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
         data-slot="dropdown-menu-content"
+        onCloseAutoFocus={handleCloseAutoFocus}
         sideOffset={sideOffset}
         align={align}
         className={cn(
