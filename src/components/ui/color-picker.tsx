@@ -474,7 +474,6 @@ const PercentageInput = ({
         onChange={(event) => {
           onChange(clamp(Number(event.target.value), 0, 100));
         }}
-        onPointerDown={(event) => event.stopPropagation()}
         step={1}
         type="text"
         value={Math.round(value)}
@@ -523,7 +522,6 @@ export const ColorPickerFormat = ({
               setColor(nextValue);
             }
           }}
-          onPointerDown={(event) => event.stopPropagation()}
           ref={hexInputRef}
           type="text"
           defaultValue={hexValue}

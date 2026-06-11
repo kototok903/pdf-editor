@@ -357,7 +357,6 @@ function ColorControls({
           align="end"
           className="w-72"
           onClick={(event) => event.stopPropagation()}
-          onPointerDown={(event) => event.stopPropagation()}
         >
           <ColorPicker
             className="h-auto gap-3"

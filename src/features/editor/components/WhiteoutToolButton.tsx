@@ -73,7 +73,6 @@ const WhiteoutToolButton = memo(function WhiteoutToolButton({
         align="start"
         className="w-56 p-3"
         onClick={(event) => event.stopPropagation()}
-        onPointerDown={(event) => event.stopPropagation()}
       >
         <div className="space-y-3">
           <div className="grid gap-1.5">

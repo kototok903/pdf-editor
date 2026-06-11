@@ -85,7 +85,6 @@ const MarkToolButton = memo(function MarkToolButton({
         align="start"
         className="w-64 p-3"
         onClick={(event) => event.stopPropagation()}
-        onPointerDown={(event) => event.stopPropagation()}
       >
         <div className="space-y-3">
           <div className="grid gap-2 text-xs font-medium">
