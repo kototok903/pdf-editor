@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -38,8 +38,10 @@ const WhiteoutToolButton = memo(function WhiteoutToolButton({
   onWhiteoutToolClick,
   settings,
 }: WhiteoutToolButtonProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <Tooltip tooltip="Whiteout" disabled={disabled}>
+    <Tooltip tooltip="Whiteout" disabled={disabled || isOpen}>
       <div className="inline-flex shrink-0">
         <Button
           aria-label="Whiteout tool"
@@ -52,7 +54,7 @@ const WhiteoutToolButton = memo(function WhiteoutToolButton({
         >
           <SquareIcon aria-hidden="true" />
         </Button>
-        <DropdownMenu>
+        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
           <DropdownMenuTrigger asChild>
             <Button
               aria-label="Whiteout settings"

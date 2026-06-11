@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { ChevronDownIcon, RotateCcwIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -45,10 +45,11 @@ const MarkToolButton = memo(function MarkToolButton({
   onSettingsReset,
   onSettingsChange,
 }: MarkToolDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const variant = isSelected ? "toolbar-active" : "toolbar";
 
   return (
-    <Tooltip tooltip="Mark" disabled={disabled}>
+    <Tooltip tooltip="Mark" disabled={disabled || isOpen}>
       <div className="inline-flex shrink-0">
         <Button
           aria-label="Mark tool"
@@ -65,7 +66,7 @@ const MarkToolButton = memo(function MarkToolButton({
             markType={markType}
           />
         </Button>
-        <DropdownMenu>
+        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
           <DropdownMenuTrigger asChild>
             <Button
               aria-label="Mark options"

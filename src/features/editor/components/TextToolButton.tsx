@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import {
   ChevronDownIcon,
   RotateCcwIcon,
@@ -67,8 +67,10 @@ const TextToolButton = memo(function TextToolButton({
   onTextToolClick,
   settings,
 }: TextToolButtonProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <Tooltip tooltip="Text" disabled={disabled}>
+    <Tooltip tooltip="Text" disabled={disabled || isOpen}>
       <div className="inline-flex shrink-0">
         <Button
           aria-label="Text tool"
@@ -81,7 +83,7 @@ const TextToolButton = memo(function TextToolButton({
         >
           <TypeIcon aria-hidden="true" />
         </Button>
-        <DropdownMenu>
+        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
           <DropdownMenuTrigger asChild>
             <Button
               aria-label="Text settings"

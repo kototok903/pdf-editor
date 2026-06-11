@@ -65,11 +65,10 @@ const ProjectDropdown = memo(function ProjectDropdown({
         <Skeleton className="h-7.5 w-19.5" />
       ) : (
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-          <Tooltip tooltip={fileName ?? ""} disabled={!fileName}>
+          <Tooltip tooltip={fileName ?? ""} disabled={!fileName || isOpen}>
             <DropdownMenuTrigger asChild>
               <Button
                 className="min-w-0 justify-start gap-1.5 text-left"
-                title={fileName ?? undefined}
                 size="sm"
                 type="button"
                 variant="toolbar"

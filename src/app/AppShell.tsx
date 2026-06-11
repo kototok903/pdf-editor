@@ -1070,7 +1070,11 @@ function AppShell() {
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
-              <Button onClick={handleConfirmRemoveProject} type="button">
+              <Button
+                variant="destructive"
+                onClick={handleConfirmRemoveProject}
+                type="button"
+              >
                 Remove Project
               </Button>
             </DialogFooter>
