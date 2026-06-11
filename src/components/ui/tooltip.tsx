@@ -31,16 +31,11 @@ function TooltipTrigger({
 }
 
 function TooltipContent({
-  disabled,
   className,
   sideOffset = 0,
   children,
   ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Content> & {
-  disabled?: boolean;
-}) {
-  if (disabled) return undefined;
-
+}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
   return (
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Content
@@ -66,10 +61,16 @@ type TooltipProps = {
 };
 
 function Tooltip({ children, tooltip, disabled }: TooltipProps) {
+  const [open, setOpen] = React.useState(false);
+
+  if (disabled && open) {
+    setOpen(false);
+  }
+
   return (
-    <TooltipRoot>
+    <TooltipRoot onOpenChange={setOpen} open={open && !disabled}>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent disabled={disabled}>{tooltip}</TooltipContent>
+      <TooltipContent>{tooltip}</TooltipContent>
     </TooltipRoot>
   );
 }

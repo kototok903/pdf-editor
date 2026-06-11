@@ -41,20 +41,20 @@ const WhiteoutToolButton = memo(function WhiteoutToolButton({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <Tooltip tooltip="Whiteout" disabled={disabled || isOpen}>
-      <div className="inline-flex shrink-0">
-        <Button
-          aria-label="Whiteout tool"
-          className="rounded-r-none px-2"
-          disabled={disabled}
-          onClick={onWhiteoutToolClick}
-          size="sm"
-          type="button"
-          variant={isSelected ? "toolbar-active" : "toolbar"}
-        >
-          <SquareIcon aria-hidden="true" />
-        </Button>
-        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <Tooltip tooltip="Whiteout" disabled={disabled || isOpen}>
+        <div className="inline-flex shrink-0">
+          <Button
+            aria-label="Whiteout tool"
+            className="rounded-r-none px-2"
+            disabled={disabled}
+            onClick={onWhiteoutToolClick}
+            size="sm"
+            type="button"
+            variant={isSelected ? "toolbar-active" : "toolbar"}
+          >
+            <SquareIcon aria-hidden="true" />
+          </Button>
           <DropdownMenuTrigger asChild>
             <Button
               aria-label="Whiteout settings"
@@ -67,45 +67,45 @@ const WhiteoutToolButton = memo(function WhiteoutToolButton({
               <ChevronDownIcon aria-hidden="true" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="w-56 p-3"
-            onClick={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            <div className="space-y-3">
-              <div className="grid gap-1.5">
-                <ColorPicker
-                  className="h-auto gap-3"
-                  defaultValue={settings.color}
-                  onChange={(value) => {
-                    onSettingsChange({ color: rgbArrayToHex(value) });
-                  }}
-                  value={settings.color}
-                >
-                  <ColorPickerSelection className="h-28 rounded-md" />
-                  <ColorPickerHue />
-                  <ColorPickerFormat />
-                </ColorPicker>
-              </div>
+        </div>
+      </Tooltip>
+      <DropdownMenuContent
+        align="start"
+        className="w-56 p-3"
+        onClick={(event) => event.stopPropagation()}
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        <div className="space-y-3">
+          <div className="grid gap-1.5">
+            <ColorPicker
+              className="h-auto gap-3"
+              defaultValue={settings.color}
+              onChange={(value) => {
+                onSettingsChange({ color: rgbArrayToHex(value) });
+              }}
+              value={settings.color}
+            >
+              <ColorPickerSelection className="h-28 rounded-md" />
+              <ColorPickerHue />
+              <ColorPickerFormat />
+            </ColorPicker>
+          </div>
 
-              <div className="flex justify-end border-t pt-3">
-                <Button
-                  disabled={isDefault}
-                  onClick={onSettingsReset}
-                  size="xs"
-                  type="button"
-                  variant="outline"
-                >
-                  <RotateCcwIcon aria-hidden="true" />
-                  Reset
-                </Button>
-              </div>
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </Tooltip>
+          <div className="flex justify-end border-t pt-3">
+            <Button
+              disabled={isDefault}
+              onClick={onSettingsReset}
+              size="xs"
+              type="button"
+              variant="outline"
+            >
+              <RotateCcwIcon aria-hidden="true" />
+              Reset
+            </Button>
+          </div>
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 });
 
