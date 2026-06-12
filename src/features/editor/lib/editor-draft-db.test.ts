@@ -10,6 +10,7 @@ import {
   putPersistedImageAssets,
   putPersistedImageAsset,
 } from "@/features/editor/lib/editor-draft-db";
+import { createEditorHistory } from "@/features/editor/lib/editor-history";
 import type {
   PersistedEditorDraftRecord,
   PersistedImageAssetRecord,
@@ -63,6 +64,27 @@ describe("editor draft db", () => {
 
     expect(await readActiveDraft(storage)).toEqual(
       expect.objectContaining({ id: activeDraftKey }),
+    );
+  });
+
+  it("round-trips form edits in draft history", async () => {
+    const storage = createMemoryEditorDraftStorage();
+    const history = createEditorHistory([], null, {
+      values: [{ fieldName: "name", type: "text", value: "Привет" }],
+    });
+
+    await writeActiveDraft(createDraftRecord({ history }), storage);
+
+    expect(await readActiveDraft(storage)).toEqual(
+      expect.objectContaining({
+        history: expect.objectContaining({
+          present: expect.objectContaining({
+            formEdits: {
+              values: [{ fieldName: "name", type: "text", value: "Привет" }],
+            },
+          }),
+        }),
+      }),
     );
   });
 

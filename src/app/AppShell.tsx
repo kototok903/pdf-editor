@@ -37,6 +37,7 @@ import type {
   TextOverlay,
   TextOverlayDefaults,
   TextOverlayPatch,
+  PdfFormValue,
   WhiteoutOverlay,
   WhiteoutOverlayPatch,
 } from "@/features/editor/editor-types";
@@ -76,6 +77,13 @@ import {
 import { createExportFileName } from "@/features/pdf-export/lib/export-file-name";
 import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
 import { usePdfPageSizes } from "@/features/pdf/hooks/usePdfPageSizes";
+import {
+  createPdfFormFieldRegistry,
+  createPdfFormValueFromElement,
+  getFormElementWidgetId,
+  type PdfFormWidget,
+} from "@/features/pdf/lib/pdf-form-metadata";
+import { updatePdfFormValue } from "@/features/editor/lib/editor-form-edits";
 import { isDocumentFontExtractionEnabled } from "@/features/pdf/lib/pdf-font-extraction-config";
 import { scalePageSizes } from "@/features/pdf/lib/pdf-page-size-utils";
 import type { PageSize } from "@/features/pdf/pdf-types";
@@ -94,6 +102,9 @@ function AppShell() {
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [renderedBasePageSizes, setRenderedBasePageSizes] = useState<
     Record<number, PageSize>
+  >({});
+  const [formWidgetsByPage, setFormWidgetsByPage] = useState<
+    Record<number, PdfFormWidget[]>
   >({});
   const [scrollToPageRequest, setScrollToPageRequest] = useState<{
     behavior: ScrollBehavior;
@@ -121,6 +132,7 @@ function AppShell() {
     clearSelection,
     commitHistoryFromBase,
     getHistoryEntrySnapshot,
+    formEdits,
     history,
     moveOverlayLayer,
     moveOverlayLayerInPage,
@@ -137,6 +149,7 @@ function AppShell() {
     updateOverlayRotation,
     updateTextOverlay,
     updateTextOverlayDraft,
+    updateFormValue,
     updateWhiteoutOverlay,
   } = useEditorOverlays();
   const {
@@ -172,6 +185,13 @@ function AppShell() {
     showImageAssetInRecents,
   } = useImageAssets();
   const overlaysByPage = useStableOverlaysByPage(overlays);
+  const formFieldRegistry = useMemo(
+    () =>
+      createPdfFormFieldRegistry(
+        Object.values(formWidgetsByPage).flatMap((widgets) => widgets),
+      ),
+    [formWidgetsByPage],
+  );
   const imageAssetById = useMemo(
     () => createImageAssetMap(imageAssets),
     [imageAssets],
@@ -444,6 +464,7 @@ function AppShell() {
     resetEditingSession();
     resetActiveTool();
     setRenderedBasePageSizes({});
+    setFormWidgetsByPage({});
     setScrollToPageRequest(null);
     clearDocumentTextFonts();
     setDocumentFontOptions([]);
@@ -517,6 +538,15 @@ function AppShell() {
     }
 
     commitPendingTextEdit();
+    const focusedFormValue = getFocusedFormValue(formFieldRegistry.widgetsById);
+    const exportFormEdits = focusedFormValue
+      ? updatePdfFormValue(formEdits, focusedFormValue)
+      : formEdits;
+
+    if (focusedFormValue && exportFormEdits !== formEdits) {
+      updateFormValue(focusedFormValue);
+    }
+
     setIsExporting(true);
     clearEditing();
 
@@ -532,6 +562,7 @@ function AppShell() {
           (fontOption): fontOption is DocumentTextFontOption =>
             fontOption.isAvailable,
         ),
+        formEdits: exportFormEdits,
         imageAssets,
         originalPdfBytes: loadedDocument.bytes,
         overlays,
@@ -553,10 +584,13 @@ function AppShell() {
     clearEditing,
     commitPendingTextEdit,
     documentFontOptions,
+    formEdits,
+    formFieldRegistry,
     imageAssets,
     isExporting,
     loadedDocument,
     overlays,
+    updateFormValue,
   ]);
 
   const handleOpenImageDialog = useCallback(() => {
@@ -592,6 +626,45 @@ function AppShell() {
       }));
     },
     [zoom],
+  );
+
+  const handleFormWidgetsChange = useCallback(
+    (pageNumber: number, widgets: PdfFormWidget[]) => {
+      setFormWidgetsByPage((currentWidgetsByPage) => {
+        const currentWidgets = currentWidgetsByPage[pageNumber] ?? [];
+
+        if (arePdfFormWidgetArraysEqual(currentWidgets, widgets)) {
+          return currentWidgetsByPage;
+        }
+
+        if (widgets.length === 0) {
+          const nextWidgetsByPage = { ...currentWidgetsByPage };
+
+          delete nextWidgetsByPage[pageNumber];
+
+          return nextWidgetsByPage;
+        }
+
+        return {
+          ...currentWidgetsByPage,
+          [pageNumber]: widgets,
+        };
+      });
+    },
+    [],
+  );
+
+  const handleCommitFormValue = useCallback(
+    (value: PdfFormValue) => {
+      const field = formFieldRegistry.fieldsByName.get(value.fieldName);
+
+      if (field?.readOnly) {
+        return;
+      }
+
+      updateFormValue(value);
+    },
+    [formFieldRegistry, updateFormValue],
   );
 
   const handleMarkSettingsChange = useCallback(
@@ -994,6 +1067,7 @@ function AppShell() {
             document={loadedDocument}
             editingOverlayId={editingOverlayId}
             error={error}
+            formEdits={formEdits}
             activeImageAsset={activeImageAsset}
             activeSignatureAsset={activeSignatureAsset}
             imageAssetById={imageAssetById}
@@ -1005,10 +1079,12 @@ function AppShell() {
             isWhiteoutToolActive={activeTool?.type === "whiteout"}
             onCancelActiveTool={handleClearActiveTool}
             onClearSelection={handleClearSelection}
+            onCommitFormValue={handleCommitFormValue}
             onCurrentPageChange={setCurrentPage}
             onDropImageFile={handleDropImageFile}
             onDropPdfFile={handleDropPdfFile}
             onEditOverlay={handleEditOverlay}
+            onFormWidgetsChange={handleFormWidgetsChange}
             onOpenFile={handleOpenFileDialog}
             onPageSizeChange={handlePageSizeChange}
             onPlaceImageOverlay={handlePlaceImageOverlay}
@@ -1171,6 +1247,54 @@ function areOverlayArrayReferencesEqual(
     left.length === right.length &&
     left.every((overlay, index) => overlay === right[index])
   );
+}
+
+function arePdfFormWidgetArraysEqual(
+  left: PdfFormWidget[],
+  right: PdfFormWidget[],
+) {
+  return (
+    left.length === right.length &&
+    left.every((widget, index) => {
+      const rightWidget = right[index];
+
+      return (
+        rightWidget !== undefined &&
+        widget.id === rightWidget.id &&
+        widget.fieldName === rightWidget.fieldName &&
+        widget.fieldType === rightWidget.fieldType &&
+        widget.readOnly === rightWidget.readOnly
+      );
+    })
+  );
+}
+
+function getFocusedFormValue(
+  widgetsById: ReadonlyMap<string, PdfFormWidget>,
+): PdfFormValue | null {
+  const activeElement = document.activeElement;
+
+  if (
+    !(
+      activeElement instanceof HTMLInputElement ||
+      activeElement instanceof HTMLSelectElement ||
+      activeElement instanceof HTMLTextAreaElement
+    )
+  ) {
+    return null;
+  }
+
+  const widgetId = getFormElementWidgetId(activeElement);
+  const widget = widgetId ? widgetsById.get(widgetId) : null;
+
+  if (!widget || widget.readOnly) {
+    return null;
+  }
+
+  return createPdfFormValueFromElement({
+    element: activeElement,
+    widget,
+  });
 }
 
 function createImageAssetMap(imageAssets: ImageAsset[]) {

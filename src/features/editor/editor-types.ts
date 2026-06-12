@@ -112,8 +112,43 @@ type WhiteoutOverlayDefaults = {
 
 type ViewportRect = PdfRect;
 
+type PdfFormTextValue = {
+  fieldName: string;
+  type: "text";
+  value: string;
+};
+
+type PdfFormCheckboxValue = {
+  checked: boolean;
+  fieldName: string;
+  type: "checkbox";
+};
+
+type PdfFormRadioValue = {
+  fieldName: string;
+  selectedValue: string | null;
+  type: "radio";
+};
+
+type PdfFormChoiceValue = {
+  fieldName: string;
+  type: "choice";
+  values: string[];
+};
+
+type PdfFormValue =
+  | PdfFormTextValue
+  | PdfFormCheckboxValue
+  | PdfFormRadioValue
+  | PdfFormChoiceValue;
+
+type EditorFormEdits = {
+  values: PdfFormValue[];
+};
+
 export type {
   EditorOverlay,
+  EditorFormEdits,
   EditorOverlayInput,
   ImageAsset,
   ImageOverlay,
@@ -122,6 +157,11 @@ export type {
   MarkType,
   OverlayType,
   PdfRect,
+  PdfFormCheckboxValue,
+  PdfFormChoiceValue,
+  PdfFormRadioValue,
+  PdfFormTextValue,
+  PdfFormValue,
   SignatureOverlay,
   StandardTextFontId,
   TextOverlay,

@@ -2,11 +2,14 @@ import { memo } from "react";
 
 import { PdfPageView } from "@/features/pdf/components/PdfPageView";
 import type {
+  EditorFormEdits,
   EditorOverlay,
   ImageAsset,
   PdfRect,
+  PdfFormValue,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
+import type { PdfFormWidget } from "@/features/pdf/lib/pdf-form-metadata";
 import { isPageInRenderWindow } from "@/features/pdf/lib/pdf-page-size-utils";
 import type { LoadedPdfDocument, PageSize } from "@/features/pdf/pdf-types";
 
@@ -16,6 +19,7 @@ type PdfDocumentViewProps = {
   currentPage: number;
   document: LoadedPdfDocument;
   editingOverlayId: string | null;
+  formEdits: EditorFormEdits;
   imageAssetById: ReadonlyMap<string, ImageAsset>;
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
@@ -24,7 +28,9 @@ type PdfDocumentViewProps = {
   isWhiteoutToolActive: boolean;
   onCancelActiveTool: () => void;
   onClearSelection: () => void;
+  onCommitFormValue: (value: PdfFormValue) => void;
   onEditOverlay: (overlayId: string | null) => void;
+  onFormWidgetsChange: (pageNumber: number, widgets: PdfFormWidget[]) => void;
   onPageElementChange: (
     pageNumber: number,
     element: HTMLElement | null,
@@ -53,6 +59,7 @@ const PdfDocumentView = memo(function PdfDocumentView({
   currentPage,
   document,
   editingOverlayId,
+  formEdits,
   imageAssetById,
   isImageToolActive,
   isMarkToolActive,
@@ -61,7 +68,9 @@ const PdfDocumentView = memo(function PdfDocumentView({
   isWhiteoutToolActive,
   onCancelActiveTool,
   onClearSelection,
+  onCommitFormValue,
   onEditOverlay,
+  onFormWidgetsChange,
   onPageElementChange,
   onPageSizeChange,
   onPlaceImageOverlay,
@@ -87,6 +96,7 @@ const PdfDocumentView = memo(function PdfDocumentView({
           activeImageAsset={activeImageAsset}
           activeSignatureAsset={activeSignatureAsset}
           editingOverlayId={editingOverlayId}
+          formEdits={formEdits}
           imageAssetById={imageAssetById}
           isImageToolActive={isImageToolActive}
           isMarkToolActive={isMarkToolActive}
@@ -96,7 +106,9 @@ const PdfDocumentView = memo(function PdfDocumentView({
           key={index + 1}
           onCancelActiveTool={onCancelActiveTool}
           onClearSelection={onClearSelection}
+          onCommitFormValue={onCommitFormValue}
           onEditOverlay={onEditOverlay}
+          onFormWidgetsChange={onFormWidgetsChange}
           onPageElementChange={onPageElementChange}
           onPageSizeChange={onPageSizeChange}
           onPlaceImageOverlay={onPlaceImageOverlay}

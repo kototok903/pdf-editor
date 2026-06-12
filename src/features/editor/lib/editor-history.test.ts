@@ -10,6 +10,7 @@ import {
   getHistoryImageAssetIds,
   redoEditorHistory,
   resetEditorHistory,
+  restoreEditorHistory,
   undoEditorHistory,
 } from "@/features/editor/lib/editor-history";
 
@@ -117,6 +118,90 @@ describe("editor history", () => {
 
     expect(nextHistory).toBe(history);
     expect(nextHistory.past).toHaveLength(0);
+  });
+
+  it("commits form value changes without requiring overlay changes", () => {
+    const history = createEditorHistory();
+    const committedHistory = commitEditorHistory(
+      history,
+      createHistoryEntry([], null, {
+        values: [
+          {
+            fieldName: "name",
+            type: "text",
+            value: "Ada",
+          },
+        ],
+      }),
+    );
+
+    expect(committedHistory.past).toHaveLength(1);
+    expect(committedHistory.present.formEdits.values).toEqual([
+      {
+        fieldName: "name",
+        type: "text",
+        value: "Ada",
+      },
+    ]);
+  });
+
+  it("compares histories by form edits", () => {
+    const history = createEditorHistory(
+      [],
+      null,
+      {
+        values: [
+          {
+            checked: true,
+            fieldName: "agree",
+            type: "checkbox",
+          },
+        ],
+      },
+    );
+    const changedHistory = createEditorHistory(
+      [],
+      null,
+      {
+        values: [
+          {
+            checked: false,
+            fieldName: "agree",
+            type: "checkbox",
+          },
+        ],
+      },
+    );
+
+    expect(areEditorHistoriesEqual(history, changedHistory)).toBe(false);
+  });
+
+  it("treats legacy histories without form edits as empty form edits", () => {
+    const legacyHistory = {
+      future: [],
+      past: [],
+      present: {
+        overlays: [],
+        selectedOverlayId: null,
+      },
+    };
+
+    expect(areEditorHistoriesEqual(legacyHistory, createEditorHistory())).toBe(
+      true,
+    );
+  });
+
+  it("restores legacy history entries with empty form edits", () => {
+    const restoredHistory = restoreEditorHistory({
+      future: [],
+      past: [],
+      present: {
+        overlays: [],
+        selectedOverlayId: null,
+      },
+    });
+
+    expect(restoredHistory.present.formEdits.values).toEqual([]);
   });
 
   it("does not update history for selection-only changes", () => {

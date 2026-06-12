@@ -9,9 +9,11 @@ import {
 
 import { Skeleton } from "@/components/ui/skeleton";
 import type {
+  EditorFormEdits,
   EditorOverlay,
   ImageAsset,
   PdfRect,
+  PdfFormValue,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
 import {
@@ -26,6 +28,7 @@ import {
 } from "@/features/editor/lib/workspace-drop-utils";
 import { PdfDocumentView } from "@/features/pdf/components/PdfDocumentView";
 import { PdfUploadEmptyState } from "@/features/pdf/components/PdfUploadEmptyState";
+import type { PdfFormWidget } from "@/features/pdf/lib/pdf-form-metadata";
 import type {
   LoadedPdfDocument,
   PageSize,
@@ -39,6 +42,7 @@ type DocumentWorkspaceProps = {
   document: LoadedPdfDocument | null;
   editingOverlayId: string | null;
   error: string | null;
+  formEdits: EditorFormEdits;
   imageAssetById: ReadonlyMap<string, ImageAsset>;
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
@@ -48,10 +52,12 @@ type DocumentWorkspaceProps = {
   isWhiteoutToolActive: boolean;
   onCancelActiveTool: () => void;
   onClearSelection: () => void;
+  onCommitFormValue: (value: PdfFormValue) => void;
   onCurrentPageChange: (pageNumber: number) => void;
   onDropImageFile: (file: File) => void;
   onDropPdfFile: (file: File) => void;
   onEditOverlay: (overlayId: string | null) => void;
+  onFormWidgetsChange: (pageNumber: number, widgets: PdfFormWidget[]) => void;
   onOpenFile: () => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
@@ -86,6 +92,7 @@ const DocumentWorkspace = memo(function DocumentWorkspace({
   document,
   editingOverlayId,
   error,
+  formEdits,
   imageAssetById,
   isImageToolActive,
   isMarkToolActive,
@@ -95,10 +102,12 @@ const DocumentWorkspace = memo(function DocumentWorkspace({
   isWhiteoutToolActive,
   onCancelActiveTool,
   onClearSelection,
+  onCommitFormValue,
   onCurrentPageChange,
   onDropImageFile,
   onDropPdfFile,
   onEditOverlay,
+  onFormWidgetsChange,
   onOpenFile,
   onPageSizeChange,
   onPlaceImageOverlay,
@@ -435,6 +444,7 @@ const DocumentWorkspace = memo(function DocumentWorkspace({
           currentPage={currentPage}
           document={document}
           editingOverlayId={editingOverlayId}
+          formEdits={formEdits}
           imageAssetById={imageAssetById}
           isImageToolActive={isImageToolActive}
           isMarkToolActive={isMarkToolActive}
@@ -443,7 +453,9 @@ const DocumentWorkspace = memo(function DocumentWorkspace({
           isWhiteoutToolActive={isWhiteoutToolActive}
           onCancelActiveTool={onCancelActiveTool}
           onClearSelection={onClearSelection}
+          onCommitFormValue={onCommitFormValue}
           onEditOverlay={onEditOverlay}
+          onFormWidgetsChange={onFormWidgetsChange}
           onPageElementChange={handlePageElementChange}
           onPageSizeChange={onPageSizeChange}
           onPlaceImageOverlay={onPlaceImageOverlay}

@@ -6,6 +6,7 @@ import { useLocalDraftPersistence } from "@/features/editor/hooks/useLocalDraftP
 import {
   createEditorHistory,
   areEditorHistoriesEqual,
+  restoreEditorHistory,
   type EditorHistoryState,
 } from "@/features/editor/lib/editor-history";
 import {
@@ -252,8 +253,9 @@ function useEditorProjectSession({
 
           if (restoredDocument) {
             const restoredHistory =
-              restoredDraft.draft.history ??
-              createEditorHistory(restoredDraft.draft.overlays);
+              restoredDraft.draft.history
+                ? restoreEditorHistory(restoredDraft.draft.history)
+                : createEditorHistory(restoredDraft.draft.overlays);
             resetHistory([], null, restoredHistory);
             const restoredCurrentPage = clampPageNumber(
               restoredDraft.draft.currentPage,
@@ -910,6 +912,7 @@ function isEmptyEditorHistory(history: EditorHistoryState) {
   return (
     history.future.length === 0 &&
     history.past.length === 0 &&
+    (history.present.formEdits?.values.length ?? 0) === 0 &&
     history.present.overlays.length === 0 &&
     history.present.selectedOverlayId === null
   );
@@ -922,7 +925,9 @@ function createProjectFromPersistedRecord(
     createdAt: record.createdAt,
     currentPage: record.currentPage,
     fileName: record.fileName,
-    history: record.history ?? createEditorHistory(),
+    history: record.history
+      ? restoreEditorHistory(record.history)
+      : createEditorHistory(),
     id: record.id,
     lastModifiedAt: record.updatedAt,
     pageCount: record.pageCount,

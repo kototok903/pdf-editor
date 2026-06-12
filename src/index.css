@@ -5,6 +5,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@font-face {
+  font-family: "PDF Editor Form";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/pdfjs/standard_fonts/LiberationSans-Regular.ttf")
+    format("truetype");
+}
+
 body {
   margin: 0;
   min-width: 320px;

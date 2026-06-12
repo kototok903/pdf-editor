@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type {
+  EditorFormEdits,
   EditorOverlay,
   EditorOverlayInput,
   MarkOverlayPatch,
   PdfRect,
+  PdfFormValue,
   TextOverlayPatch,
   WhiteoutOverlayPatch,
 } from "@/features/editor/editor-types";
@@ -22,6 +24,10 @@ import {
   type EditorHistoryEntry,
   type EditorHistoryState,
 } from "@/features/editor/lib/editor-history";
+import {
+  emptyEditorFormEdits,
+  updatePdfFormValue,
+} from "@/features/editor/lib/editor-form-edits";
 import {
   moveOverlayLayerRelative,
   moveOverlayToPageLayer,
@@ -53,6 +59,7 @@ function useEditorOverlays() {
   }, [selectedOverlayId]);
 
   const overlays = history.present.overlays;
+  const formEdits = history.present.formEdits;
 
   const commitOverlayState = useCallback(
     (
@@ -64,7 +71,11 @@ function useEditorOverlays() {
 
         return commitEditorHistory(
           currentHistory,
-          createHistoryEntry(nextOverlays, nextSelectedOverlayId),
+          createHistoryEntry(
+            nextOverlays,
+            nextSelectedOverlayId,
+            currentHistory.present.formEdits,
+          ),
         );
       });
     },
@@ -75,11 +86,12 @@ function useEditorOverlays() {
     (
       nextOverlays: EditorOverlay[],
       nextSelectedOverlayId = selectedOverlayIdRef.current,
+      nextFormEdits = historyRef.current.present.formEdits,
     ) => {
       setHistory((currentHistory) =>
         replaceEditorHistoryPresent(
           currentHistory,
-          createHistoryEntry(nextOverlays, nextSelectedOverlayId),
+          createHistoryEntry(nextOverlays, nextSelectedOverlayId, nextFormEdits),
         ),
       );
     },
@@ -155,7 +167,13 @@ function useEditorOverlays() {
           nextHistory.present.overlays,
         );
       } else {
-        setHistory(resetEditorHistory(nextOverlays, nextSelectedOverlayId));
+        setHistory(
+          resetEditorHistory(
+            nextOverlays,
+            nextSelectedOverlayId,
+            emptyEditorFormEdits,
+          ),
+        );
         setValidSelectedOverlayId(nextSelectedOverlayId, nextOverlays);
       }
     },
@@ -319,6 +337,37 @@ function useEditorOverlays() {
     [commitOverlayState],
   );
 
+  const updateFormValue = useCallback((value: PdfFormValue) => {
+    setHistory((currentHistory) => {
+      const nextFormEdits = updatePdfFormValue(
+        currentHistory.present.formEdits,
+        value,
+      );
+
+      return commitEditorHistory(
+        currentHistory,
+        createHistoryEntry(
+          currentHistory.present.overlays,
+          currentHistory.present.selectedOverlayId,
+          nextFormEdits,
+        ),
+      );
+    });
+  }, []);
+
+  const replaceFormEdits = useCallback((nextFormEdits: EditorFormEdits) => {
+    setHistory((currentHistory) =>
+      replaceEditorHistoryPresent(
+        currentHistory,
+        createHistoryEntry(
+          currentHistory.present.overlays,
+          currentHistory.present.selectedOverlayId,
+          nextFormEdits,
+        ),
+      ),
+    );
+  }, []);
+
   const undo = useCallback(() => {
     setHistory((currentHistory) => {
       const nextHistory = undoEditorHistory(currentHistory);
@@ -364,12 +413,14 @@ function useEditorOverlays() {
     clearSelection,
     commitHistoryFromBase,
     getHistoryEntrySnapshot,
+    formEdits,
     history,
     moveOverlayLayer,
     moveOverlayLayerInPage,
     overlays,
     redo,
     removeOverlay,
+    replaceFormEdits,
     replaceOverlays,
     resetHistory,
     selectOverlay,
@@ -380,6 +431,7 @@ function useEditorOverlays() {
     updateOverlayRotation,
     updateTextOverlay,
     updateTextOverlayDraft,
+    updateFormValue,
     updateWhiteoutOverlay,
   };
 }

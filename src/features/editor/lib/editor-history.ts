@@ -1,10 +1,18 @@
 import type {
+  EditorFormEdits,
   EditorOverlay,
   ImageOverlay,
   SignatureOverlay,
 } from "@/features/editor/editor-types";
+import {
+  areEditorFormEditsEqual,
+  cloneEditorFormEdits,
+  emptyEditorFormEdits,
+  normalizeEditorFormEdits,
+} from "@/features/editor/lib/editor-form-edits";
 
 type EditorHistoryEntry = {
+  formEdits: EditorFormEdits;
   overlays: EditorOverlay[];
   selectedOverlayId: string | null;
 };
@@ -15,24 +23,35 @@ type EditorHistoryState = {
   present: EditorHistoryEntry;
 };
 
+type RestorableEditorHistoryEntry = Partial<EditorHistoryEntry>;
+
+type RestorableEditorHistoryState = {
+  future?: RestorableEditorHistoryEntry[];
+  past?: RestorableEditorHistoryEntry[];
+  present?: RestorableEditorHistoryEntry;
+};
+
 const editorHistoryLimit = 100;
 
 function createEditorHistory(
   overlays: EditorOverlay[] = [],
   selectedOverlayId: string | null = null,
+  formEdits: EditorFormEdits = emptyEditorFormEdits,
 ): EditorHistoryState {
   return {
     future: [],
     past: [],
-    present: createHistoryEntry(overlays, selectedOverlayId),
+    present: createHistoryEntry(overlays, selectedOverlayId, formEdits),
   };
 }
 
 function createHistoryEntry(
   overlays: EditorOverlay[],
   selectedOverlayId: string | null,
+  formEdits: EditorFormEdits = emptyEditorFormEdits,
 ): EditorHistoryEntry {
   return {
+    formEdits: normalizeEditorFormEdits(formEdits),
     overlays,
     selectedOverlayId: getValidSelectedOverlayId(overlays, selectedOverlayId),
   };
@@ -45,6 +64,7 @@ function commitEditorHistory(
   const sanitizedEntry = createHistoryEntry(
     nextEntry.overlays,
     nextEntry.selectedOverlayId,
+    nextEntry.formEdits,
   );
 
   if (areHistoryEntriesEqual(history.present, sanitizedEntry)) {
@@ -66,10 +86,12 @@ function commitEditorHistoryFromBase(
   const sanitizedBaseEntry = createHistoryEntry(
     baseEntry.overlays,
     baseEntry.selectedOverlayId,
+    baseEntry.formEdits,
   );
   const sanitizedNextEntry = createHistoryEntry(
     nextEntry.overlays,
     nextEntry.selectedOverlayId,
+    nextEntry.formEdits,
   );
 
   if (areHistoryEntriesEqual(sanitizedBaseEntry, sanitizedNextEntry)) {
@@ -90,6 +112,7 @@ function replaceEditorHistoryPresent(
   const sanitizedEntry = createHistoryEntry(
     nextEntry.overlays,
     nextEntry.selectedOverlayId,
+    nextEntry.formEdits,
   );
 
   if (areHistoryEntriesEqual(history.present, sanitizedEntry)) {
@@ -105,19 +128,21 @@ function replaceEditorHistoryPresent(
 function resetEditorHistory(
   overlays: EditorOverlay[] = [],
   selectedOverlayId: string | null = null,
+  formEdits: EditorFormEdits = emptyEditorFormEdits,
 ): EditorHistoryState {
-  return createEditorHistory(overlays, selectedOverlayId);
+  return createEditorHistory(overlays, selectedOverlayId, formEdits);
 }
 
 function restoreEditorHistory(
-  history: Pick<EditorHistoryState, "future" | "past" | "present">,
+  history: RestorableEditorHistoryState | null | undefined,
 ): EditorHistoryState {
+  const future = Array.isArray(history?.future) ? history.future : [];
+  const past = Array.isArray(history?.past) ? history.past : [];
+
   return {
-    future: history.future.map(cloneRestoredHistoryEntry),
-    past: history.past
-      .map(cloneRestoredHistoryEntry)
-      .slice(-editorHistoryLimit),
-    present: cloneRestoredHistoryEntry(history.present),
+    future: future.map(cloneRestoredHistoryEntry),
+    past: past.map(cloneRestoredHistoryEntry).slice(-editorHistoryLimit),
+    present: cloneRestoredHistoryEntry(history?.present),
   };
 }
 
@@ -164,15 +189,20 @@ function getHistoryImageAssetIds(history: EditorHistoryState) {
 }
 
 function cloneHistoryEntry(entry: EditorHistoryEntry): EditorHistoryEntry {
-  return createHistoryEntry(entry.overlays, entry.selectedOverlayId);
+  return createHistoryEntry(
+    entry.overlays,
+    entry.selectedOverlayId,
+    entry.formEdits,
+  );
 }
 
 function cloneRestoredHistoryEntry(
-  entry: EditorHistoryEntry,
+  entry: RestorableEditorHistoryEntry | null | undefined,
 ): EditorHistoryEntry {
   return createHistoryEntry(
-    cloneOverlays(entry.overlays),
-    entry.selectedOverlayId,
+    cloneOverlays(entry?.overlays ?? []),
+    entry?.selectedOverlayId ?? null,
+    cloneEditorFormEdits(entry?.formEdits),
   );
 }
 
@@ -184,26 +214,42 @@ function cloneOverlays(overlays: EditorOverlay[]) {
 }
 
 function areHistoryEntriesEqual(
-  left: EditorHistoryEntry,
-  right: EditorHistoryEntry,
+  left: RestorableEditorHistoryEntry | null | undefined,
+  right: RestorableEditorHistoryEntry | null | undefined,
 ) {
-  return areOverlayListsEqual(left.overlays, right.overlays);
+  if (!left || !right) {
+    return left === right;
+  }
+
+  return (
+    areOverlayListsEqual(left.overlays ?? [], right.overlays ?? []) &&
+    areEditorFormEditsEqual(left.formEdits, right.formEdits)
+  );
 }
 
 function areEditorHistoriesEqual(
-  left: EditorHistoryState,
-  right: EditorHistoryState,
+  left: RestorableEditorHistoryState | null | undefined,
+  right: RestorableEditorHistoryState | null | undefined,
 ) {
+  if (!left || !right) {
+    return left === right;
+  }
+
+  const leftPast = Array.isArray(left.past) ? left.past : [];
+  const rightPast = Array.isArray(right.past) ? right.past : [];
+  const leftFuture = Array.isArray(left.future) ? left.future : [];
+  const rightFuture = Array.isArray(right.future) ? right.future : [];
+
   return (
-    areHistoryEntryListsEqual(left.past, right.past) &&
+    areHistoryEntryListsEqual(leftPast, rightPast) &&
     areHistoryEntriesEqual(left.present, right.present) &&
-    areHistoryEntryListsEqual(left.future, right.future)
+    areHistoryEntryListsEqual(leftFuture, rightFuture)
   );
 }
 
 function areHistoryEntryListsEqual(
-  left: EditorHistoryEntry[],
-  right: EditorHistoryEntry[],
+  left: Partial<EditorHistoryEntry>[],
+  right: Partial<EditorHistoryEntry>[],
 ) {
   return (
     left.length === right.length &&

@@ -1,18 +1,23 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { AnnotationMode } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 import { OverlayLayer } from "@/features/editor/components/OverlayLayer";
 import type {
+  EditorFormEdits,
   EditorOverlay,
   ImageAsset,
   PdfRect,
+  PdfFormValue,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
+import { PdfAnnotationLayer } from "@/features/pdf/components/PdfAnnotationLayer";
 import { PdfTextLayer } from "@/features/pdf/components/PdfTextLayer";
 import { shouldClearOverlaySelectionOnPagePointerDown } from "@/features/pdf/lib/page-pointer-events";
 import {
   cleanupPdfRender,
   type PdfRenderTask,
 } from "@/features/pdf/lib/pdf-render-cleanup";
+import type { PdfFormWidget } from "@/features/pdf/lib/pdf-form-metadata";
 import type {
   PageSize,
   PDFDocumentProxy,
@@ -23,6 +28,7 @@ type PdfPageViewProps = {
   activeImageAsset: ImageAsset | null;
   activeSignatureAsset: ImageAsset | null;
   editingOverlayId: string | null;
+  formEdits: EditorFormEdits;
   imageAssetById: ReadonlyMap<string, ImageAsset>;
   isImageToolActive: boolean;
   isMarkToolActive: boolean;
@@ -31,7 +37,9 @@ type PdfPageViewProps = {
   isWhiteoutToolActive: boolean;
   onCancelActiveTool: () => void;
   onClearSelection: () => void;
+  onCommitFormValue: (value: PdfFormValue) => void;
   onEditOverlay: (overlayId: string | null) => void;
+  onFormWidgetsChange: (pageNumber: number, widgets: PdfFormWidget[]) => void;
   onPageElementChange: (
     pageNumber: number,
     element: HTMLElement | null,
@@ -60,6 +68,7 @@ const PdfPageView = memo(function PdfPageView({
   activeImageAsset,
   activeSignatureAsset,
   editingOverlayId,
+  formEdits,
   imageAssetById,
   isImageToolActive,
   isMarkToolActive,
@@ -68,7 +77,9 @@ const PdfPageView = memo(function PdfPageView({
   isWhiteoutToolActive,
   onCancelActiveTool,
   onClearSelection,
+  onCommitFormValue,
   onEditOverlay,
+  onFormWidgetsChange,
   onPageElementChange,
   onPageSizeChange,
   onPlaceImageOverlay,
@@ -153,6 +164,7 @@ const PdfPageView = memo(function PdfPageView({
         onPageSizeChange(pageNumber, nextPageSize);
 
         renderTask = page.render({
+          annotationMode: AnnotationMode.DISABLE,
           canvas: canvasElement,
           canvasContext,
           transform:
@@ -240,6 +252,15 @@ const PdfPageView = memo(function PdfPageView({
       )}
       <canvas className="relative z-0 block" ref={canvasRef} />
       <PdfTextLayer
+        pageNumber={pageNumber}
+        pdfDocument={pdfDocument}
+        scale={scale}
+        shouldRender={shouldRender}
+      />
+      <PdfAnnotationLayer
+        formEdits={formEdits}
+        onCommitFormValue={onCommitFormValue}
+        onFormWidgetsChange={onFormWidgetsChange}
         pageNumber={pageNumber}
         pdfDocument={pdfDocument}
         scale={scale}

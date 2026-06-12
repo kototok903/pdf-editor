@@ -82,6 +82,7 @@ function isEmptyEditorHistory(history: EditorHistoryState) {
   return (
     history.future.length === 0 &&
     history.past.length === 0 &&
+    (history.present.formEdits?.values.length ?? 0) === 0 &&
     history.present.overlays.length === 0 &&
     history.present.selectedOverlayId === null
   );

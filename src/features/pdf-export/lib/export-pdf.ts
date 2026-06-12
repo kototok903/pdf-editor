@@ -2,12 +2,18 @@ import fontkit from "@pdf-lib/fontkit";
 import {
   degrees,
   LineCapStyle,
+  PDFCheckBox,
   PDFDocument,
+  PDFDropdown,
+  PDFOptionList,
   type PDFFont,
   type PDFPage,
+  PDFRadioGroup,
+  PDFTextField,
 } from "pdf-lib";
 
 import type {
+  EditorFormEdits,
   EditorOverlay,
   ImageAsset,
   ImageOverlay,
@@ -36,6 +42,9 @@ import {
 
 type ExportPdfOptions = {
   documentFonts?: DocumentTextFontOption[];
+  flattenForms?: boolean;
+  formEdits?: EditorFormEdits;
+  formFontBytes?: ArrayBuffer;
   imageAssets: ImageAsset[];
   originalPdfBytes: ArrayBuffer;
   overlays: EditorOverlay[];
@@ -52,6 +61,9 @@ type ExportContext = {
 
 async function exportPdf({
   documentFonts = [],
+  flattenForms = false,
+  formEdits = { values: [] },
+  formFontBytes,
   imageAssets,
   originalPdfBytes,
   overlays,
@@ -72,6 +84,11 @@ async function exportPdf({
 
   const pages = pdfDocument.getPages();
 
+  await applyFormEdits(context, formEdits, {
+    flattenForms,
+    formFontBytes,
+  });
+
   for (const overlay of overlays) {
     const page = pages[overlay.pageNumber - 1];
 
@@ -91,6 +108,120 @@ async function exportPdf({
   }
 
   return pdfDocument.save();
+}
+
+async function applyFormEdits(
+  context: ExportContext,
+  formEdits: EditorFormEdits,
+  {
+    flattenForms,
+    formFontBytes,
+  }: {
+    flattenForms: boolean;
+    formFontBytes?: ArrayBuffer;
+  },
+) {
+  if (formEdits.values.length === 0) {
+    return;
+  }
+
+  const form = context.pdfDocument.getForm();
+  let didApplyFormValue = false;
+
+  for (const value of formEdits.values) {
+    const field = form.getFieldMaybe(value.fieldName);
+
+    if (!field || field.isReadOnly()) {
+      continue;
+    }
+
+    switch (value.type) {
+      case "checkbox":
+        if (field instanceof PDFCheckBox) {
+          if (value.checked) {
+            field.check();
+          } else {
+            field.uncheck();
+          }
+
+          didApplyFormValue = true;
+        }
+        break;
+      case "choice":
+        if (field instanceof PDFDropdown) {
+          if (value.values.length > 0) {
+            field.select(value.values);
+          } else {
+            field.clear();
+          }
+
+          didApplyFormValue = true;
+        } else if (field instanceof PDFOptionList) {
+          if (value.values.length > 0) {
+            field.select(value.values);
+          } else {
+            field.clear();
+          }
+
+          didApplyFormValue = true;
+        }
+        break;
+      case "radio":
+        if (field instanceof PDFRadioGroup) {
+          selectRadioGroupValue(field, value.selectedValue);
+          didApplyFormValue = true;
+        }
+        break;
+      case "text":
+        if (field instanceof PDFTextField) {
+          field.setText(value.value);
+          didApplyFormValue = true;
+        }
+        break;
+    }
+  }
+
+  if (!didApplyFormValue) {
+    return;
+  }
+
+  const formFont = await getPdfFormFont(context, formFontBytes);
+
+  form.updateFieldAppearances(formFont);
+
+  if (flattenForms) {
+    form.flatten({ updateFieldAppearances: false });
+  }
+}
+
+function selectRadioGroupValue(
+  field: PDFRadioGroup,
+  selectedValue: string | null,
+) {
+  if (!selectedValue) {
+    field.clear();
+    return;
+  }
+
+  const options = field.getOptions();
+
+  if (options.includes(selectedValue)) {
+    field.select(selectedValue);
+    return;
+  }
+
+  const numericOptionIndex = Number.parseInt(selectedValue, 10);
+
+  if (
+    Number.isInteger(numericOptionIndex) &&
+    String(numericOptionIndex) === selectedValue &&
+    options[numericOptionIndex]
+  ) {
+    field.select(options[numericOptionIndex]);
+    return;
+  }
+
+  field.select(selectedValue);
 }
 
 async function drawTextOverlay(
@@ -450,6 +581,50 @@ async function getPdfFont(context: ExportContext, fontId: TextFontId) {
   context.fontCache.set(fontId, font);
 
   return font;
+}
+
+async function getPdfFormFont(
+  context: ExportContext,
+  formFontBytes?: ArrayBuffer,
+) {
+  const cacheKey = "form:liberation-sans";
+  const cachedFont = context.fontCache.get(cacheKey);
+
+  if (cachedFont) {
+    return cachedFont;
+  }
+
+  if (!context.fontkitRegistered) {
+    context.pdfDocument.registerFontkit(fontkit);
+    context.fontkitRegistered = true;
+  }
+
+  const fontBytes = formFontBytes ?? (await fetchPdfFormFontBytes());
+  const font = await context.pdfDocument.embedFont(fontBytes.slice(0), {
+    customName: "PDFEditorFormFont",
+    subset: false,
+  });
+
+  context.fontCache.set(cacheKey, font);
+
+  return font;
+}
+
+async function fetchPdfFormFontBytes() {
+  const response = await fetch(getPdfFormFontUrl());
+
+  if (!response.ok) {
+    throw new Error("Unable to load the form font for export.");
+  }
+
+  return response.arrayBuffer();
+}
+
+function getPdfFormFontUrl() {
+  return new URL(
+    `${import.meta.env.BASE_URL}pdfjs/standard_fonts/LiberationSans-Regular.ttf`,
+    globalThis.location?.href ?? import.meta.url,
+  ).toString();
 }
 
 async function getPdfDocumentFontSource(
