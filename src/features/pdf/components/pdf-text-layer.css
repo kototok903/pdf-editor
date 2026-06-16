@@ -45,6 +45,14 @@
   cursor: default;
 }
 
+.textLayer .pdf-text-layer-spacer::selection {
+  background-color: transparent;
+}
+
+.textLayer .pdf-text-layer-spacer::-moz-selection {
+  background-color: transparent;
+}
+
 .textLayer ::selection {
   background-color: rgb(96 165 250 / 0.3);
   background-color: color-mix(in srgb, AccentColor, transparent 70%);
