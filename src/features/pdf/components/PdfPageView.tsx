@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { AnnotationMode } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { AnnotationMode } from "pdfjs-dist";
 
 import { OverlayLayer } from "@/features/editor/components/OverlayLayer";
 import type {

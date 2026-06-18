@@ -1,8 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import {
-  AnnotationLayer,
-  setLayerDimensions,
-} from "pdfjs-dist/legacy/build/pdf.mjs";
+import { AnnotationLayer, setLayerDimensions } from "pdfjs-dist";
 
 import type {
   EditorFormEdits,

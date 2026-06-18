@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { TextLayer } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { TextLayer } from "pdfjs-dist";
 
 import type { PDFDocumentProxy } from "@/features/pdf/pdf-types";
 import "@/features/pdf/components/pdf-text-layer.css";
@@ -230,8 +230,10 @@ function handleSelectionChange() {
     previousSelectionRange !== null &&
     (range.compareBoundaryPoints(Range.END_TO_END, previousSelectionRange) ===
       0 ||
-      range.compareBoundaryPoints(Range.START_TO_END, previousSelectionRange) ===
-        0);
+      range.compareBoundaryPoints(
+        Range.START_TO_END,
+        previousSelectionRange,
+      ) === 0);
   const anchorNode = getSelectionAnchorNode(range, isModifyingSelectionStart);
   const anchorElement = getElementForNode(anchorNode);
   const parentTextLayer = anchorElement?.closest(".textLayer");

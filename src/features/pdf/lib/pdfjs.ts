@@ -1,8 +1,5 @@
-import {
-  GlobalWorkerOptions,
-  getDocument,
-} from "pdfjs-dist/legacy/build/pdf.mjs";
-import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.mjs?url";
+import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
 import type { PDFDocumentProxy } from "pdfjs-dist/types/src/pdf";
 
 import { isDocumentFontExtractionEnabled } from "@/features/pdf/lib/pdf-font-extraction-config";
