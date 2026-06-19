@@ -6,6 +6,20 @@ import type { EditorFormEdits } from "@/features/editor/editor-types";
 import { exportPdf } from "@/features/pdf-export/lib/export-pdf";
 
 describe("export pdf form fields", () => {
+  it("sets the exported PDF producer", async () => {
+    const originalPdfBytes = await createFormPdf();
+    const exportedBytes = await exportPdf({
+      imageAssets: [],
+      originalPdfBytes,
+      overlays: [],
+    });
+    const exportedPdf = await PDFDocument.load(exportedBytes, {
+      updateMetadata: false,
+    });
+
+    expect(exportedPdf.getProducer()).toBe("PDF Editor by kototok903");
+  });
+
   it("applies filled form values without flattening by default", async () => {
     const originalPdfBytes = await createFormPdf();
     const exportedBytes = await exportPdf({
@@ -46,9 +60,7 @@ describe("export pdf form fields", () => {
     });
     const exportedPdf = await PDFDocument.load(exportedBytes);
 
-    expect(exportedPdf.getForm().getTextField("name").getText()).toBe(
-      "Привет",
-    );
+    expect(exportedPdf.getForm().getTextField("name").getText()).toBe("Привет");
   });
 
   it("flattens form fields when requested", async () => {

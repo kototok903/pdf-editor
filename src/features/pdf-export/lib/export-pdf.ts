@@ -59,6 +59,8 @@ type ExportContext = {
   pdfDocument: PDFDocument;
 };
 
+const exportedPdfProducer = "PDF Editor by kototok903";
+
 async function exportPdf({
   documentFonts = [],
   flattenForms = false,
@@ -69,6 +71,8 @@ async function exportPdf({
   overlays,
 }: ExportPdfOptions) {
   const pdfDocument = await PDFDocument.load(originalPdfBytes);
+  pdfDocument.setProducer(exportedPdfProducer);
+
   const context: ExportContext = {
     documentFontsById: new Map(
       documentFonts.map((fontOption) => [fontOption.id, fontOption]),
