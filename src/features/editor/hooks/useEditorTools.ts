@@ -30,10 +30,7 @@ type UseEditorToolsOptions = {
   addImageFile: (file: File) => Promise<ImageAsset>;
   addImageUrl: (url: string) => Promise<ImageAsset>;
   addOverlay: (input: EditorOverlayInput) => EditorOverlay;
-  addSignatureBlob: (
-    blob: Blob,
-    fileName: string,
-  ) => Promise<ImageAsset>;
+  addSignatureBlob: (blob: Blob, fileName: string) => Promise<ImageAsset>;
   currentPage: number;
   editOverlay: (overlayId: string | null) => void;
   getCurrentPageSize: () => { height: number; width: number } | null;

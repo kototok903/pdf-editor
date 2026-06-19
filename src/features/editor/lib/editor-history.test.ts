@@ -146,32 +146,24 @@ describe("editor history", () => {
   });
 
   it("compares histories by form edits", () => {
-    const history = createEditorHistory(
-      [],
-      null,
-      {
-        values: [
-          {
-            checked: true,
-            fieldName: "agree",
-            type: "checkbox",
-          },
-        ],
-      },
-    );
-    const changedHistory = createEditorHistory(
-      [],
-      null,
-      {
-        values: [
-          {
-            checked: false,
-            fieldName: "agree",
-            type: "checkbox",
-          },
-        ],
-      },
-    );
+    const history = createEditorHistory([], null, {
+      values: [
+        {
+          checked: true,
+          fieldName: "agree",
+          type: "checkbox",
+        },
+      ],
+    });
+    const changedHistory = createEditorHistory([], null, {
+      values: [
+        {
+          checked: false,
+          fieldName: "agree",
+          type: "checkbox",
+        },
+      ],
+    });
 
     expect(areEditorHistoriesEqual(history, changedHistory)).toBe(false);
   });

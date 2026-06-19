@@ -313,9 +313,7 @@ function createPdfFormValueFromElement({
   return null;
 }
 
-function getFormElementWidgetId(
-  element: EventTarget | null,
-): string | null {
+function getFormElementWidgetId(element: EventTarget | null): string | null {
   if (!(element instanceof Element)) {
     return null;
   }
@@ -615,8 +613,8 @@ function getInitialButtonWidgetChecked(widget: PdfFormWidget) {
 
   return Boolean(
     widget.exportValue &&
-      widget.fieldValue !== "Off" &&
-      widget.fieldValue === widget.exportValue,
+    widget.fieldValue !== "Off" &&
+    widget.fieldValue === widget.exportValue,
   );
 }
 

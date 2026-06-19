@@ -24,8 +24,6 @@ describe("getSidebarThumbnailRenderPages", () => {
       pageCount: 5,
     });
 
-    expect([...pages].sort((left, right) => left - right)).toEqual([
-      1, 2, 3,
-    ]);
+    expect([...pages].sort((left, right) => left - right)).toEqual([1, 2, 3]);
   });
 });

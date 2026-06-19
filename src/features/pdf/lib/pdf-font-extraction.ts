@@ -279,9 +279,5 @@ function getPrintableAsciiCodePoints() {
   return Array.from({ length: 95 }, (_, index) => index + 32);
 }
 
-export {
-  extractPdfFonts,
-  getAvailablePdfFonts,
-  getUnavailablePdfFonts,
-};
+export { extractPdfFonts, getAvailablePdfFonts, getUnavailablePdfFonts };
 export type { AvailablePdfFont, ExtractedPdfFont };

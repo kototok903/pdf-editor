@@ -91,7 +91,11 @@ function useEditorOverlays() {
       setHistory((currentHistory) =>
         replaceEditorHistoryPresent(
           currentHistory,
-          createHistoryEntry(nextOverlays, nextSelectedOverlayId, nextFormEdits),
+          createHistoryEntry(
+            nextOverlays,
+            nextSelectedOverlayId,
+            nextFormEdits,
+          ),
         ),
       );
     },

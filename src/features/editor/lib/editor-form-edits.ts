@@ -60,7 +60,9 @@ function updatePdfFormValue(
 
   if (
     nextValues.length === formEdits.values.length &&
-    nextValues.every((nextValue, index) => nextValue === formEdits.values[index])
+    nextValues.every(
+      (nextValue, index) => nextValue === formEdits.values[index],
+    )
   ) {
     return formEdits;
   }
@@ -70,10 +72,7 @@ function updatePdfFormValue(
   };
 }
 
-function getPdfFormValue(
-  formEdits: EditorFormEdits,
-  valueKey: string,
-) {
+function getPdfFormValue(formEdits: EditorFormEdits, valueKey: string) {
   return formEdits.values.find(
     (value) => getPdfFormValueKey(value) === valueKey,
   );
@@ -105,9 +104,7 @@ function areEditorFormEditsEqual(
   return normalizedLeft.values.every((leftValue) => {
     const rightValue = rightValuesByKey.get(getPdfFormValueKey(leftValue));
 
-    return rightValue
-      ? arePdfFormValuesEqual(leftValue, rightValue)
-      : false;
+    return rightValue ? arePdfFormValuesEqual(leftValue, rightValue) : false;
   });
 }
 
