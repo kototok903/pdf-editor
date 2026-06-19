@@ -46,10 +46,8 @@ function SettingsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent aria-describedby={undefined} className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="border-b pb-4 px-4 -mx-4">
-            Settings
-          </DialogTitle>
+        <DialogHeader separated>
+          <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4">
           <div className="flex items-center justify-between gap-4">

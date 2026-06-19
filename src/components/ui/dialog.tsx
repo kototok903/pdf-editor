@@ -82,11 +82,19 @@ function DialogContent({
   );
 }
 
-function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+function DialogHeader({
+  className,
+  separated = false,
+  ...props
+}: React.ComponentProps<"div"> & { separated?: boolean }) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2", className)}
+      className={cn(
+        "flex flex-col gap-2",
+        separated ? "border-b px-4 pb-4 -mx-4" : "",
+        className,
+      )}
       {...props}
     />
   );

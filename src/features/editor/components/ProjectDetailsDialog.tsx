@@ -38,7 +38,7 @@ function ProjectDetailsDialog({
         aria-describedby={undefined}
         className="flex flex-col max-h-[min(50rem,calc(100vh-2rem))] sm:max-w-xl"
       >
-        <DialogHeader className="border-b px-4 pb-3 -mx-4">
+        <DialogHeader separated>
           <DialogTitle>Details</DialogTitle>
         </DialogHeader>
 
