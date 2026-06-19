@@ -6,6 +6,7 @@ import type { Project } from "@/features/editor/lib/editor-projects";
 import {
   formatByteSize,
   getEditedPageCount,
+  getProjectPageSize,
   getProjectDetails,
 } from "@/features/editor/lib/project-details";
 
@@ -76,5 +77,42 @@ describe("project details", () => {
       pagesEdited: 2,
     });
     expect(getProjectDetails(project).originalSize).toContain("KB");
+  });
+
+  it("shows no page size until all page sizes are available", () => {
+    const project = createTestProject([]);
+
+    expect(getProjectPageSize(project, {})).toBeNull();
+    expect(
+      getProjectPageSize(project, {
+        1: { height: 792, width: 612 },
+      }),
+    ).toBeNull();
+  });
+
+  it("formats matching page sizes in inches with orientation", () => {
+    const project = createTestProject([]);
+
+    expect(
+      getProjectPageSize(project, {
+        1: { height: 792, width: 612 },
+        2: { height: 792, width: 612 },
+        3: { height: 792, width: 612 },
+        4: { height: 792, width: 612 },
+      }),
+    ).toBe("8.5 x 11 in (portrait)");
+  });
+
+  it("shows varies when loaded page sizes differ", () => {
+    const project = createTestProject([]);
+
+    expect(
+      getProjectPageSize(project, {
+        1: { height: 792, width: 612 },
+        2: { height: 792, width: 612 },
+        3: { height: 612, width: 792 },
+        4: { height: 792, width: 612 },
+      }),
+    ).toBe("Varies");
   });
 });

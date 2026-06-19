@@ -30,6 +30,8 @@ import type { Project } from "@/features/editor/lib/editor-projects";
 import { ProjectDropdown } from "@/features/editor/components/ProjectDropdown";
 import { SidebarsToggle } from "@/features/editor/components/SidebarsToggle";
 import { Tooltip } from "@/components/ui/tooltip";
+import type { PdfDocumentMetadata } from "@/features/pdf/lib/pdf-document-details";
+import type { PageSize } from "@/features/pdf/pdf-types";
 
 type EditorToolbarProps = {
   activeProjectId: string | null;
@@ -48,6 +50,7 @@ type EditorToolbarProps = {
   isTextToolActive: boolean;
   isWhiteoutSettingsDefault: boolean;
   isWhiteoutToolActive: boolean;
+  metadata: PdfDocumentMetadata | null;
   onImportImageFromClipboard: () => void;
   onImportImageUrl: (url: string) => Promise<void>;
   onMarkSettingsChange: (patch: MarkOverlayPatch) => void;
@@ -80,6 +83,7 @@ type EditorToolbarProps = {
   onZoomIn: () => void;
   onZoomOut: () => void;
   pageCount: number;
+  pageSizes: Record<number, PageSize>;
   projects: Project[];
   signatureAssets: ImageAsset[];
   status: "empty" | "loading" | "loaded" | "error";
@@ -113,6 +117,7 @@ const EditorToolbar = memo(function EditorToolbar({
   isTextToolActive,
   isWhiteoutSettingsDefault,
   isWhiteoutToolActive,
+  metadata,
   markSettings,
   canRedo,
   canCloseProject,
@@ -149,6 +154,7 @@ const EditorToolbar = memo(function EditorToolbar({
   onZoomIn,
   onZoomOut,
   pageCount,
+  pageSizes,
   projects,
   signatureAssets,
   status,
@@ -170,6 +176,8 @@ const EditorToolbar = memo(function EditorToolbar({
         <ProjectDropdown
           hasPdf={hasPdf}
           fileName={fileName}
+          metadata={metadata}
+          pageSizes={pageSizes}
           projects={projects}
           activeProjectId={activeProjectId}
           isExporting={isExporting}

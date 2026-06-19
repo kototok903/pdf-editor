@@ -22,10 +22,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Project } from "@/features/editor/lib/editor-projects";
 import { ProjectDetailsDialog } from "@/features/editor/components/ProjectDetailsDialog";
 import { Tooltip } from "@/components/ui/tooltip";
+import type { PdfDocumentMetadata } from "@/features/pdf/lib/pdf-document-details";
+import type { PageSize } from "@/features/pdf/pdf-types";
 
 type ProjectDropdownProps = {
   hasPdf: boolean;
   fileName: string | null;
+  metadata: PdfDocumentMetadata | null;
+  pageSizes: Record<number, PageSize>;
   projects: Project[];
   activeProjectId: string | null;
   isExporting: boolean;
@@ -42,6 +46,8 @@ type ProjectDropdownProps = {
 const ProjectDropdown = memo(function ProjectDropdown({
   hasPdf,
   fileName,
+  metadata,
+  pageSizes,
   projects,
   activeProjectId,
   isExporting,
@@ -206,8 +212,10 @@ const ProjectDropdown = memo(function ProjectDropdown({
         </DropdownMenu>
       )}
       <ProjectDetailsDialog
+        metadata={metadata}
         onOpenChange={setIsDetailsDialogOpen}
         open={isDetailsDialogOpen}
+        pageSizes={pageSizes}
         project={activeProject}
       />
     </div>
