@@ -35,6 +35,7 @@ function createTestProject(patch: Partial<Project> = {}): Project {
     lastModifiedAt: 100,
     pageCount: 3,
     pdfBytes: new Uint8Array([1, 2, 3]).buffer,
+    pdfTitle: null,
     ...patch,
   };
 }
@@ -64,6 +65,7 @@ describe("editor projects", () => {
       lastModifiedAt: 500,
       pageCount: 3,
       pdfBytes: document.bytes,
+      pdfTitle: null,
     });
   });
 

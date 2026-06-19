@@ -49,6 +49,7 @@ type UseEditorProjectSessionOptions = {
   ) => Promise<LoadedPdfDocument | null>;
   openFile: (file: File) => Promise<LoadedPdfDocument | null>;
   overlays: EditorOverlay[];
+  pdfTitle: string | null;
   replaceImageAssets: (imageAssets: ImageAsset[]) => void;
   resetHistory: (
     nextOverlays?: EditorOverlay[],
@@ -92,6 +93,7 @@ function useEditorProjectSession({
   openBytes,
   openFile,
   overlays,
+  pdfTitle,
   replaceImageAssets,
   resetHistory,
   resetProjectRuntimeState,
@@ -129,6 +131,7 @@ function useEditorProjectSession({
       imageAssets,
       isReadyToPersist: isLocalDraftReady,
       overlays,
+      pdfTitle,
       projects,
     });
 
@@ -252,10 +255,9 @@ function useEditorProjectSession({
           }
 
           if (restoredDocument) {
-            const restoredHistory =
-              restoredDraft.draft.history
-                ? restoreEditorHistory(restoredDraft.draft.history)
-                : createEditorHistory(restoredDraft.draft.overlays);
+            const restoredHistory = restoredDraft.draft.history
+              ? restoreEditorHistory(restoredDraft.draft.history)
+              : createEditorHistory(restoredDraft.draft.overlays);
             resetHistory([], null, restoredHistory);
             const restoredCurrentPage = clampPageNumber(
               restoredDraft.draft.currentPage,
@@ -413,6 +415,7 @@ function useEditorProjectSession({
       document,
       history,
       lastModifiedAt: getProjectLastModifiedAt(currentProject, history),
+      pdfTitle,
     });
   }, [
     activeProjectId,
@@ -420,6 +423,7 @@ function useEditorProjectSession({
     document,
     getProjectLastModifiedAt,
     history,
+    pdfTitle,
     projects,
   ]);
 
@@ -738,6 +742,7 @@ function useEditorProjectSession({
       currentPage,
       document,
       history,
+      pdfTitle,
       lastModifiedAt:
         cachedModifiedAt?.history === history
           ? cachedModifiedAt.lastModifiedAt
@@ -753,6 +758,7 @@ function useEditorProjectSession({
     currentPage,
     document,
     history,
+    pdfTitle,
     projectModifiedAtCache,
     projects,
   ]);
@@ -932,6 +938,7 @@ function createProjectFromPersistedRecord(
     lastModifiedAt: record.updatedAt,
     pageCount: record.pageCount,
     pdfBytes: record.pdfBytes,
+    pdfTitle: record.pdfTitle ?? null,
   };
 }
 

@@ -11,6 +11,7 @@ type Project = {
   lastModifiedAt: number;
   pageCount: number;
   pdfBytes: ArrayBuffer;
+  pdfTitle: string | null;
 };
 
 type CreateProjectInput = {
@@ -19,6 +20,7 @@ type CreateProjectInput = {
   history?: EditorHistoryState;
   id?: string;
   now?: number;
+  pdfTitle?: string | null;
 };
 
 const projectIdAlphabet =
@@ -40,6 +42,7 @@ function createProject({
   history = createEditorHistory(),
   id = createProjectId(),
   now = Date.now(),
+  pdfTitle = null,
 }: CreateProjectInput): Project {
   return {
     createdAt: now,
@@ -50,6 +53,7 @@ function createProject({
     lastModifiedAt: now,
     pageCount: document.pageCount,
     pdfBytes: document.bytes,
+    pdfTitle,
   };
 }
 
@@ -60,11 +64,13 @@ function updateProjectFromDocument(
     document,
     history,
     lastModifiedAt = project.lastModifiedAt,
+    pdfTitle = project.pdfTitle,
   }: {
     currentPage: number;
     document: LoadedPdfDocument;
     history: EditorHistoryState;
     lastModifiedAt?: number;
+    pdfTitle?: string | null;
   },
 ): Project {
   return {
@@ -75,6 +81,7 @@ function updateProjectFromDocument(
     lastModifiedAt,
     pageCount: document.pageCount,
     pdfBytes: document.bytes,
+    pdfTitle,
   };
 }
 

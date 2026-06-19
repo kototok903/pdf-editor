@@ -38,6 +38,7 @@ function createTestProject(overlays: EditorOverlay[]): Project {
     lastModifiedAt: 200,
     pageCount: 4,
     pdfBytes: new Uint8Array(1536).buffer,
+    pdfTitle: null,
   };
 }
 

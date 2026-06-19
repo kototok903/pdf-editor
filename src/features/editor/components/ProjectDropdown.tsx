@@ -64,6 +64,8 @@ const ProjectDropdown = memo(function ProjectDropdown({
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const activeProject =
     projects.find((project) => project.id === activeProjectId) ?? null;
+  const activeProjectDisplayName =
+    activeProject?.pdfTitle ?? metadata?.title ?? fileName;
 
   return (
     <div>
@@ -71,7 +73,10 @@ const ProjectDropdown = memo(function ProjectDropdown({
         <Skeleton className="h-7.5 w-19.5" />
       ) : (
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-          <Tooltip tooltip={fileName ?? ""} disabled={!fileName || isOpen}>
+          <Tooltip
+            tooltip={activeProjectDisplayName ?? ""}
+            disabled={!activeProjectDisplayName || isOpen}
+          >
             <DropdownMenuTrigger asChild>
               <Button
                 className="min-w-0 justify-start gap-1.5 text-left"
@@ -82,7 +87,7 @@ const ProjectDropdown = memo(function ProjectDropdown({
                 <FileTextIcon aria-hidden="true" />
                 <span className="min-w-0">
                   <span className="block max-w-36 truncate">
-                    {fileName ?? "File"}
+                    {activeProjectDisplayName ?? "File"}
                   </span>
                 </span>
                 <ChevronDownIcon aria-hidden="true" className="shrink-0" />
@@ -155,7 +160,7 @@ const ProjectDropdown = memo(function ProjectDropdown({
                       >
                         <span className="min-w-0">
                           <span className="block truncate text-sm font-medium">
-                            {project.fileName}
+                            {getProjectDisplayName(project)}
                           </span>
                           <span className="block truncate text-xs text-muted-foreground">
                             {project.pageCount}{" "}
@@ -223,6 +228,10 @@ const ProjectDropdown = memo(function ProjectDropdown({
 });
 
 ProjectDropdown.displayName = "ProjectDropdown";
+
+function getProjectDisplayName(project: Project) {
+  return project.pdfTitle ?? project.fileName;
+}
 
 function formatProjectLastModified(lastModifiedAt: number) {
   const elapsedMs = Math.max(0, Date.now() - lastModifiedAt);

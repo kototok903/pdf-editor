@@ -36,82 +36,87 @@ function ProjectDetailsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         aria-describedby={undefined}
-        className="max-h-[min(42rem,calc(100vh-2rem))] overflow-y-auto sm:max-w-xl"
+        className="flex flex-col max-h-[min(50rem,calc(100vh-2rem))] sm:max-w-xl"
       >
         <DialogHeader className="border-b px-4 pb-3 -mx-4">
           <DialogTitle>Details</DialogTitle>
         </DialogHeader>
 
         {project && details && (
-          <div className="grid gap-4">
-            <ProjectDetailsSection>
-              <ProjectDetailRow label="File name" value={project.fileName} />
-              <ProjectDetailRow
-                label="File size"
-                value={details.originalSize}
-              />
-            </ProjectDetailsSection>
+          <div className="min-h-0 overflow-y-auto pr-4 -mr-4">
+            <div className="grid gap-4">
+              <ProjectDetailsSection>
+                <ProjectDetailRow label="File name" value={project.fileName} />
+                <ProjectDetailRow
+                  label="File size"
+                  value={details.originalSize}
+                />
+              </ProjectDetailsSection>
 
-            <ProjectDetailsSection>
-              <ProjectDetailRow label="Title" value={pdfMetadata?.title} />
-              <ProjectDetailRow label="Author" value={pdfMetadata?.author} />
-              <ProjectDetailRow label="Subject" value={pdfMetadata?.subject} />
-              <ProjectDetailRow
-                label="Keywords"
-                value={pdfMetadata?.keywords}
-              />
-              <ProjectDetailRow
-                label="File created"
-                value={
-                  pdfMetadata?.createdAt
-                    ? formatDate(pdfMetadata.createdAt)
-                    : null
-                }
-              />
-              <ProjectDetailRow
-                label="File modified"
-                value={
-                  pdfMetadata?.modifiedAt
-                    ? formatDate(pdfMetadata.modifiedAt)
-                    : null
-                }
-              />
-              <ProjectDetailRow
-                label="Application"
-                value={pdfMetadata?.application}
-              />
-            </ProjectDetailsSection>
+              <ProjectDetailsSection>
+                <ProjectDetailRow label="Title" value={pdfMetadata?.title} />
+                <ProjectDetailRow label="Author" value={pdfMetadata?.author} />
+                <ProjectDetailRow
+                  label="Subject"
+                  value={pdfMetadata?.subject}
+                />
+                <ProjectDetailRow
+                  label="Keywords"
+                  value={pdfMetadata?.keywords}
+                />
+                <ProjectDetailRow
+                  label="File created"
+                  value={
+                    pdfMetadata?.createdAt
+                      ? formatDate(pdfMetadata.createdAt)
+                      : null
+                  }
+                />
+                <ProjectDetailRow
+                  label="File modified"
+                  value={
+                    pdfMetadata?.modifiedAt
+                      ? formatDate(pdfMetadata.modifiedAt)
+                      : null
+                  }
+                />
+                <ProjectDetailRow
+                  label="Application"
+                  value={pdfMetadata?.application}
+                />
+              </ProjectDetailsSection>
 
-            <ProjectDetailsSection>
-              <ProjectDetailRow
-                label="PDF producer"
-                value={pdfMetadata?.pdfProducer}
-              />
-              <ProjectDetailRow
-                label="PDF version"
-                value={pdfMetadata?.pdfVersion}
-              />
-              <ProjectDetailRow
-                label="Page count"
-                value={new Intl.NumberFormat().format(project.pageCount)}
-              />
-              <ProjectDetailRow label="Page size" value={details.pageSize} />
-            </ProjectDetailsSection>
+              <ProjectDetailsSection>
+                <ProjectDetailRow
+                  label="PDF producer"
+                  value={pdfMetadata?.pdfProducer}
+                />
+                <ProjectDetailRow
+                  label="PDF version"
+                  value={pdfMetadata?.pdfVersion}
+                />
+                <ProjectDetailRow
+                  label="Page count"
+                  value={new Intl.NumberFormat().format(project.pageCount)}
+                />
+                <ProjectDetailRow label="Page size" value={details.pageSize} />
+              </ProjectDetailsSection>
 
-            <ProjectDetailsSection>
-              <ProjectDetailRow
-                label="Layers"
-                value={new Intl.NumberFormat().format(details.layerCount)}
-              />
-              <ProjectDetailRow
-                label="Pages edited"
-                value={new Intl.NumberFormat().format(details.pagesEdited)}
-              />
-              <ProjectDetailRow
-                label="Project modified"
-                value={formatDate(project.lastModifiedAt)}
-              />
-            </ProjectDetailsSection>
+              <ProjectDetailsSection>
+                <ProjectDetailRow
+                  label="Layers"
+                  value={new Intl.NumberFormat().format(details.layerCount)}
+                />
+                <ProjectDetailRow
+                  label="Pages edited"
+                  value={new Intl.NumberFormat().format(details.pagesEdited)}
+                />
+                <ProjectDetailRow
+                  label="Project modified"
+                  value={formatDate(project.lastModifiedAt)}
+                />
+              </ProjectDetailsSection>
+            </div>
           </div>
         )}
       </DialogContent>
@@ -121,7 +126,9 @@ function ProjectDetailsDialog({
 
 function ProjectDetailsSection({ children }: { children: ReactNode }) {
   return (
-    <dl className="grid gap-2 border-t pt-4 first:border-t-0">{children}</dl>
+    <dl className="grid gap-2 border-t not-first:pt-4 first:border-t-0">
+      {children}
+    </dl>
   );
 }
 

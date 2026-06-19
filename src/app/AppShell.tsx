@@ -555,6 +555,7 @@ function AppShell() {
     openBytes,
     openFile,
     overlays,
+    pdfTitle: pdfDocumentMetadata?.title ?? null,
     replaceImageAssets,
     resetHistory,
     resetProjectRuntimeState,

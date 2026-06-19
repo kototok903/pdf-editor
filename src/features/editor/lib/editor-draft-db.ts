@@ -24,6 +24,7 @@ type PersistedEditorProjectRecord = {
   id: string;
   pageCount: number;
   pdfBytes: ArrayBuffer;
+  pdfTitle?: string | null;
   updatedAt: number;
 };
 
@@ -36,6 +37,7 @@ type PersistedEditorDraftRecord = {
   imageAssetIds: string[];
   overlays: EditorOverlay[];
   pdfBytes: ArrayBuffer;
+  pdfTitle?: string | null;
   projectId?: string;
   projects?: PersistedEditorProjectRecord[];
   updatedAt: number;
