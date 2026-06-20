@@ -67,7 +67,7 @@ function ProjectDetailsDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           aria-describedby={undefined}
-          className="flex max-h-[min(50rem,calc(100vh-2rem))] flex-col sm:max-w-xl"
+          className="flex max-h-[min(50rem,calc(100vh-2rem))] flex-col gap-0 sm:max-w-xl"
         >
           <DialogHeader separated>
             <DialogTitle>Details</DialogTitle>
@@ -77,7 +77,7 @@ function ProjectDetailsDialog({
             <ScrollFade
               fadeColor="var(--popover)"
               outerClassName="flex flex-col min-h-0"
-              innerClassName="pr-4 -mr-4"
+              innerClassName="p-4 -mx-4"
             >
               <div className="flex flex-col gap-4">
                 <ProjectDetailsSection>
@@ -238,7 +238,7 @@ function EditProjectMetadataDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         aria-describedby={undefined}
-        className="flex max-h-[min(45rem,calc(100vh-2rem))] flex-col sm:max-w-md"
+        className="flex max-h-[min(45rem,calc(100vh-2rem))] flex-col gap-0 sm:max-w-md"
       >
         <DialogHeader separated>
           <DialogTitle>Edit metadata</DialogTitle>
@@ -248,7 +248,7 @@ function EditProjectMetadataDialog({
           <ScrollFade
             fadeColor="var(--popover)"
             outerClassName="flex flex-col min-h-0"
-            innerClassName="px-4 -mx-4"
+            innerClassName="p-4 -mx-4"
           >
             <div className="flex flex-col gap-4">
               <MetadataField
