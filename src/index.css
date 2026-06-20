@@ -419,3 +419,45 @@ body {
   .moveable-direction.moveable-direction.moveable-ne {
   cursor: n-resize;
 }
+
+/*Scroll Fade styles*/
+.scroll-fade {
+  position: relative;
+  isolation: isolate;
+  --fade-size: 24px;
+  --fade-color: var(--background);
+}
+
+.scroll-fade::before,
+.scroll-fade::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-repeat: no-repeat;
+}
+
+.scroll-fade::before {
+  background-image:
+    linear-gradient(to bottom, var(--fade-color), transparent),
+    linear-gradient(to top, var(--fade-color), transparent);
+  background-size:
+    100% calc(var(--top, 0) * var(--fade-size)),
+    100% calc(var(--bottom, 0) * var(--fade-size));
+  background-position:
+    center top,
+    center bottom;
+}
+
+.scroll-fade::after {
+  background-image:
+    linear-gradient(to right, var(--fade-color), transparent),
+    linear-gradient(to left, var(--fade-color), transparent);
+  background-size:
+    calc(var(--left, 0) * var(--fade-size)) 100%,
+    calc(var(--right, 0) * var(--fade-size)) 100%;
+  background-position:
+    left center,
+    right center;
+}

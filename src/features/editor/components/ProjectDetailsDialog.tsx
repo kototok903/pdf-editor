@@ -31,6 +31,7 @@ import {
 } from "@/features/pdf/lib/pdf-metadata";
 import type { PageSize } from "@/features/pdf/pdf-types";
 import { cn, formatDate } from "@/lib/utils";
+import ScrollFade from "@/components/ui/scroll-fade";
 
 type ProjectDetailsDialogProps = {
   editOpen: boolean;
@@ -66,14 +67,18 @@ function ProjectDetailsDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           aria-describedby={undefined}
-          className="flex max-h-[min(50rem,calc(100vh-2rem))] flex-col sm:max-w-md"
+          className="flex max-h-[min(50rem,calc(100vh-2rem))] flex-col sm:max-w-xl"
         >
           <DialogHeader separated>
             <DialogTitle>Details</DialogTitle>
           </DialogHeader>
 
           {project && details && pdfMetadata && (
-            <div className="-mr-4 min-h-0 overflow-y-auto pr-4">
+            <ScrollFade
+              fadeColor="var(--popover)"
+              outerClassName="flex flex-col min-h-0"
+              innerClassName="pr-4 -mr-4"
+            >
               <div className="flex flex-col gap-4">
                 <ProjectDetailsSection>
                   <ProjectDetailRow
@@ -153,7 +158,7 @@ function ProjectDetailsDialog({
                   />
                 </ProjectDetailsSection>
               </div>
-            </div>
+            </ScrollFade>
           )}
 
           <DialogFooter>
@@ -233,14 +238,18 @@ function EditProjectMetadataDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         aria-describedby={undefined}
-        className="flex max-h-[min(45rem,calc(100vh-2rem))] flex-col sm:max-w-2xl"
+        className="flex max-h-[min(45rem,calc(100vh-2rem))] flex-col sm:max-w-md"
       >
         <DialogHeader separated>
           <DialogTitle>Edit metadata</DialogTitle>
         </DialogHeader>
 
         {draftMetadata && (
-          <div className="min-h-0 overflow-y-auto px-4 -mx-4">
+          <ScrollFade
+            fadeColor="var(--popover)"
+            outerClassName="flex flex-col min-h-0"
+            innerClassName="px-4 -mx-4"
+          >
             <div className="flex flex-col gap-4">
               <MetadataField
                 label="Title"
@@ -301,7 +310,7 @@ function EditProjectMetadataDialog({
                 properties={draftMetadata.customProperties}
               />
             </div>
-          </div>
+          </ScrollFade>
         )}
 
         <DialogFooter>
