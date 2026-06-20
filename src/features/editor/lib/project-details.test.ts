@@ -9,6 +9,7 @@ import {
   getProjectPageSize,
   getProjectDetails,
 } from "@/features/editor/lib/project-details";
+import { emptyPdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 
 function createTextOverlay(id: string, pageNumber: number): EditorOverlay {
   return {
@@ -36,9 +37,10 @@ function createTestProject(overlays: EditorOverlay[]): Project {
     history: createEditorHistory(overlays),
     id: "project-a",
     lastModifiedAt: 200,
+    metadata: emptyPdfProjectMetadata,
+    originalMetadata: emptyPdfProjectMetadata,
     pageCount: 4,
     pdfBytes: new Uint8Array(1536).buffer,
-    pdfTitle: null,
   };
 }
 

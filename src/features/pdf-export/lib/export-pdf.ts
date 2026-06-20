@@ -3,9 +3,13 @@ import {
   degrees,
   LineCapStyle,
   PDFCheckBox,
+  PDFDict,
   PDFDocument,
   PDFDropdown,
+  PDFHexString,
+  PDFName,
   PDFOptionList,
+  PDFString,
   type PDFFont,
   type PDFPage,
   PDFRadioGroup,
@@ -28,6 +32,8 @@ import {
   type DocumentTextFontOption,
   type DocumentTextFontSource,
 } from "@/features/editor/lib/text-fonts";
+import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
+import { standardMetadataInfoKeys } from "@/features/pdf/lib/pdf-metadata";
 import {
   hexToPdfRgb,
   rectToPdfPageRect,
@@ -46,6 +52,7 @@ type ExportPdfOptions = {
   formEdits?: EditorFormEdits;
   formFontBytes?: ArrayBuffer;
   imageAssets: ImageAsset[];
+  metadata?: PdfProjectMetadata | null;
   originalPdfBytes: ArrayBuffer;
   overlays: EditorOverlay[];
 };
@@ -67,11 +74,15 @@ async function exportPdf({
   formEdits = { values: [] },
   formFontBytes,
   imageAssets,
+  metadata = null,
   originalPdfBytes,
   overlays,
 }: ExportPdfOptions) {
-  const pdfDocument = await PDFDocument.load(originalPdfBytes);
-  pdfDocument.setProducer(exportedPdfProducer);
+  const pdfDocument = await PDFDocument.load(originalPdfBytes, {
+    updateMetadata: false,
+  });
+  applyPdfMetadata(pdfDocument, metadata);
+  pdfDocument.setModificationDate(new Date());
 
   const context: ExportContext = {
     documentFontsById: new Map(
@@ -112,6 +123,101 @@ async function exportPdf({
   }
 
   return pdfDocument.save();
+}
+
+function applyPdfMetadata(
+  pdfDocument: PDFDocument,
+  metadata: PdfProjectMetadata | null,
+) {
+  if (!metadata) {
+    pdfDocument.setProducer(exportedPdfProducer);
+    return;
+  }
+
+  const info = getOrCreateInfoDict(pdfDocument);
+
+  setMetadataString(info, "Title", metadata.title);
+  setMetadataString(info, "Author", metadata.author);
+  setMetadataString(info, "Subject", metadata.subject);
+  setMetadataString(info, "Keywords", metadata.keywords);
+  setMetadataString(info, "Creator", metadata.creator);
+  setMetadataLanguage(pdfDocument, metadata.language);
+
+  if (metadata.isProducerOverridden) {
+    setMetadataString(info, "Producer", metadata.producer);
+  } else {
+    pdfDocument.setProducer(exportedPdfProducer);
+  }
+
+  if (metadata.trapped) {
+    info.set(PDFName.of("Trapped"), PDFName.of(metadata.trapped));
+  } else {
+    info.delete(PDFName.of("Trapped"));
+  }
+
+  const customPropertyKeys = new Set(
+    metadata.customProperties.map((property) => property.key.trim()),
+  );
+
+  for (const key of info.keys()) {
+    const decodedKey = key.decodeText();
+
+    if (
+      (decodedKey === "Language" ||
+        !standardMetadataInfoKeys.has(decodedKey)) &&
+      !customPropertyKeys.has(decodedKey)
+    ) {
+      info.delete(key);
+    }
+  }
+
+  for (const property of metadata.customProperties) {
+    const key = property.key.trim();
+
+    if (key) {
+      setMetadataString(info, key, property.value);
+    }
+  }
+}
+
+function setMetadataLanguage(
+  pdfDocument: PDFDocument,
+  language: string | null,
+) {
+  if (language) {
+    pdfDocument.catalog.set(PDFName.of("Lang"), PDFString.of(language));
+    return;
+  }
+
+  pdfDocument.catalog.delete(PDFName.of("Lang"));
+}
+
+function getOrCreateInfoDict(pdfDocument: PDFDocument) {
+  const infoRef = pdfDocument.context.trailerInfo.Info;
+  const existingInfo = infoRef
+    ? pdfDocument.context.lookupMaybe(infoRef, PDFDict)
+    : undefined;
+
+  if (existingInfo) {
+    return existingInfo;
+  }
+
+  const info = pdfDocument.context.obj({});
+
+  pdfDocument.context.trailerInfo.Info = pdfDocument.context.register(info);
+
+  return info;
+}
+
+function setMetadataString(info: PDFDict, key: string, value: string | null) {
+  const name = PDFName.of(key);
+
+  if (value == null) {
+    info.delete(name);
+    return;
+  }
+
+  info.set(name, PDFHexString.fromText(value));
 }
 
 async function applyFormEdits(

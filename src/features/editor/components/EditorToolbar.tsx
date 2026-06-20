@@ -30,11 +30,12 @@ import type { Project } from "@/features/editor/lib/editor-projects";
 import { ProjectDropdown } from "@/features/editor/components/ProjectDropdown";
 import { SidebarsToggle } from "@/features/editor/components/SidebarsToggle";
 import { Tooltip } from "@/components/ui/tooltip";
-import type { PdfDocumentMetadata } from "@/features/pdf/lib/pdf-document-details";
+import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import type { PageSize } from "@/features/pdf/pdf-types";
 
 type EditorToolbarProps = {
   activeProjectId: string | null;
+  activeProject: Project | null;
   activeImageAssetId: string | null;
   activeSignatureAssetId: string | null;
   documentFontOptions: DocumentTextFontMenuOption[];
@@ -50,7 +51,6 @@ type EditorToolbarProps = {
   isTextToolActive: boolean;
   isWhiteoutSettingsDefault: boolean;
   isWhiteoutToolActive: boolean;
-  metadata: PdfDocumentMetadata | null;
   onImportImageFromClipboard: () => void;
   onImportImageUrl: (url: string) => Promise<void>;
   onMarkSettingsChange: (patch: MarkOverlayPatch) => void;
@@ -74,6 +74,7 @@ type EditorToolbarProps = {
   onTextSettingsReset: () => void;
   onTextToolClick: () => void;
   onOpenSettings: () => void;
+  onUpdateActiveProjectMetadata: (metadata: PdfProjectMetadata) => void;
   onToggleLayersSidebar: () => void;
   onTogglePagesSidebar: () => void;
   onUndo: () => void;
@@ -102,6 +103,7 @@ type EditorToolbarProps = {
 
 const EditorToolbar = memo(function EditorToolbar({
   activeProjectId,
+  activeProject,
   activeImageAssetId,
   activeSignatureAssetId,
   documentFontOptions,
@@ -117,7 +119,6 @@ const EditorToolbar = memo(function EditorToolbar({
   isTextToolActive,
   isWhiteoutSettingsDefault,
   isWhiteoutToolActive,
-  metadata,
   markSettings,
   canRedo,
   canCloseProject,
@@ -145,6 +146,7 @@ const EditorToolbar = memo(function EditorToolbar({
   onTextSettingsReset,
   onTextToolClick,
   onOpenSettings,
+  onUpdateActiveProjectMetadata,
   onToggleLayersSidebar,
   onTogglePagesSidebar,
   onUndo,
@@ -174,9 +176,9 @@ const EditorToolbar = memo(function EditorToolbar({
     <header className="sticky top-0 z-20 border-b bg-toolbar text-toolbar-foreground">
       <div className="flex h-12 items-center gap-1.5 px-2.5">
         <ProjectDropdown
+          activeProject={activeProject}
           hasPdf={hasPdf}
           fileName={fileName}
-          metadata={metadata}
           pageSizes={pageSizes}
           projects={projects}
           activeProjectId={activeProjectId}
@@ -189,6 +191,7 @@ const EditorToolbar = memo(function EditorToolbar({
           onOpenProjectInNewTab={onOpenProjectInNewTab}
           onSelectProject={onSelectProject}
           onRemoveProject={onRemoveProject}
+          onUpdateActiveProjectMetadata={onUpdateActiveProjectMetadata}
         />
 
         <SidebarsToggle

@@ -1,5 +1,7 @@
 import type { EditorHistoryState } from "@/features/editor/lib/editor-history";
 import { createEditorHistory } from "@/features/editor/lib/editor-history";
+import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
+import { clonePdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 
 type Project = {
@@ -9,9 +11,10 @@ type Project = {
   history: EditorHistoryState;
   id: string;
   lastModifiedAt: number;
+  metadata?: PdfProjectMetadata;
+  originalMetadata?: PdfProjectMetadata;
   pageCount: number;
   pdfBytes: ArrayBuffer;
-  pdfTitle: string | null;
 };
 
 type CreateProjectInput = {
@@ -19,8 +22,9 @@ type CreateProjectInput = {
   document: LoadedPdfDocument;
   history?: EditorHistoryState;
   id?: string;
+  metadata?: PdfProjectMetadata;
   now?: number;
-  pdfTitle?: string | null;
+  originalMetadata?: PdfProjectMetadata;
 };
 
 const projectIdAlphabet =
@@ -41,8 +45,9 @@ function createProject({
   document,
   history = createEditorHistory(),
   id = createProjectId(),
+  metadata,
   now = Date.now(),
-  pdfTitle = null,
+  originalMetadata = metadata,
 }: CreateProjectInput): Project {
   return {
     createdAt: now,
@@ -51,9 +56,10 @@ function createProject({
     history,
     id,
     lastModifiedAt: now,
+    metadata: cloneOptionalPdfProjectMetadata(metadata),
+    originalMetadata: cloneOptionalPdfProjectMetadata(originalMetadata),
     pageCount: document.pageCount,
     pdfBytes: document.bytes,
-    pdfTitle,
   };
 }
 
@@ -64,13 +70,15 @@ function updateProjectFromDocument(
     document,
     history,
     lastModifiedAt = project.lastModifiedAt,
-    pdfTitle = project.pdfTitle,
+    metadata = project.metadata,
+    originalMetadata = project.originalMetadata,
   }: {
     currentPage: number;
     document: LoadedPdfDocument;
     history: EditorHistoryState;
     lastModifiedAt?: number;
-    pdfTitle?: string | null;
+    metadata?: PdfProjectMetadata;
+    originalMetadata?: PdfProjectMetadata;
   },
 ): Project {
   return {
@@ -79,9 +87,10 @@ function updateProjectFromDocument(
     fileName: document.fileName,
     history,
     lastModifiedAt,
+    metadata: cloneOptionalPdfProjectMetadata(metadata),
+    originalMetadata: cloneOptionalPdfProjectMetadata(originalMetadata),
     pageCount: document.pageCount,
     pdfBytes: document.bytes,
-    pdfTitle,
   };
 }
 
@@ -127,6 +136,12 @@ function sortProjectsForSwitcher(
 
 function clampProjectPage(pageNumber: number, pageCount: number) {
   return Math.min(pageCount, Math.max(1, pageNumber));
+}
+
+function cloneOptionalPdfProjectMetadata(
+  metadata: PdfProjectMetadata | undefined,
+) {
+  return metadata ? clonePdfProjectMetadata(metadata) : undefined;
 }
 
 export {

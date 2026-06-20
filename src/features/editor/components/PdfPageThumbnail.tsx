@@ -127,10 +127,7 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
           return;
         }
 
-        if (
-          error instanceof Error &&
-          error.name === "RenderingCancelledException"
-        ) {
+        if (isExpectedPdfTeardownError(error)) {
           return;
         }
 
@@ -293,5 +290,13 @@ function ThumbnailOverlay({
 
 const thumbnailWidth = 60;
 const thumbnailPlaceholderHeight = 78;
+
+function isExpectedPdfTeardownError(error: unknown) {
+  return (
+    error instanceof Error &&
+    (error.name === "RenderingCancelledException" ||
+      error.message === "Transport destroyed")
+  );
+}
 
 export { PdfPageThumbnail };

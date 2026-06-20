@@ -22,13 +22,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Project } from "@/features/editor/lib/editor-projects";
 import { ProjectDetailsDialog } from "@/features/editor/components/ProjectDetailsDialog";
 import { Tooltip } from "@/components/ui/tooltip";
-import type { PdfDocumentMetadata } from "@/features/pdf/lib/pdf-document-details";
+import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import type { PageSize } from "@/features/pdf/pdf-types";
 
 type ProjectDropdownProps = {
+  activeProject: Project | null;
   hasPdf: boolean;
   fileName: string | null;
-  metadata: PdfDocumentMetadata | null;
   pageSizes: Record<number, PageSize>;
   projects: Project[];
   activeProjectId: string | null;
@@ -41,12 +41,13 @@ type ProjectDropdownProps = {
   onOpenProjectInNewTab: (projectId: string) => void;
   onSelectProject: (projectId: string) => void;
   onRemoveProject: (projectId: string) => void;
+  onUpdateActiveProjectMetadata: (metadata: PdfProjectMetadata) => void;
 };
 
 const ProjectDropdown = memo(function ProjectDropdown({
+  activeProject,
   hasPdf,
   fileName,
-  metadata,
   pageSizes,
   projects,
   activeProjectId,
@@ -59,13 +60,13 @@ const ProjectDropdown = memo(function ProjectDropdown({
   onOpenProjectInNewTab,
   onSelectProject,
   onRemoveProject,
+  onUpdateActiveProjectMetadata,
 }: ProjectDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const activeProject =
-    projects.find((project) => project.id === activeProjectId) ?? null;
-  const activeProjectDisplayName =
-    activeProject?.pdfTitle ?? metadata?.title ?? fileName;
+  const [isEditMetadataDialogOpen, setIsEditMetadataDialogOpen] =
+    useState(false);
+  const activeProjectDisplayName = activeProject?.metadata?.title ?? fileName;
 
   return (
     <div>
@@ -217,9 +218,15 @@ const ProjectDropdown = memo(function ProjectDropdown({
         </DropdownMenu>
       )}
       <ProjectDetailsDialog
-        metadata={metadata}
+        onEdit={() => {
+          setIsDetailsDialogOpen(false);
+          setIsEditMetadataDialogOpen(true);
+        }}
+        onEditOpenChange={setIsEditMetadataDialogOpen}
         onOpenChange={setIsDetailsDialogOpen}
         open={isDetailsDialogOpen}
+        editOpen={isEditMetadataDialogOpen}
+        onUpdateMetadata={onUpdateActiveProjectMetadata}
         pageSizes={pageSizes}
         project={activeProject}
       />
@@ -230,7 +237,7 @@ const ProjectDropdown = memo(function ProjectDropdown({
 ProjectDropdown.displayName = "ProjectDropdown";
 
 function getProjectDisplayName(project: Project) {
-  return project.pdfTitle ?? project.fileName;
+  return project.metadata?.title ?? project.fileName;
 }
 
 function formatProjectLastModified(lastModifiedAt: number) {

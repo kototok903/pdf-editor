@@ -83,14 +83,10 @@ import {
   getFormElementWidgetId,
   type PdfFormWidget,
 } from "@/features/pdf/lib/pdf-form-metadata";
-import {
-  getPdfDocumentMetadata,
-  type PdfDocumentMetadata,
-} from "@/features/pdf/lib/pdf-document-details";
 import { updatePdfFormValue } from "@/features/editor/lib/editor-form-edits";
 import { isDocumentFontExtractionEnabled } from "@/features/pdf/lib/pdf-font-extraction-config";
 import { scalePageSizes } from "@/features/pdf/lib/pdf-page-size-utils";
-import type { LoadedPdfDocument, PageSize } from "@/features/pdf/pdf-types";
+import type { PageSize } from "@/features/pdf/pdf-types";
 
 const zoomStep = 0.1;
 
@@ -119,10 +115,6 @@ function AppShell() {
   const [documentFontOptions, setDocumentFontOptions] = useState<
     DocumentTextFontMenuOption[]
   >([]);
-  const [pdfDocumentMetadataState, setPdfDocumentMetadataState] = useState<{
-    document: LoadedPdfDocument;
-    metadata: PdfDocumentMetadata | null;
-  } | null>(null);
   const {
     isPagesSidebarOpen,
     markDefaults,
@@ -168,10 +160,6 @@ function AppShell() {
     openFile,
     status,
   } = usePdfDocument();
-  const pdfDocumentMetadata =
-    pdfDocumentMetadataState?.document === loadedDocument
-      ? pdfDocumentMetadataState.metadata
-      : null;
   const scannedBasePageSizes = usePdfPageSizes(loadedDocument);
   const basePageSizes = useMemo(
     () => ({
@@ -271,36 +259,6 @@ function AppShell() {
   useEffect(() => {
     globalThis.document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
-
-  useEffect(() => {
-    if (!loadedDocument) {
-      return;
-    }
-
-    let isCancelled = false;
-
-    void getPdfDocumentMetadata(loadedDocument.pdfDocument)
-      .then((metadata) => {
-        if (!isCancelled) {
-          setPdfDocumentMetadataState({
-            document: loadedDocument,
-            metadata,
-          });
-        }
-      })
-      .catch(() => {
-        if (!isCancelled) {
-          setPdfDocumentMetadataState({
-            document: loadedDocument,
-            metadata: null,
-          });
-        }
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [loadedDocument]);
 
   useEffect(() => {
     clearDocumentTextFonts();
@@ -531,6 +489,7 @@ function AppShell() {
 
   const {
     activeProjectId,
+    activeProject,
     clearProjectSessionForLocalData,
     closeActiveProject: handleCloseActiveProject,
     confirmRemoveProject: handleConfirmRemoveProject,
@@ -545,6 +504,8 @@ function AppShell() {
     selectProject: handleSelectProject,
     setIsLocalDraftReady,
     toolbarProjects,
+    ensureActiveProjectMetadata,
+    updateActiveProjectMetadata,
   } = useEditorProjectSession({
     clearFile,
     commitPendingTextEdit,
@@ -555,7 +516,6 @@ function AppShell() {
     openBytes,
     openFile,
     overlays,
-    pdfTitle: pdfDocumentMetadata?.title ?? null,
     replaceImageAssets,
     resetHistory,
     resetProjectRuntimeState,
@@ -600,6 +560,7 @@ function AppShell() {
       );
       const { exportPdf } =
         await import("@/features/pdf-export/lib/export-pdf");
+      const exportProject = await ensureActiveProjectMetadata();
       const exportedBytes = await exportPdf({
         documentFonts: documentFontOptions.filter(
           (fontOption): fontOption is DocumentTextFontOption =>
@@ -607,6 +568,7 @@ function AppShell() {
         ),
         formEdits: exportFormEdits,
         imageAssets,
+        metadata: exportProject?.metadata ?? activeProject?.metadata ?? null,
         originalPdfBytes: loadedDocument.bytes,
         overlays,
       });
@@ -633,6 +595,8 @@ function AppShell() {
     isExporting,
     loadedDocument,
     overlays,
+    activeProject,
+    ensureActiveProjectMetadata,
     updateFormValue,
   ]);
 
@@ -1033,7 +997,8 @@ function AppShell() {
           isWhiteoutSettingsDefault={isWhiteoutSettingsDefault}
           isWhiteoutToolActive={activeTool?.type === "whiteout"}
           markSettings={currentMarkSettings}
-          metadata={pdfDocumentMetadata}
+          activeProject={activeProject}
+          onUpdateActiveProjectMetadata={updateActiveProjectMetadata}
           onCloseActiveProject={handleCloseActiveProject}
           onCreateSignature={handleCreateSignature}
           onExportPdf={handleExportPdf}

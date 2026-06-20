@@ -42,7 +42,6 @@ type UseLocalDraftPersistenceOptions = {
   imageAssets: ImageAsset[];
   isReadyToPersist: boolean;
   overlays: EditorOverlay[];
-  pdfTitle: string | null;
   projects: Project[];
 };
 
@@ -54,7 +53,6 @@ function useLocalDraftPersistence({
   imageAssets,
   isReadyToPersist,
   overlays,
-  pdfTitle,
   projects,
 }: UseLocalDraftPersistenceOptions) {
   const [hydrationState, setHydrationState] =
@@ -116,7 +114,6 @@ function useLocalDraftPersistence({
         activeProjectId,
         imageAssets,
         modifiedAtCache: projectModifiedAtCacheRef.current,
-        pdfTitle,
         projects: options.projects ?? projects,
       });
     },
@@ -128,7 +125,6 @@ function useLocalDraftPersistence({
       imageAssets,
       isReadyToPersist,
       projects,
-      pdfTitle,
     ],
   );
 
@@ -159,7 +155,6 @@ function useLocalDraftPersistence({
         activeProjectId,
         imageAssets,
         modifiedAtCache: projectModifiedAtCacheRef.current,
-        pdfTitle,
         projects,
       }).catch(() => {
         // Persistence is best-effort; editing should continue.
@@ -175,7 +170,6 @@ function useLocalDraftPersistence({
     imageAssets,
     isReadyToPersist,
     overlays,
-    pdfTitle,
     projects,
   ]);
 
@@ -200,7 +194,6 @@ async function persistActiveDraft({
   activeProjectId,
   imageAssets,
   modifiedAtCache,
-  pdfTitle,
   projects,
 }: {
   activeProjectId: string | null;
@@ -209,7 +202,6 @@ async function persistActiveDraft({
   history: EditorHistoryState;
   imageAssets: ImageAsset[];
   modifiedAtCache: ProjectModifiedAtCache;
-  pdfTitle: string | null;
   projects: Project[];
 }) {
   const projectsToPersist = getProjectsToPersist({
@@ -218,7 +210,6 @@ async function persistActiveDraft({
     document,
     history,
     modifiedAtCache,
-    pdfTitle,
     projects,
   });
 
@@ -242,9 +233,10 @@ async function persistActiveDraft({
     history: activeProject.history,
     id: activeDraftKey,
     imageAssetIds,
+    metadata: activeProject.metadata,
     overlays: activeProject.history.present.overlays,
+    originalMetadata: activeProject.originalMetadata,
     pdfBytes: activeProject.pdfBytes,
-    pdfTitle: activeProject.pdfTitle,
     projectId: activeProject.id,
     projects: projectsToPersist.map((project) => ({
       createdAt: project.createdAt,
@@ -252,9 +244,10 @@ async function persistActiveDraft({
       fileName: project.fileName,
       history: project.history,
       id: project.id,
+      metadata: project.metadata,
+      originalMetadata: project.originalMetadata,
       pageCount: project.pageCount,
       pdfBytes: project.pdfBytes,
-      pdfTitle: project.pdfTitle,
       updatedAt: project.lastModifiedAt,
     })),
     updatedAt: activeProject.lastModifiedAt,
@@ -267,7 +260,6 @@ function getProjectsToPersist({
   document,
   history,
   modifiedAtCache,
-  pdfTitle,
   projects,
 }: {
   activeProjectId: string | null;
@@ -275,7 +267,6 @@ function getProjectsToPersist({
   document: LoadedPdfDocument | null;
   history: EditorHistoryState;
   modifiedAtCache: ProjectModifiedAtCache;
-  pdfTitle: string | null;
   projects: Project[];
 }) {
   if (!activeProjectId || !document) {
@@ -293,9 +284,11 @@ function getProjectsToPersist({
     lastModifiedAt: activeProject
       ? getProjectLastModifiedAt(activeProject, history, modifiedAtCache)
       : Date.now(),
+    metadata: activeProject?.metadata,
+    originalMetadata:
+      activeProject?.originalMetadata ?? activeProject?.metadata,
     pageCount: document.pageCount,
     pdfBytes: document.bytes,
-    pdfTitle,
   };
 
   if (!activeProject) {

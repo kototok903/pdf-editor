@@ -1,6 +1,13 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import {
+  PDFDict,
+  PDFDocument,
+  PDFHexString,
+  PDFName,
+  PDFString,
+  StandardFonts,
+} from "pdf-lib";
 
 import type { EditorFormEdits } from "@/features/editor/editor-types";
 import { exportPdf } from "@/features/pdf-export/lib/export-pdf";
@@ -18,6 +25,105 @@ describe("export pdf form fields", () => {
     });
 
     expect(exportedPdf.getProducer()).toBe("PDF Editor by kototok903");
+  });
+
+  it("applies editable PDF metadata and updates modification date", async () => {
+    const originalPdfBytes = await createFormPdf();
+    const exportedBytes = await exportPdf({
+      imageAssets: [],
+      metadata: {
+        author: "Ada Lovelace",
+        creator: "Forms App",
+        customProperties: [],
+        isProducerOverridden: false,
+        keywords: "math computing",
+        language: "en-US",
+        producer: "Original Producer",
+        subject: "Research",
+        title: "Notes",
+        trapped: null,
+      },
+      originalPdfBytes,
+      overlays: [],
+    });
+    const exportedPdf = await PDFDocument.load(exportedBytes, {
+      updateMetadata: false,
+    });
+
+    expect(exportedPdf.getTitle()).toBe("Notes");
+    expect(exportedPdf.getAuthor()).toBe("Ada Lovelace");
+    expect(exportedPdf.getSubject()).toBe("Research");
+    expect(exportedPdf.getKeywords()).toBe("math computing");
+    expect(exportedPdf.getCreator()).toBe("Forms App");
+    expect(exportedPdf.getProducer()).toBe("PDF Editor by kototok903");
+    expect(
+      exportedPdf.catalog.lookup(PDFName.of("Lang"), PDFString).decodeText(),
+    ).toBe("en-US");
+    expect(exportedPdf.getModificationDate()).toBeInstanceOf(Date);
+  });
+
+  it("keeps an edited PDF producer", async () => {
+    const originalPdfBytes = await createFormPdf();
+    const exportedBytes = await exportPdf({
+      imageAssets: [],
+      metadata: {
+        author: null,
+        creator: null,
+        customProperties: [],
+        isProducerOverridden: true,
+        keywords: null,
+        language: null,
+        producer: "Custom Producer",
+        subject: null,
+        title: null,
+        trapped: null,
+      },
+      originalPdfBytes,
+      overlays: [],
+    });
+    const exportedPdf = await PDFDocument.load(exportedBytes, {
+      updateMetadata: false,
+    });
+
+    expect(exportedPdf.getProducer()).toBe("Custom Producer");
+  });
+
+  it("writes trapped status and custom metadata properties", async () => {
+    const originalPdfBytes = await createFormPdf();
+    const exportedBytes = await exportPdf({
+      imageAssets: [],
+      metadata: {
+        author: null,
+        creator: null,
+        customProperties: [{ key: "Client", value: "Acme" }],
+        isProducerOverridden: false,
+        keywords: null,
+        language: null,
+        producer: null,
+        subject: null,
+        title: null,
+        trapped: "Unknown",
+      },
+      originalPdfBytes,
+      overlays: [],
+    });
+    const exportedPdf = await PDFDocument.load(exportedBytes, {
+      updateMetadata: false,
+    });
+    const infoRef = exportedPdf.context.trailerInfo.Info;
+
+    if (!infoRef) {
+      throw new Error("Expected exported PDF info dictionary.");
+    }
+
+    const info = exportedPdf.context.lookup(infoRef, PDFDict);
+
+    expect(info.lookup(PDFName.of("Trapped"), PDFName).decodeText()).toBe(
+      "Unknown",
+    );
+    expect(info.lookup(PDFName.of("Client"), PDFHexString).decodeText()).toBe(
+      "Acme",
+    );
   });
 
   it("applies filled form values without flattening by default", async () => {

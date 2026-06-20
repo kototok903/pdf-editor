@@ -1,6 +1,6 @@
 import type { EditorOverlay } from "@/features/editor/editor-types";
 import type { Project } from "@/features/editor/lib/editor-projects";
-import type { PdfDocumentMetadata } from "@/features/pdf/lib/pdf-document-details";
+import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import type { PageSize } from "@/features/pdf/pdf-types";
 
 const byteUnits = ["bytes", "KB", "MB", "GB"] as const;
@@ -8,7 +8,7 @@ const pdfPointsPerInch = 72;
 const pageSizeTolerance = 0.5;
 
 type ProjectDetails = {
-  metadata: PdfDocumentMetadata | null;
+  metadata: PdfProjectMetadata | null;
   layerCount: number;
   originalSize: string;
   pageSize: string | null;
@@ -16,7 +16,7 @@ type ProjectDetails = {
 };
 
 type GetProjectDetailsOptions = {
-  metadata?: PdfDocumentMetadata | null;
+  metadata?: PdfProjectMetadata | null;
   pageSizes?: Record<number, PageSize>;
 };
 

@@ -26,6 +26,12 @@ import {
   getProjectIdFromPath,
   isProjectPath,
 } from "@/features/editor/lib/project-route-utils";
+import {
+  createPdfProjectMetadata,
+  emptyPdfProjectMetadata,
+  type PdfProjectMetadata,
+} from "@/features/pdf/lib/pdf-metadata";
+import { getPdfDocumentMetadata } from "@/features/pdf/lib/pdf-document-details";
 import type {
   LoadedPdfDocument,
   PdfLoadStatus,
@@ -49,7 +55,6 @@ type UseEditorProjectSessionOptions = {
   ) => Promise<LoadedPdfDocument | null>;
   openFile: (file: File) => Promise<LoadedPdfDocument | null>;
   overlays: EditorOverlay[];
-  pdfTitle: string | null;
   replaceImageAssets: (imageAssets: ImageAsset[]) => void;
   resetHistory: (
     nextOverlays?: EditorOverlay[],
@@ -93,7 +98,6 @@ function useEditorProjectSession({
   openBytes,
   openFile,
   overlays,
-  pdfTitle,
   replaceImageAssets,
   resetHistory,
   resetProjectRuntimeState,
@@ -131,7 +135,6 @@ function useEditorProjectSession({
       imageAssets,
       isReadyToPersist: isLocalDraftReady,
       overlays,
-      pdfTitle,
       projects,
     });
 
@@ -226,18 +229,25 @@ function useEditorProjectSession({
             }
 
             if (restoredDocument) {
+              const restoredProject = await hydrateProjectMetadata(
+                targetProject,
+                restoredDocument,
+              );
               const restoredCurrentPage = clampPageNumber(
-                targetProject.currentPage,
+                restoredProject.currentPage,
                 restoredDocument.pageCount,
               );
 
-              resetHistory([], null, targetProject.history);
+              setProjects((currentProjects) =>
+                upsertProject(currentProjects, restoredProject),
+              );
+              resetHistory([], null, restoredProject.history);
               setCurrentPage(restoredCurrentPage);
               requestWorkspacePageScroll(setScrollToPageRequest, {
                 behavior: "auto",
                 pageNumber: restoredCurrentPage,
               });
-              setActiveProjectId(targetProject.id);
+              setActiveProjectId(restoredProject.id);
             } else {
               toast.error("Unable to restore project", {
                 description: "The saved local project could not be opened.",
@@ -268,16 +278,23 @@ function useEditorProjectSession({
               behavior: "auto",
               pageNumber: restoredCurrentPage,
             });
-            const restoredProject = createProject({
-              currentPage: restoredCurrentPage,
-              document: restoredDocument,
-              history: restoredHistory,
-              id:
-                restoredDraft.draft.projectId ??
-                initialRouteProjectId ??
-                undefined,
-              now: restoredDraft.draft.updatedAt,
-            });
+            const restoredProject = await hydrateProjectMetadata(
+              createProject({
+                currentPage: restoredCurrentPage,
+                document: restoredDocument,
+                history: restoredHistory,
+                id:
+                  restoredDraft.draft.projectId ??
+                  initialRouteProjectId ??
+                  undefined,
+                metadata: restoredDraft.draft.metadata,
+                now: restoredDraft.draft.updatedAt,
+                originalMetadata:
+                  restoredDraft.draft.originalMetadata ??
+                  restoredDraft.draft.metadata,
+              }),
+              restoredDocument,
+            );
             setProjects([restoredProject]);
             if (initialRouteProjectId === restoredProject.id) {
               setActiveProjectId(restoredProject.id);
@@ -415,7 +432,8 @@ function useEditorProjectSession({
       document,
       history,
       lastModifiedAt: getProjectLastModifiedAt(currentProject, history),
-      pdfTitle,
+      metadata: currentProject.metadata,
+      originalMetadata: currentProject.originalMetadata,
     });
   }, [
     activeProjectId,
@@ -423,7 +441,6 @@ function useEditorProjectSession({
     document,
     getProjectLastModifiedAt,
     history,
-    pdfTitle,
     projects,
   ]);
 
@@ -482,12 +499,19 @@ function useEditorProjectSession({
         return false;
       }
 
+      const restoredProject = await hydrateProjectMetadata(
+        project,
+        restoredDocument,
+      );
       const restoredCurrentPage = clampPageNumber(
-        project.currentPage,
+        restoredProject.currentPage,
         restoredDocument.pageCount,
       );
 
-      resetHistory([], null, project.history);
+      setProjects((currentProjects) =>
+        upsertProject(currentProjects, restoredProject),
+      );
+      resetHistory([], null, restoredProject.history);
       setCurrentPage(restoredCurrentPage);
       requestWorkspacePageScroll(setScrollToPageRequest, {
         behavior: "auto",
@@ -495,9 +519,9 @@ function useEditorProjectSession({
       });
 
       if (options.pathUpdate === "push") {
-        pushProjectPath(project.id);
+        pushProjectPath(restoredProject.id);
       } else if (options.pathUpdate === "replace") {
-        replaceProjectPath(project.id);
+        replaceProjectPath(restoredProject.id);
       }
 
       return true;
@@ -555,6 +579,20 @@ function useEditorProjectSession({
       pushProjectPath(project.id);
       setCurrentPage(1);
       resetHistory();
+
+      void readProjectMetadata(openedDocument).then((metadata) => {
+        setProjects((currentProjects) =>
+          currentProjects.map((currentProject) =>
+            currentProject.id === project.id
+              ? {
+                  ...currentProject,
+                  metadata: currentProject.metadata ?? metadata,
+                  originalMetadata: currentProject.originalMetadata ?? metadata,
+                }
+              : currentProject,
+          ),
+        );
+      });
     },
     [
       activateProject,
@@ -742,7 +780,6 @@ function useEditorProjectSession({
       currentPage,
       document,
       history,
-      pdfTitle,
       lastModifiedAt:
         cachedModifiedAt?.history === history
           ? cachedModifiedAt.lastModifiedAt
@@ -758,10 +795,60 @@ function useEditorProjectSession({
     currentPage,
     document,
     history,
-    pdfTitle,
     projectModifiedAtCache,
     projects,
   ]);
+
+  const activeProject = useMemo(
+    () =>
+      activeProjectId
+        ? (toolbarProjects.find((project) => project.id === activeProjectId) ??
+          null)
+        : null,
+    [activeProjectId, toolbarProjects],
+  );
+
+  const updateActiveProjectMetadata = useCallback(
+    (nextMetadata: PdfProjectMetadata) => {
+      if (!activeProjectId) {
+        return;
+      }
+
+      setProjects((currentProjects) =>
+        currentProjects.map((project) =>
+          project.id === activeProjectId
+            ? {
+                ...project,
+                lastModifiedAt: Date.now(),
+                metadata: nextMetadata,
+              }
+            : project,
+        ),
+      );
+    },
+    [activeProjectId],
+  );
+
+  const ensureActiveProjectMetadata = useCallback(async () => {
+    if (!activeProject || !document) {
+      return null;
+    }
+
+    if (activeProject.metadata && activeProject.originalMetadata) {
+      return activeProject;
+    }
+
+    const hydratedProject = await hydrateProjectMetadata(
+      activeProject,
+      document,
+    );
+
+    setProjects((currentProjects) =>
+      upsertProject(currentProjects, hydratedProject),
+    );
+
+    return hydratedProject;
+  }, [activeProject, document]);
 
   const pendingRemoveProjectFileName = useMemo(() => {
     if (!pendingRemoveProjectId) {
@@ -881,6 +968,7 @@ function useEditorProjectSession({
 
   return {
     activeProjectId,
+    activeProject,
     clearProjectSessionForLocalData,
     closeActiveProject,
     confirmRemoveProject,
@@ -897,6 +985,35 @@ function useEditorProjectSession({
     selectProject,
     setIsLocalDraftReady,
     toolbarProjects,
+    ensureActiveProjectMetadata,
+    updateActiveProjectMetadata,
+  };
+}
+
+async function readProjectMetadata(document: LoadedPdfDocument) {
+  try {
+    return createPdfProjectMetadata(
+      await getPdfDocumentMetadata(document.pdfDocument),
+    );
+  } catch {
+    return emptyPdfProjectMetadata;
+  }
+}
+
+async function hydrateProjectMetadata(
+  project: Project,
+  document: LoadedPdfDocument,
+): Promise<Project> {
+  if (project.metadata && project.originalMetadata) {
+    return project;
+  }
+
+  const metadata = await readProjectMetadata(document);
+
+  return {
+    ...project,
+    metadata: project.metadata ?? metadata,
+    originalMetadata: project.originalMetadata ?? metadata,
   };
 }
 
@@ -936,9 +1053,10 @@ function createProjectFromPersistedRecord(
       : createEditorHistory(),
     id: record.id,
     lastModifiedAt: record.updatedAt,
+    metadata: record.metadata,
+    originalMetadata: record.originalMetadata ?? record.metadata,
     pageCount: record.pageCount,
     pdfBytes: record.pdfBytes,
-    pdfTitle: record.pdfTitle ?? null,
   };
 }
 

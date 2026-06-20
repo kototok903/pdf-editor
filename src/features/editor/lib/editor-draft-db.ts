@@ -1,5 +1,6 @@
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import type { EditorHistoryState } from "@/features/editor/lib/editor-history";
+import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 
 type PersistedImageAssetRecord = {
   bytes: ArrayBuffer;
@@ -22,9 +23,10 @@ type PersistedEditorProjectRecord = {
   fileName: string;
   history?: EditorHistoryState;
   id: string;
+  metadata?: PdfProjectMetadata;
+  originalMetadata?: PdfProjectMetadata;
   pageCount: number;
   pdfBytes: ArrayBuffer;
-  pdfTitle?: string | null;
   updatedAt: number;
 };
 
@@ -35,9 +37,10 @@ type PersistedEditorDraftRecord = {
   history?: EditorHistoryState;
   id: typeof activeDraftKey;
   imageAssetIds: string[];
+  metadata?: PdfProjectMetadata;
   overlays: EditorOverlay[];
+  originalMetadata?: PdfProjectMetadata;
   pdfBytes: ArrayBuffer;
-  pdfTitle?: string | null;
   projectId?: string;
   projects?: PersistedEditorProjectRecord[];
   updatedAt: number;

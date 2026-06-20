@@ -11,6 +11,7 @@ import {
   putPersistedImageAsset,
 } from "@/features/editor/lib/editor-draft-db";
 import { createEditorHistory } from "@/features/editor/lib/editor-history";
+import { emptyPdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import type {
   PersistedEditorDraftRecord,
   PersistedImageAssetRecord,
@@ -44,7 +45,9 @@ function createDraftRecord(
     fileName: "form.pdf",
     id: activeDraftKey,
     imageAssetIds: ["image-1"],
+    metadata: emptyPdfProjectMetadata,
     overlays: [],
+    originalMetadata: emptyPdfProjectMetadata,
     pdfBytes: new Uint8Array([4, 5, 6]).buffer,
     updatedAt: 300,
     ...patch,
@@ -101,6 +104,8 @@ describe("editor draft db", () => {
             currentPage: 1,
             fileName: "a.pdf",
             id: "project-a",
+            metadata: emptyPdfProjectMetadata,
+            originalMetadata: emptyPdfProjectMetadata,
             pageCount: 2,
             pdfBytes: projectBytes,
             updatedAt: 200,
