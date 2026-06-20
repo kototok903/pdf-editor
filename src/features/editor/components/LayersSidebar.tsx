@@ -41,7 +41,7 @@ const LayersSidebar = memo(function LayersSidebar({
             ))}
           </>
         ) : (
-          <div className="size-16 rounded-md border border-dashed border-sidebar-border bg-page/70 text-center text-[11px] text-muted-foreground" />
+          <div className="size-16 rounded-md border border-dashed border-sidebar-border text-center text-[11px] text-muted-foreground" />
         )}
       </div>
     </aside>

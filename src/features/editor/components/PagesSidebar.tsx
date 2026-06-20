@@ -164,7 +164,7 @@ const PagesSidebar = memo(function PagesSidebar({
             />
           ))
         ) : (
-          <div className="w-15 h-20 rounded-md border border-dashed bg-page/70" />
+          <div className="w-15 h-20 rounded-md border border-dashed" />
         )}
       </div>
     </aside>
