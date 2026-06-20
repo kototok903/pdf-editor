@@ -24,6 +24,7 @@ import { ProjectDetailsDialog } from "@/features/editor/components/ProjectDetail
 import { Tooltip } from "@/components/ui/tooltip";
 import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import type { PageSize } from "@/features/pdf/pdf-types";
+import { cn } from "@/lib/utils";
 
 type ProjectDropdownProps = {
   activeProject: Project | null;
@@ -142,7 +143,12 @@ const ProjectDropdown = memo(function ProjectDropdown({
 
                     return (
                       <div
-                        className="grid grid-cols-[1fr_auto] items-center gap-2 rounded-md border border-transparent p-1.5 text-left outline-none hover:border-border hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 data-[active=true]:border-primary/50 data-[active=true]:bg-primary/10"
+                        className={cn(
+                          "grid grid-cols-[1fr_auto] items-center gap-2 rounded-md border border-transparent p-1.5 text-left outline-none",
+                          "hover:border-border hover:not-has-[.row-action:hover]:bg-muted",
+                          "data-[active=true]:border-primary/50 data-[active=true]:bg-primary/10",
+                          "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                        )}
                         data-active={isActive}
                         key={project.id}
                         onClick={() => {
@@ -173,7 +179,7 @@ const ProjectDropdown = memo(function ProjectDropdown({
                           {!isActive && (
                             <Button
                               aria-label={`Open ${project.fileName} in new tab`}
-                              className="size-7 p-0"
+                              className="row-action size-7 p-0"
                               onClick={(event) => {
                                 event.stopPropagation();
                                 setIsOpen(false);
@@ -190,7 +196,7 @@ const ProjectDropdown = memo(function ProjectDropdown({
                           )}
                           <Button
                             aria-label={`Remove ${project.fileName}`}
-                            className="size-7 p-0"
+                            className="row-action size-7 p-0"
                             onClick={(event) => {
                               event.stopPropagation();
                               setIsOpen(false);

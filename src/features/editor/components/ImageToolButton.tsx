@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { ImageAsset } from "@/features/editor/editor-types";
 import { getImageMetadataLabel } from "@/features/editor/lib/image-asset-utils";
+import { cn } from "@/lib/utils";
 
 type ImageToolDropdownProps = {
   activeImageAssetId: string | null;
@@ -89,7 +90,12 @@ const ImageToolButton = memo(function ImageToolButton({
           <div className="grid gap-1">
             {imageAssets.map((asset) => (
               <div
-                className="grid grid-cols-[2.5rem_1fr_auto] items-center gap-2 rounded-md border border-transparent p-1.5 text-left outline-none hover:border-border hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 data-[active=true]:border-primary/50 data-[active=true]:bg-primary/10"
+                className={cn(
+                  "grid grid-cols-[2.5rem_1fr_auto] items-center gap-2 rounded-md border border-transparent p-1.5 text-left outline-none",
+                  "hover:border-border hover:not-has-[.row-action:hover]:bg-muted",
+                  "data-[active=true]:border-primary/50 data-[active=true]:bg-primary/10",
+                  "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                )}
                 data-active={asset.id === activeImageAssetId}
                 key={asset.id}
                 onClick={() => handleSelectImageAsset(asset.id)}
@@ -119,7 +125,7 @@ const ImageToolButton = memo(function ImageToolButton({
                 </span>
                 <Button
                   aria-label={`Remove ${asset.name} from recent images`}
-                  className="size-7 p-0"
+                  className="row-action size-7 p-0"
                   onClick={(event) => {
                     event.stopPropagation();
                     onRemoveImageAssetFromRecents(asset.id);

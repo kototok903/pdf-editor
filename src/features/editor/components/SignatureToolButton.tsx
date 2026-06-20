@@ -79,10 +79,12 @@ const SignatureToolButton = memo(function SignatureToolButton({
               {signatureAssets.map((asset) => (
                 <div
                   className={cn(
-                    "grid min-h-16 grid-cols-[1fr_auto] items-center gap-2 rounded-md border border-transparent p-1.5 text-left outline-none hover:border-border hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-                    asset.id === activeSignatureAssetId &&
-                      "border-primary/50 bg-primary/10",
+                    "grid min-h-16 grid-cols-[1fr_auto] items-center gap-2 rounded-md border border-transparent p-1.5 text-left outline-none",
+                    "hover:border-border hover:not-has-[.row-action:hover]:bg-muted",
+                    "data-[active=true]:border-primary/50 data-[active=true]:bg-primary/10",
+                    "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
                   )}
+                  data-active={asset.id === activeSignatureAssetId}
                   key={asset.id}
                   onClick={() => handleSelectSignatureAsset(asset.id)}
                   onKeyDown={(event) => {
@@ -104,7 +106,7 @@ const SignatureToolButton = memo(function SignatureToolButton({
                   </span>
                   <Button
                     aria-label="Remove signature from recent signatures"
-                    className="size-7 p-0"
+                    className="row-action size-7 p-0"
                     onClick={(event) => {
                       event.stopPropagation();
                       onRemoveSignatureAssetFromRecents(asset.id);
