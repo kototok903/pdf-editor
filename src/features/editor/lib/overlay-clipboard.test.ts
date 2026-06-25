@@ -17,7 +17,7 @@ describe("overlay clipboard helpers", () => {
         fontId: "helvetica",
         fontSize: 18,
         id: "text-1",
-        pageNumber: 1,
+        pageId: "page-1",
         rect: { height: 40, width: 160, x: 24, y: 32 },
         text: "Hello",
         type: "text",
@@ -25,7 +25,7 @@ describe("overlay clipboard helpers", () => {
       {
         assetId: "asset-1",
         id: "image-1",
-        pageNumber: 1,
+        pageId: "page-1",
         rect: { height: 100, width: 120, x: 40, y: 48 },
         rotationDegrees: 45,
         sha256Signature: "signature-1",
@@ -34,7 +34,7 @@ describe("overlay clipboard helpers", () => {
       {
         assetId: "signature-asset-1",
         id: "signature-1",
-        pageNumber: 1,
+        pageId: "page-1",
         rect: { height: 52, width: 180, x: 44, y: 52 },
         rotationDegrees: 315,
         sha256Signature: "signature-sha-1",
@@ -44,14 +44,14 @@ describe("overlay clipboard helpers", () => {
         color: "#2563eb",
         id: "mark-1",
         markType: "check",
-        pageNumber: 1,
+        pageId: "page-1",
         rect: { height: 18, width: 18, x: 60, y: 72 },
         type: "mark",
       },
       {
         color: "#ffffff",
         id: "whiteout-1",
-        pageNumber: 1,
+        pageId: "page-1",
         rect: { height: 44, width: 120, x: 70, y: 82 },
         type: "whiteout",
       },
@@ -72,7 +72,7 @@ describe("overlay clipboard helpers", () => {
       fontId: "helvetica",
       fontSize: 18,
       id: "text-1",
-      pageNumber: 1,
+      pageId: "page-1",
       rect: { height: 40, width: 160, x: 24, y: 32 },
       text: "Hello",
       type: "text",
@@ -80,12 +80,12 @@ describe("overlay clipboard helpers", () => {
 
     expect(
       toOverlayInput(payload, {
-        pageNumber: 2,
+        pageId: "page-2",
         pageSize: { height: 500, width: 400 },
         pasteCount: 3,
       }),
     ).toMatchObject({
-      pageNumber: 2,
+      pageId: "page-2",
       rect: { height: 40, width: 160, x: 60, y: 68 },
     });
   });
@@ -94,7 +94,7 @@ describe("overlay clipboard helpers", () => {
     const overlay: EditorOverlay = {
       assetId: "asset-1",
       id: "image-1",
-      pageNumber: 1,
+      pageId: "page-1",
       rect: { height: 90, width: 110, x: 250, y: 240 },
       rotationDegrees: 90,
       sha256Signature: "signature-1",
@@ -105,7 +105,7 @@ describe("overlay clipboard helpers", () => {
 
     expect(
       toOverlayInput(payload, {
-        pageNumber: 2,
+        pageId: "page-2",
         pageSize,
         pasteCount: 4,
       }).rect,
@@ -127,7 +127,7 @@ describe("overlay clipboard helpers", () => {
       fontId: "helvetica",
       fontSize: 18,
       id: "text-1",
-      pageNumber: 1,
+      pageId: "page-1",
       rect: { height: 40, width: 160, x: 24, y: 32 },
       text: "Hello",
       type: "text",
@@ -153,7 +153,7 @@ describe("overlay clipboard helpers", () => {
       fontId: "helvetica",
       fontSize: 18,
       id: "text-1",
-      pageNumber: 1,
+      pageId: "page-1",
       rect: { height: 40, width: 160, x: 24, y: 32 },
       text: "Hello",
       type: "text",
@@ -178,7 +178,7 @@ describe("overlay clipboard helpers", () => {
         JSON.stringify({
           overlay: {
             assetId: "asset-1",
-            pageNumber: 1,
+            pageId: "page-1",
             rect: { height: 100, width: 120, x: 40, y: 48 },
             sha256Signature: "signature-1",
             type: "image",
@@ -198,7 +198,7 @@ describe("overlay clipboard helpers", () => {
       parseOverlayClipboardPayload(
         JSON.stringify({
           overlay: {
-            pageNumber: 1,
+            pageId: "page-1",
             rect: { height: 44, width: 120, x: 70, y: 82 },
             type: "whiteout",
           },
@@ -214,7 +214,7 @@ describe("overlay clipboard helpers", () => {
       parseOverlayClipboardPayload(
         JSON.stringify({
           overlay: {
-            pageNumber: 1,
+            pageId: "page-1",
             rect: { height: 52, width: 180, x: 44, y: 52 },
             type: "signature",
           },

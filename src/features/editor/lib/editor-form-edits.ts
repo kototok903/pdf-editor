@@ -78,8 +78,10 @@ function getPdfFormValue(formEdits: EditorFormEdits, valueKey: string) {
   );
 }
 
-function getPdfFormValueKey(value: Pick<PdfFormValue, "fieldName" | "type">) {
-  return `${value.type}:${value.fieldName}`;
+function getPdfFormValueKey(
+  value: Pick<PdfFormValue, "fieldName" | "pageId" | "type">,
+) {
+  return `${value.pageId}:${value.type}:${value.fieldName}`;
 }
 
 function areEditorFormEditsEqual(
@@ -113,7 +115,11 @@ function arePdfFormValuesEqual(left: PdfFormValue, right: PdfFormValue) {
     return true;
   }
 
-  if (left.type !== right.type || left.fieldName !== right.fieldName) {
+  if (
+    left.type !== right.type ||
+    left.fieldName !== right.fieldName ||
+    left.pageId !== right.pageId
+  ) {
     return false;
   }
 

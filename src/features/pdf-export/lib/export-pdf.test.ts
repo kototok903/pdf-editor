@@ -131,10 +131,25 @@ describe("export pdf form fields", () => {
     const exportedBytes = await exportPdf({
       formEdits: {
         values: [
-          { fieldName: "name", type: "text", value: "Ada" },
-          { checked: true, fieldName: "agree", type: "checkbox" },
-          { fieldName: "color", selectedValue: "1", type: "radio" },
-          { fieldName: "country", type: "choice", values: ["jp"] },
+          { fieldName: "name", pageId: "page-1", type: "text", value: "Ada" },
+          {
+            checked: true,
+            fieldName: "agree",
+            pageId: "page-1",
+            type: "checkbox",
+          },
+          {
+            fieldName: "color",
+            pageId: "page-1",
+            selectedValue: "1",
+            type: "radio",
+          },
+          {
+            fieldName: "country",
+            pageId: "page-1",
+            type: "choice",
+            values: ["jp"],
+          },
         ],
       },
       formFontBytes: await readFormFontBytes(),
@@ -154,7 +169,9 @@ describe("export pdf form fields", () => {
   it("supports non-latin form text with the embedded form font", async () => {
     const originalPdfBytes = await createFormPdf();
     const formEdits: EditorFormEdits = {
-      values: [{ fieldName: "name", type: "text", value: "Привет" }],
+      values: [
+        { fieldName: "name", pageId: "page-1", type: "text", value: "Привет" },
+      ],
     };
     const exportedBytes = await exportPdf({
       flattenForms: false,
@@ -174,7 +191,9 @@ describe("export pdf form fields", () => {
     const exportedBytes = await exportPdf({
       flattenForms: true,
       formEdits: {
-        values: [{ fieldName: "name", type: "text", value: "Ada" }],
+        values: [
+          { fieldName: "name", pageId: "page-1", type: "text", value: "Ada" },
+        ],
       },
       formFontBytes: await readFormFontBytes(),
       imageAssets: [],

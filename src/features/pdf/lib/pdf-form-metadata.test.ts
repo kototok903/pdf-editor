@@ -27,6 +27,7 @@ describe("pdf form metadata", () => {
         },
       ],
       2,
+      "page-2",
     );
 
     expect(widgets).toEqual([
@@ -39,6 +40,7 @@ describe("pdf form metadata", () => {
         multiSelect: false,
         options: undefined,
         pageNumber: 2,
+        pageId: "page-2",
         readOnly: false,
         rect: [10, 20, 110, 40],
       },
@@ -54,6 +56,7 @@ describe("pdf form metadata", () => {
         fieldValue: null,
         id: "10R",
         pageNumber: 1,
+        pageId: "page-1",
         readOnly: false,
         rect: [10, 20, 20, 30],
       },
@@ -64,6 +67,7 @@ describe("pdf form metadata", () => {
         fieldValue: null,
         id: "11R",
         pageNumber: 1,
+        pageId: "page-1",
         readOnly: false,
         rect: [30, 20, 40, 30],
       },
@@ -91,6 +95,7 @@ describe("pdf form metadata", () => {
           { displayValue: "Japan", exportValue: "jp" },
         ],
         pageNumber: 1,
+        pageId: "page-1",
         readOnly: false,
         rect: [10, 20, 110, 40],
       },
@@ -123,6 +128,7 @@ describe("pdf form metadata", () => {
           fieldValue: "Ada",
           id: "10R",
           pageNumber: 1,
+          pageId: "page-1",
           readOnly: false,
           rect: [10, 20, 110, 40],
         },
@@ -133,6 +139,7 @@ describe("pdf form metadata", () => {
           fieldValue: "yes",
           id: "11R",
           pageNumber: 1,
+          pageId: "page-1",
           readOnly: false,
           rect: [10, 50, 20, 60],
         },
@@ -158,8 +165,13 @@ describe("pdf form metadata", () => {
       container,
       formEdits: {
         values: [
-          { fieldName: "name", type: "text", value: "Grace" },
-          { checked: true, fieldName: "agree", type: "checkbox" },
+          { fieldName: "name", pageId: "page-1", type: "text", value: "Grace" },
+          {
+            checked: true,
+            fieldName: "agree",
+            pageId: "page-1",
+            type: "checkbox",
+          },
         ],
       },
       widgets: [
@@ -169,6 +181,7 @@ describe("pdf form metadata", () => {
           fieldValue: "Ada",
           id: "10R",
           pageNumber: 1,
+          pageId: "page-1",
           readOnly: false,
           rect: [10, 20, 110, 40],
         },
@@ -179,6 +192,7 @@ describe("pdf form metadata", () => {
           fieldValue: "Off",
           id: "11R",
           pageNumber: 1,
+          pageId: "page-1",
           readOnly: false,
           rect: [10, 50, 20, 60],
         },

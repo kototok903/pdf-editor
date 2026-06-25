@@ -30,6 +30,7 @@ import {
   SettingsDialog,
 } from "@/features/editor/components/SettingsDialog";
 import type {
+  DocumentPage,
   EditorOverlay,
   ImageAsset,
   MarkOverlay,
@@ -54,6 +55,10 @@ import {
 } from "@/features/editor/hooks/useEditorPreferences";
 import { supportedImageAcceptValue } from "@/features/editor/lib/image-asset-utils";
 import { getPageLayerOverlays } from "@/features/editor/lib/layer-sidebar-utils";
+import {
+  getPageIdForVisiblePage,
+  getVisiblePageNumberForPageId,
+} from "@/features/editor/lib/document-pages";
 import { defaultMarkSettings } from "@/features/editor/lib/mark-definitions";
 import {
   defaultTextOverlay,
@@ -131,6 +136,7 @@ function AppShell() {
     canUndo,
     clearSelection,
     commitHistoryFromBase,
+    documentPages,
     getHistoryEntrySnapshot,
     formEdits,
     history,
@@ -184,7 +190,8 @@ function AppShell() {
     recentSignatureAssets,
     showImageAssetInRecents,
   } = useImageAssets();
-  const overlaysByPage = useStableOverlaysByPage(overlays);
+  const currentPageId = getPageIdForVisiblePage(documentPages, currentPage);
+  const overlaysByPage = useStableOverlaysByPage(overlays, documentPages);
   const formFieldRegistry = useMemo(
     () =>
       createPdfFormFieldRegistry(
@@ -199,8 +206,11 @@ function AppShell() {
   const currentPageOverlays =
     overlaysByPage.get(currentPage) ?? emptyEditorOverlays;
   const currentPageLayerOverlays = useMemo(
-    () => getPageLayerOverlays(currentPageOverlays, currentPage),
-    [currentPage, currentPageOverlays],
+    () =>
+      currentPageId
+        ? getPageLayerOverlays(currentPageOverlays, currentPageId)
+        : emptyEditorOverlays,
+    [currentPageId, currentPageOverlays],
   );
 
   const selectedTextOverlay = useMemo(
@@ -231,7 +241,10 @@ function AppShell() {
     () => overlays.find((overlay) => overlay.id === selectedOverlayId) ?? null,
     [overlays, selectedOverlayId],
   );
-  const selectedOverlayPageNumber = selectedOverlay?.pageNumber ?? null;
+  const selectedOverlayPageNumber = getVisiblePageNumberForPageId(
+    documentPages,
+    selectedOverlay?.pageId ?? null,
+  );
 
   const currentTextSettings = selectedTextOverlay ?? textDefaults;
   const currentMarkSettings = selectedMarkOverlay ?? markDefaults;
@@ -391,6 +404,7 @@ function AppShell() {
     addOverlay,
     addSignatureBlob,
     currentPage,
+    documentPages,
     editOverlay: handleEditOverlay,
     getCurrentPageSize,
     imageAssets,
@@ -412,6 +426,7 @@ function AppShell() {
     addSignatureBlob,
     addRenderableOverlay,
     currentPage,
+    documentPages,
     getCurrentPageSize,
     getCurrentTextDefaults,
     imageAssets,
@@ -436,6 +451,7 @@ function AppShell() {
   }, [clearEditing, commitPendingTextEdit, redo, resetActiveTool]);
 
   useEditorKeyboardShortcuts({
+    documentPages,
     editingOverlayId,
     hasActiveTool: activeTool !== null,
     onClearActiveTool: handleClearActiveTool,
@@ -569,6 +585,7 @@ function AppShell() {
         formEdits: exportFormEdits,
         imageAssets,
         metadata: exportProject?.metadata ?? activeProject?.metadata ?? null,
+        documentPages,
         originalPdfBytes: loadedDocument.bytes,
         overlays,
       });
@@ -589,6 +606,7 @@ function AppShell() {
     clearEditing,
     commitPendingTextEdit,
     documentFontOptions,
+    documentPages,
     formEdits,
     formFieldRegistry,
     imageAssets,
@@ -957,6 +975,36 @@ function AppShell() {
     },
     [handleRequestWorkspacePageScroll],
   );
+  const handleMoveOverlayLayerByVisiblePage = useCallback(
+    ({
+      insertBelowOverlayId,
+      overlayId,
+      pageNumber,
+      targetPageSize,
+      trackHistory,
+    }: {
+      insertBelowOverlayId?: string | null;
+      overlayId: string;
+      pageNumber: number;
+      targetPageSize?: { height: number; width: number } | null;
+      trackHistory?: boolean;
+    }) => {
+      const pageId = getPageIdForVisiblePage(documentPages, pageNumber);
+
+      if (!pageId) {
+        return;
+      }
+
+      moveOverlayLayer({
+        insertBelowOverlayId,
+        overlayId,
+        pageId,
+        targetPageSize,
+        trackHistory,
+      });
+    },
+    [documentPages, moveOverlayLayer],
+  );
 
   return (
     <TooltipProvider delayDuration={700}>
@@ -1043,7 +1091,8 @@ function AppShell() {
           <SidebarDragDropProvider
             onCommitHistoryFromBase={commitHistoryFromBase}
             currentPage={currentPage}
-            moveOverlayLayer={moveOverlayLayer}
+            documentPages={documentPages}
+            moveOverlayLayer={handleMoveOverlayLayerByVisiblePage}
             onCurrentPageChange={setCurrentPage}
             onGetHistoryEntrySnapshot={getHistoryEntrySnapshot}
             onRequestWorkspacePageScroll={handleRequestWorkspacePageScroll}
@@ -1075,6 +1124,7 @@ function AppShell() {
           <DocumentWorkspace
             currentPage={currentPage}
             document={loadedDocument}
+            documentPages={documentPages}
             editingOverlayId={editingOverlayId}
             error={error}
             formEdits={formEdits}
@@ -1198,7 +1248,10 @@ function getExportErrorMessage(error: unknown) {
 
 const emptyEditorOverlays: EditorOverlay[] = [];
 
-function useStableOverlaysByPage(overlays: EditorOverlay[]) {
+function useStableOverlaysByPage(
+  overlays: EditorOverlay[],
+  documentPages: DocumentPage[],
+) {
   const previousOverlaysByPageRef =
     useRef<ReadonlyMap<number, EditorOverlay[]>>(emptyOverlaysByPage);
 
@@ -1207,30 +1260,41 @@ function useStableOverlaysByPage(overlays: EditorOverlay[]) {
     const previousOverlaysByPage = previousOverlaysByPageRef.current;
     const nextOverlaysByPage = groupOverlaysByPage(
       overlays,
+      documentPages,
       previousOverlaysByPage,
     );
 
     // eslint-disable-next-line react-hooks/refs -- This is a memo cache update for the next render, not render data.
     previousOverlaysByPageRef.current = nextOverlaysByPage;
     return nextOverlaysByPage;
-  }, [overlays]);
+  }, [documentPages, overlays]);
 }
 
 const emptyOverlaysByPage = new Map<number, EditorOverlay[]>();
 
 function groupOverlaysByPage(
   overlays: EditorOverlay[],
+  documentPages: DocumentPage[],
   previousOverlaysByPage: ReadonlyMap<number, EditorOverlay[]>,
 ) {
   const nextOverlaysByPage = new Map<number, EditorOverlay[]>();
+  const visiblePageById = new Map(
+    documentPages.map((page, index) => [page.id, index + 1] as const),
+  );
 
   for (const overlay of overlays) {
-    const pageOverlays = nextOverlaysByPage.get(overlay.pageNumber);
+    const pageNumber = visiblePageById.get(overlay.pageId);
+
+    if (!pageNumber) {
+      continue;
+    }
+
+    const pageOverlays = nextOverlaysByPage.get(pageNumber);
 
     if (pageOverlays) {
       pageOverlays.push(overlay);
     } else {
-      nextOverlaysByPage.set(overlay.pageNumber, [overlay]);
+      nextOverlaysByPage.set(pageNumber, [overlay]);
     }
   }
 

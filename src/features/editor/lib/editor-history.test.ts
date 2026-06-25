@@ -22,7 +22,7 @@ function createTextOverlay(
     fontId: "helvetica",
     fontSize: 16,
     id: "text-1",
-    pageNumber: 1,
+    pageId: "page-1",
     rect: { height: 40, width: 120, x: 20, y: 30 },
     text: "Text",
     type: "text",
@@ -36,7 +36,7 @@ function createImageOverlay(
   return {
     assetId: "image-1",
     id: "overlay-image-1",
-    pageNumber: 1,
+    pageId: "page-1",
     rect: { height: 40, width: 80, x: 30, y: 40 },
     rotationDegrees: 0,
     sha256Signature: "signature-1",
@@ -51,7 +51,7 @@ function createSignatureOverlay(
   return {
     assetId: "signature-asset-1",
     id: "overlay-signature-1",
-    pageNumber: 1,
+    pageId: "page-1",
     rect: { height: 42, width: 160, x: 34, y: 44 },
     rotationDegrees: 0,
     sha256Signature: "signature-sha-1",
@@ -128,6 +128,7 @@ describe("editor history", () => {
         values: [
           {
             fieldName: "name",
+            pageId: "page-1",
             type: "text",
             value: "Ada",
           },
@@ -139,6 +140,7 @@ describe("editor history", () => {
     expect(committedHistory.present.formEdits.values).toEqual([
       {
         fieldName: "name",
+        pageId: "page-1",
         type: "text",
         value: "Ada",
       },
@@ -151,6 +153,7 @@ describe("editor history", () => {
         {
           checked: true,
           fieldName: "agree",
+          pageId: "page-1",
           type: "checkbox",
         },
       ],
@@ -160,6 +163,7 @@ describe("editor history", () => {
         {
           checked: false,
           fieldName: "agree",
+          pageId: "page-1",
           type: "checkbox",
         },
       ],

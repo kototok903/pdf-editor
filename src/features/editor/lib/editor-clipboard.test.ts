@@ -32,7 +32,7 @@ describe("editor clipboard helpers", () => {
     const overlay: EditorOverlay = {
       assetId: "asset-1",
       id: "image-1",
-      pageNumber: 1,
+      pageId: "page-1",
       rect: { height: 100, width: 120, x: 40, y: 48 },
       rotationDegrees: 0,
       sha256Signature: "signature-1",
@@ -53,7 +53,7 @@ describe("editor clipboard helpers", () => {
       color: "#2563eb",
       id: "mark-1",
       markType: "check",
-      pageNumber: 1,
+      pageId: "page-1",
       rect: { height: 18, width: 18, x: 60, y: 72 },
       type: "mark",
     };
@@ -158,7 +158,7 @@ function textOverlay(): EditorOverlay {
     fontId: "helvetica",
     fontSize: 18,
     id: "text-1",
-    pageNumber: 1,
+    pageId: "page-1",
     rect: { height: 40, width: 160, x: 24, y: 32 },
     text: "Hello",
     type: "text",

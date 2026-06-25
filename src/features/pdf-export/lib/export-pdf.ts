@@ -19,6 +19,7 @@ import {
 import type {
   EditorFormEdits,
   EditorOverlay,
+  DocumentPage,
   ImageAsset,
   ImageOverlay,
   MarkOverlay,
@@ -47,6 +48,7 @@ import {
 } from "@/features/pdf-export/lib/export-text-utils";
 
 type ExportPdfOptions = {
+  documentPages?: DocumentPage[];
   documentFonts?: DocumentTextFontOption[];
   flattenForms?: boolean;
   formEdits?: EditorFormEdits;
@@ -69,6 +71,7 @@ type ExportContext = {
 const exportedPdfProducer = "PDF Editor by kototok903";
 
 async function exportPdf({
+  documentPages = [],
   documentFonts = [],
   flattenForms = false,
   formEdits = { values: [] },
@@ -98,6 +101,9 @@ async function exportPdf({
   };
 
   const pages = pdfDocument.getPages();
+  const pageIndexById = new Map(
+    documentPages.map((documentPage, index) => [documentPage.id, index]),
+  );
 
   await applyFormEdits(context, formEdits, {
     flattenForms,
@@ -105,7 +111,8 @@ async function exportPdf({
   });
 
   for (const overlay of overlays) {
-    const page = pages[overlay.pageNumber - 1];
+    const pageIndex = pageIndexById.get(overlay.pageId);
+    const page = pageIndex === undefined ? null : pages[pageIndex];
 
     if (!page) {
       continue;

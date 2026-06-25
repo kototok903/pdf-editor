@@ -7,7 +7,10 @@ import {
 } from "@dnd-kit/react";
 import { isSortableOperation } from "@dnd-kit/react/sortable";
 
-import type { EditorOverlay } from "@/features/editor/editor-types";
+import type {
+  DocumentPage,
+  EditorOverlay,
+} from "@/features/editor/editor-types";
 import type { EditorHistoryEntry } from "@/features/editor/lib/editor-history";
 import {
   getPageNumberFromPageDropId,
@@ -17,6 +20,7 @@ import {
   sidebarDndSensors,
 } from "@/features/editor/components/sidebar-dnd";
 import { getPageLayerOverlays } from "@/features/editor/lib/layer-sidebar-utils";
+import { getPageIdForVisiblePage } from "@/features/editor/lib/document-pages";
 
 type LayerDragSnapshot = {
   currentPage: number;
@@ -28,6 +32,7 @@ type LayerDragSnapshot = {
 type SidebarDragDropProviderProps = {
   children: ReactNode;
   currentPage: number;
+  documentPages: DocumentPage[];
   moveOverlayLayer: ({
     insertBelowOverlayId,
     overlayId,
@@ -58,6 +63,7 @@ type SidebarDragDropProviderProps = {
 function SidebarDragDropProvider({
   children,
   currentPage,
+  documentPages,
   moveOverlayLayer,
   onCommitHistoryFromBase,
   onCurrentPageChange,
@@ -238,9 +244,12 @@ function SidebarDragDropProvider({
             typeof sortableSource.group === "number"
               ? sortableSource.group
               : currentPage;
-          const pageOverlayIds = getPageLayerOverlays(overlays, pageNumber).map(
-            (overlay) => overlay.id,
-          );
+          const pageId = getPageIdForVisiblePage(documentPages, pageNumber);
+          const pageOverlayIds = pageId
+            ? getPageLayerOverlays(overlays, pageId).map(
+                (overlay) => overlay.id,
+              )
+            : [];
           const pageOverlayIdsWithoutActive = pageOverlayIds.filter(
             (overlayId) => overlayId !== activeOverlayId,
           );
@@ -273,6 +282,7 @@ function SidebarDragDropProvider({
     [
       clearPageHoverMoveTimeout,
       currentPage,
+      documentPages,
       moveDraggedOverlayToPage,
       moveOverlayLayer,
       onCommitHistoryFromBase,

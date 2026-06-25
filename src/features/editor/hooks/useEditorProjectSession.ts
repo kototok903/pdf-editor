@@ -578,7 +578,7 @@ function useEditorProjectSession({
       setActiveProjectId(project.id);
       pushProjectPath(project.id);
       setCurrentPage(1);
-      resetHistory();
+      resetHistory([], null, project.history);
 
       void readProjectMetadata(openedDocument).then((metadata) => {
         setProjects((currentProjects) =>
@@ -1047,6 +1047,7 @@ function createProjectFromPersistedRecord(
   return {
     createdAt: record.createdAt,
     currentPage: record.currentPage,
+    documentSources: record.documentSources,
     fileName: record.fileName,
     history: record.history
       ? restoreEditorHistory(record.history)

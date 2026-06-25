@@ -11,7 +11,7 @@ const overlays: EditorOverlay[] = [
   {
     color: "#ffffff",
     id: "page-1-bottom",
-    pageNumber: 1,
+    pageId: "page-1",
     rect: { height: 10, width: 10, x: 0, y: 0 },
     type: "whiteout",
   },
@@ -19,7 +19,7 @@ const overlays: EditorOverlay[] = [
     color: "#000000",
     id: "page-2-only",
     markType: "check",
-    pageNumber: 2,
+    pageId: "page-2",
     rect: { height: 10, width: 10, x: 0, y: 0 },
     type: "mark",
   },
@@ -28,7 +28,7 @@ const overlays: EditorOverlay[] = [
     fontId: "helvetica",
     fontSize: 16,
     id: "page-1-top",
-    pageNumber: 1,
+    pageId: "page-1",
     rect: { height: 10, width: 10, x: 0, y: 0 },
     text: "Hello",
     type: "text",
@@ -39,7 +39,7 @@ const mixedPageLayerOverlays: EditorOverlay[] = [
   {
     color: "#ffffff",
     id: "page-1-bottom",
-    pageNumber: 1,
+    pageId: "page-1",
     rect: { height: 10, width: 10, x: 0, y: 0 },
     type: "whiteout",
   },
@@ -47,7 +47,7 @@ const mixedPageLayerOverlays: EditorOverlay[] = [
     color: "#000000",
     id: "page-2-first",
     markType: "check",
-    pageNumber: 2,
+    pageId: "page-2",
     rect: { height: 10, width: 10, x: 0, y: 0 },
     type: "mark",
   },
@@ -55,7 +55,7 @@ const mixedPageLayerOverlays: EditorOverlay[] = [
     color: "#000000",
     id: "page-1-middle",
     markType: "x",
-    pageNumber: 1,
+    pageId: "page-1",
     rect: { height: 10, width: 10, x: 0, y: 0 },
     type: "mark",
   },
@@ -63,7 +63,7 @@ const mixedPageLayerOverlays: EditorOverlay[] = [
     color: "#000000",
     id: "page-2-second",
     markType: "dot",
-    pageNumber: 2,
+    pageId: "page-2",
     rect: { height: 10, width: 10, x: 0, y: 0 },
     type: "mark",
   },
@@ -72,7 +72,7 @@ const mixedPageLayerOverlays: EditorOverlay[] = [
     fontId: "helvetica",
     fontSize: 16,
     id: "page-1-top",
-    pageNumber: 1,
+    pageId: "page-1",
     rect: { height: 10, width: 10, x: 0, y: 0 },
     text: "Hello",
     type: "text",
@@ -82,7 +82,7 @@ const mixedPageLayerOverlays: EditorOverlay[] = [
 describe("layer sidebar utils", () => {
   it("returns only active-page overlays in topmost-first order", () => {
     expect(
-      getPageLayerOverlays(overlays, 1).map((overlay) => overlay.id),
+      getPageLayerOverlays(overlays, "page-1").map((overlay) => overlay.id),
     ).toEqual(["page-1-top", "page-1-bottom"]);
   });
 
@@ -90,7 +90,7 @@ describe("layer sidebar utils", () => {
     const nextOverlays = moveOverlayToPageLayer(overlays, {
       insertBelowOverlayId: "page-1-top",
       overlayId: "page-1-bottom",
-      pageNumber: 1,
+      pageId: "page-1",
     });
 
     expect(nextOverlays.map((overlay) => overlay.id)).toEqual([
@@ -99,34 +99,34 @@ describe("layer sidebar utils", () => {
       "page-1-top",
     ]);
     expect(
-      getPageLayerOverlays(nextOverlays, 1).map((overlay) => overlay.id),
+      getPageLayerOverlays(nextOverlays, "page-1").map((overlay) => overlay.id),
     ).toEqual(["page-1-top", "page-1-bottom"]);
   });
 
   it("moves an overlay to the top of the target page without a reference overlay", () => {
     const nextOverlays = moveOverlayToPageLayer(overlays, {
       overlayId: "page-1-bottom",
-      pageNumber: 1,
+      pageId: "page-1",
     });
 
     expect(
-      getPageLayerOverlays(nextOverlays, 1).map((overlay) => overlay.id),
+      getPageLayerOverlays(nextOverlays, "page-1").map((overlay) => overlay.id),
     ).toEqual(["page-1-bottom", "page-1-top"]);
   });
 
   it("moves an overlay to an empty target page without a reference overlay", () => {
     const nextOverlays = moveOverlayToPageLayer(overlays, {
       overlayId: "page-1-top",
-      pageNumber: 3,
+      pageId: "page-3",
     });
 
     expect(
-      getPageLayerOverlays(nextOverlays, 3).map((overlay) => overlay.id),
+      getPageLayerOverlays(nextOverlays, "page-3").map((overlay) => overlay.id),
     ).toEqual(["page-1-top"]);
     expect(
       nextOverlays.find((overlay) => overlay.id === "page-1-top"),
     ).toMatchObject({
-      pageNumber: 3,
+      pageId: "page-3",
     });
   });
 
@@ -137,20 +137,20 @@ describe("layer sidebar utils", () => {
           color: "#000000",
           id: "wide-page-mark",
           markType: "check",
-          pageNumber: 1,
+          pageId: "page-1",
           rect: { height: 40, width: 100, x: 560, y: 30 },
           type: "mark",
         },
       ],
       {
         overlayId: "wide-page-mark",
-        pageNumber: 2,
+        pageId: "page-2",
         targetPageSize: { height: 800, width: 300 },
       },
     );
 
     expect(nextOverlays[0]).toMatchObject({
-      pageNumber: 2,
+      pageId: "page-2",
       rect: { height: 40, width: 100, x: 292, y: 30 },
     });
   });
@@ -162,21 +162,21 @@ describe("layer sidebar utils", () => {
           color: "#000000",
           id: "same-page-mark",
           markType: "check",
-          pageNumber: 1,
+          pageId: "page-1",
           rect: { height: 40, width: 100, x: 560, y: 30 },
           type: "mark",
         },
         {
           color: "#ffffff",
           id: "same-page-whiteout",
-          pageNumber: 1,
+          pageId: "page-1",
           rect: { height: 10, width: 10, x: 0, y: 0 },
           type: "whiteout",
         },
       ],
       {
         overlayId: "same-page-mark",
-        pageNumber: 1,
+        pageId: "page-1",
         targetPageSize: { height: 800, width: 300 },
       },
     );
@@ -191,7 +191,7 @@ describe("layer sidebar utils", () => {
       moveOverlayToPageLayer(overlays, {
         insertBelowOverlayId: "missing",
         overlayId: "page-1-top",
-        pageNumber: 1,
+        pageId: "page-1",
       }),
     ).toBe(overlays);
   });
@@ -211,7 +211,7 @@ describe("layer sidebar utils", () => {
       "page-1-middle",
     ]);
     expect(
-      getPageLayerOverlays(nextOverlays, 1).map((overlay) => overlay.id),
+      getPageLayerOverlays(nextOverlays, "page-1").map((overlay) => overlay.id),
     ).toEqual(["page-1-middle", "page-1-top", "page-1-bottom"]);
   });
 
@@ -230,7 +230,7 @@ describe("layer sidebar utils", () => {
       "page-1-bottom",
     ]);
     expect(
-      getPageLayerOverlays(nextOverlays, 1).map((overlay) => overlay.id),
+      getPageLayerOverlays(nextOverlays, "page-1").map((overlay) => overlay.id),
     ).toEqual(["page-1-bottom", "page-1-top", "page-1-middle"]);
   });
 
@@ -249,7 +249,7 @@ describe("layer sidebar utils", () => {
       "page-1-top",
     ]);
     expect(
-      getPageLayerOverlays(nextOverlays, 1).map((overlay) => overlay.id),
+      getPageLayerOverlays(nextOverlays, "page-1").map((overlay) => overlay.id),
     ).toEqual(["page-1-top", "page-1-bottom", "page-1-middle"]);
   });
 
@@ -268,7 +268,7 @@ describe("layer sidebar utils", () => {
       "page-2-second",
     ]);
     expect(
-      getPageLayerOverlays(nextOverlays, 1).map((overlay) => overlay.id),
+      getPageLayerOverlays(nextOverlays, "page-1").map((overlay) => overlay.id),
     ).toEqual(["page-1-middle", "page-1-bottom", "page-1-top"]);
   });
 

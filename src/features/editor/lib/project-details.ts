@@ -36,7 +36,7 @@ function getProjectDetails(
 }
 
 function getEditedPageCount(overlays: EditorOverlay[]) {
-  return new Set(overlays.map((overlay) => overlay.pageNumber)).size;
+  return new Set(overlays.map((overlay) => overlay.pageId)).size;
 }
 
 function formatByteSize(byteCount: number) {

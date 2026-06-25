@@ -1,4 +1,5 @@
 import type {
+  DocumentPage,
   EditorFormEdits,
   EditorOverlay,
   ImageOverlay,
@@ -12,6 +13,7 @@ import {
 } from "@/features/editor/lib/editor-form-edits";
 
 type EditorHistoryEntry = {
+  documentPages: DocumentPage[];
   formEdits: EditorFormEdits;
   overlays: EditorOverlay[];
   selectedOverlayId: string | null;
@@ -37,11 +39,17 @@ function createEditorHistory(
   overlays: EditorOverlay[] = [],
   selectedOverlayId: string | null = null,
   formEdits: EditorFormEdits = emptyEditorFormEdits,
+  documentPages: DocumentPage[] = [],
 ): EditorHistoryState {
   return {
     future: [],
     past: [],
-    present: createHistoryEntry(overlays, selectedOverlayId, formEdits),
+    present: createHistoryEntry(
+      overlays,
+      selectedOverlayId,
+      formEdits,
+      documentPages,
+    ),
   };
 }
 
@@ -49,8 +57,10 @@ function createHistoryEntry(
   overlays: EditorOverlay[],
   selectedOverlayId: string | null,
   formEdits: EditorFormEdits = emptyEditorFormEdits,
+  documentPages: DocumentPage[] = [],
 ): EditorHistoryEntry {
   return {
+    documentPages: cloneDocumentPages(documentPages),
     formEdits: normalizeEditorFormEdits(formEdits),
     overlays,
     selectedOverlayId: getValidSelectedOverlayId(overlays, selectedOverlayId),
@@ -65,6 +75,7 @@ function commitEditorHistory(
     nextEntry.overlays,
     nextEntry.selectedOverlayId,
     nextEntry.formEdits,
+    nextEntry.documentPages,
   );
 
   if (areHistoryEntriesEqual(history.present, sanitizedEntry)) {
@@ -87,11 +98,13 @@ function commitEditorHistoryFromBase(
     baseEntry.overlays,
     baseEntry.selectedOverlayId,
     baseEntry.formEdits,
+    baseEntry.documentPages,
   );
   const sanitizedNextEntry = createHistoryEntry(
     nextEntry.overlays,
     nextEntry.selectedOverlayId,
     nextEntry.formEdits,
+    nextEntry.documentPages,
   );
 
   if (areHistoryEntriesEqual(sanitizedBaseEntry, sanitizedNextEntry)) {
@@ -113,6 +126,7 @@ function replaceEditorHistoryPresent(
     nextEntry.overlays,
     nextEntry.selectedOverlayId,
     nextEntry.formEdits,
+    nextEntry.documentPages,
   );
 
   if (areHistoryEntriesEqual(history.present, sanitizedEntry)) {
@@ -129,8 +143,14 @@ function resetEditorHistory(
   overlays: EditorOverlay[] = [],
   selectedOverlayId: string | null = null,
   formEdits: EditorFormEdits = emptyEditorFormEdits,
+  documentPages: DocumentPage[] = [],
 ): EditorHistoryState {
-  return createEditorHistory(overlays, selectedOverlayId, formEdits);
+  return createEditorHistory(
+    overlays,
+    selectedOverlayId,
+    formEdits,
+    documentPages,
+  );
 }
 
 function restoreEditorHistory(
@@ -193,6 +213,7 @@ function cloneHistoryEntry(entry: EditorHistoryEntry): EditorHistoryEntry {
     entry.overlays,
     entry.selectedOverlayId,
     entry.formEdits,
+    entry.documentPages,
   );
 }
 
@@ -203,7 +224,12 @@ function cloneRestoredHistoryEntry(
     cloneOverlays(entry?.overlays ?? []),
     entry?.selectedOverlayId ?? null,
     cloneEditorFormEdits(entry?.formEdits),
+    cloneDocumentPages(entry?.documentPages ?? []),
   );
+}
+
+function cloneDocumentPages(documentPages: readonly DocumentPage[]) {
+  return documentPages.map((page) => ({ ...page }));
 }
 
 function cloneOverlays(overlays: EditorOverlay[]) {
@@ -222,8 +248,42 @@ function areHistoryEntriesEqual(
   }
 
   return (
+    areDocumentPagesEqual(
+      left.documentPages ?? [],
+      right.documentPages ?? [],
+    ) &&
     areOverlayListsEqual(left.overlays ?? [], right.overlays ?? []) &&
     areEditorFormEditsEqual(left.formEdits, right.formEdits)
+  );
+}
+
+function areDocumentPagesEqual(
+  left: readonly DocumentPage[],
+  right: readonly DocumentPage[],
+) {
+  if (left === right) {
+    return true;
+  }
+
+  return (
+    left.length === right.length &&
+    left.every((page, index) => areDocumentPageEqual(page, right[index]))
+  );
+}
+
+function areDocumentPageEqual(
+  left: DocumentPage,
+  right: DocumentPage | undefined,
+) {
+  if (!right) {
+    return false;
+  }
+
+  return (
+    left.id === right.id &&
+    left.rotationDegrees === right.rotationDegrees &&
+    left.sourceId === right.sourceId &&
+    left.sourcePageNumber === right.sourcePageNumber
   );
 }
 
@@ -271,12 +331,19 @@ function areOverlayListsEqual(left: EditorOverlay[], right: EditorOverlay[]) {
   );
 }
 
-function areOverlaysEqual(left: EditorOverlay, right: EditorOverlay) {
+function areOverlaysEqual(
+  left: EditorOverlay,
+  right: EditorOverlay | undefined,
+) {
+  if (!right) {
+    return false;
+  }
+
   return (
     left === right ||
     (left.type === right.type &&
       left.id === right.id &&
-      left.pageNumber === right.pageNumber &&
+      left.pageId === right.pageId &&
       arePdfRectsEqual(left.rect, right.rect) &&
       areOverlayTypeFieldsEqual(left, right))
   );

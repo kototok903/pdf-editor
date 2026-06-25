@@ -2,6 +2,7 @@ import { memo } from "react";
 
 import { PdfPageView } from "@/features/pdf/components/PdfPageView";
 import type {
+  DocumentPage,
   EditorFormEdits,
   EditorOverlay,
   ImageAsset,
@@ -18,6 +19,7 @@ type PdfDocumentViewProps = {
   activeSignatureAsset: ImageAsset | null;
   currentPage: number;
   document: LoadedPdfDocument;
+  documentPages: DocumentPage[];
   editingOverlayId: string | null;
   formEdits: EditorFormEdits;
   imageAssetById: ReadonlyMap<string, ImageAsset>;
@@ -58,6 +60,7 @@ const PdfDocumentView = memo(function PdfDocumentView({
   activeSignatureAsset,
   currentPage,
   document,
+  documentPages,
   editingOverlayId,
   formEdits,
   imageAssetById,
@@ -121,6 +124,7 @@ const PdfDocumentView = memo(function PdfDocumentView({
           onUpdateOverlayRect={onUpdateOverlayRect}
           onUpdateOverlayRotation={onUpdateOverlayRotation}
           pageOverlays={overlaysByPage.get(index + 1) ?? emptyPageOverlays}
+          pageId={documentPages[index]?.id ?? String(index + 1)}
           pageSize={pageSizes[index + 1] ?? getDefaultPageSize(scale)}
           pageNumber={index + 1}
           pdfDocument={document.pdfDocument}

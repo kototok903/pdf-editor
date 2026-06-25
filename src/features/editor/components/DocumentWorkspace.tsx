@@ -9,6 +9,7 @@ import {
 
 import { Skeleton } from "@/components/ui/skeleton";
 import type {
+  DocumentPage,
   EditorFormEdits,
   EditorOverlay,
   ImageAsset,
@@ -40,6 +41,7 @@ type DocumentWorkspaceProps = {
   activeSignatureAsset: ImageAsset | null;
   currentPage: number;
   document: LoadedPdfDocument | null;
+  documentPages: DocumentPage[];
   editingOverlayId: string | null;
   error: string | null;
   formEdits: EditorFormEdits;
@@ -90,6 +92,7 @@ const DocumentWorkspace = memo(function DocumentWorkspace({
   activeSignatureAsset,
   currentPage,
   document,
+  documentPages,
   editingOverlayId,
   error,
   formEdits,
@@ -443,6 +446,7 @@ const DocumentWorkspace = memo(function DocumentWorkspace({
           activeSignatureAsset={activeSignatureAsset}
           currentPage={currentPage}
           document={document}
+          documentPages={documentPages}
           editingOverlayId={editingOverlayId}
           formEdits={formEdits}
           imageAssetById={imageAssetById}

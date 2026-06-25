@@ -17,7 +17,7 @@ function createTextOverlay(id: string, pageNumber: number): EditorOverlay {
     fontId: "helvetica",
     fontSize: 16,
     id,
-    pageNumber,
+    pageId: `page-${pageNumber}`,
     rect: {
       height: 24,
       width: 120,
@@ -33,6 +33,7 @@ function createTestProject(overlays: EditorOverlay[]): Project {
   return {
     createdAt: 100,
     currentPage: 1,
+    documentSources: [],
     fileName: "form.pdf",
     history: createEditorHistory(overlays),
     id: "project-a",

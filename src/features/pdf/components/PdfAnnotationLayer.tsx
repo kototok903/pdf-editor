@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { AnnotationLayer, setLayerDimensions } from "pdfjs-dist";
 
 import type {
+  DocumentPageId,
   EditorFormEdits,
   PdfFormValue,
 } from "@/features/editor/editor-types";
@@ -20,6 +21,7 @@ type PdfAnnotationLayerProps = {
   formEdits: EditorFormEdits;
   onCommitFormValue: (value: PdfFormValue) => void;
   onFormWidgetsChange: (pageNumber: number, widgets: PdfFormWidget[]) => void;
+  pageId: DocumentPageId;
   pageNumber: number;
   pdfDocument: PDFDocumentProxy;
   scale: number;
@@ -30,6 +32,7 @@ const PdfAnnotationLayer = memo(function PdfAnnotationLayer({
   formEdits,
   onCommitFormValue,
   onFormWidgetsChange,
+  pageId,
   pageNumber,
   pdfDocument,
   scale,
@@ -78,7 +81,11 @@ const PdfAnnotationLayer = memo(function PdfAnnotationLayer({
           return;
         }
 
-        const nextWidgets = extractPdfFormWidgets(annotations, pageNumber);
+        const nextWidgets = extractPdfFormWidgets(
+          annotations,
+          pageNumber,
+          pageId,
+        );
 
         applyFormEditsToAnnotationStorage({
           annotationStorage: pdfDocument.annotationStorage,
@@ -151,7 +158,14 @@ const PdfAnnotationLayer = memo(function PdfAnnotationLayer({
       setWidgets(emptyFormWidgets);
       onFormWidgetsChange(pageNumber, emptyFormWidgets);
     };
-  }, [onFormWidgetsChange, pageNumber, pdfDocument, scale, shouldRender]);
+  }, [
+    onFormWidgetsChange,
+    pageId,
+    pageNumber,
+    pdfDocument,
+    scale,
+    shouldRender,
+  ]);
 
   useEffect(() => {
     const container = annotationLayerRef.current;

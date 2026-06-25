@@ -42,6 +42,7 @@ function createDraftRecord(
 ): PersistedEditorDraftRecord {
   return {
     currentPage: 2,
+    documentSources: [],
     fileName: "form.pdf",
     id: activeDraftKey,
     imageAssetIds: ["image-1"],
@@ -73,7 +74,9 @@ describe("editor draft db", () => {
   it("round-trips form edits in draft history", async () => {
     const storage = createMemoryEditorDraftStorage();
     const history = createEditorHistory([], null, {
-      values: [{ fieldName: "name", type: "text", value: "Привет" }],
+      values: [
+        { fieldName: "name", pageId: "page-1", type: "text", value: "Привет" },
+      ],
     });
 
     await writeActiveDraft(createDraftRecord({ history }), storage);
@@ -83,7 +86,14 @@ describe("editor draft db", () => {
         history: expect.objectContaining({
           present: expect.objectContaining({
             formEdits: {
-              values: [{ fieldName: "name", type: "text", value: "Привет" }],
+              values: [
+                {
+                  fieldName: "name",
+                  pageId: "page-1",
+                  type: "text",
+                  value: "Привет",
+                },
+              ],
             },
           }),
         }),
@@ -102,6 +112,7 @@ describe("editor draft db", () => {
           {
             createdAt: 100,
             currentPage: 1,
+            documentSources: [],
             fileName: "a.pdf",
             id: "project-a",
             metadata: emptyPdfProjectMetadata,

@@ -4,6 +4,7 @@ import type {
   EditorFormEdits,
   EditorOverlay,
   EditorOverlayInput,
+  DocumentPageId,
   MarkOverlayPatch,
   PdfRect,
   PdfFormValue,
@@ -60,6 +61,7 @@ function useEditorOverlays() {
 
   const overlays = history.present.overlays;
   const formEdits = history.present.formEdits;
+  const documentPages = history.present.documentPages;
 
   const commitOverlayState = useCallback(
     (
@@ -75,6 +77,7 @@ function useEditorOverlays() {
             nextOverlays,
             nextSelectedOverlayId,
             currentHistory.present.formEdits,
+            currentHistory.present.documentPages,
           ),
         );
       });
@@ -95,6 +98,7 @@ function useEditorOverlays() {
             nextOverlays,
             nextSelectedOverlayId,
             nextFormEdits,
+            historyRef.current.present.documentPages,
           ),
         ),
       );
@@ -163,6 +167,7 @@ function useEditorOverlays() {
       nextOverlays: EditorOverlay[] = [],
       nextSelectedOverlayId: string | null = null,
       nextHistory?: EditorHistoryState,
+      nextDocumentPages = historyRef.current.present.documentPages,
     ) => {
       if (nextHistory) {
         setHistory(restoreEditorHistory(nextHistory));
@@ -176,6 +181,7 @@ function useEditorOverlays() {
             nextOverlays,
             nextSelectedOverlayId,
             emptyEditorFormEdits,
+            nextDocumentPages,
           ),
         );
         setValidSelectedOverlayId(nextSelectedOverlayId, nextOverlays);
@@ -209,13 +215,13 @@ function useEditorOverlays() {
     ({
       insertBelowOverlayId,
       overlayId,
-      pageNumber,
+      pageId,
       targetPageSize,
       trackHistory = true,
     }: {
       insertBelowOverlayId?: string | null;
       overlayId: string;
-      pageNumber: number;
+      pageId: DocumentPageId;
       targetPageSize?: { height: number; width: number } | null;
       trackHistory?: boolean;
     }) => {
@@ -223,7 +229,7 @@ function useEditorOverlays() {
         moveOverlayToPageLayer(currentOverlays, {
           insertBelowOverlayId,
           overlayId,
-          pageNumber,
+          pageId,
           targetPageSize,
         });
 
@@ -354,6 +360,7 @@ function useEditorOverlays() {
           currentHistory.present.overlays,
           currentHistory.present.selectedOverlayId,
           nextFormEdits,
+          currentHistory.present.documentPages,
         ),
       );
     });
@@ -367,6 +374,7 @@ function useEditorOverlays() {
           currentHistory.present.overlays,
           currentHistory.present.selectedOverlayId,
           nextFormEdits,
+          currentHistory.present.documentPages,
         ),
       ),
     );
@@ -417,6 +425,7 @@ function useEditorOverlays() {
     clearSelection,
     commitHistoryFromBase,
     getHistoryEntrySnapshot,
+    documentPages,
     formEdits,
     history,
     moveOverlayLayer,

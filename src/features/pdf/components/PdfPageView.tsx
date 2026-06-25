@@ -3,6 +3,7 @@ import { AnnotationMode } from "pdfjs-dist";
 
 import { OverlayLayer } from "@/features/editor/components/OverlayLayer";
 import type {
+  DocumentPageId,
   EditorFormEdits,
   EditorOverlay,
   ImageAsset,
@@ -55,6 +56,7 @@ type PdfPageViewProps = {
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
   onUpdateOverlayRotation: (overlayId: string, rotationDegrees: number) => void;
   pageOverlays: EditorOverlay[];
+  pageId: DocumentPageId;
   pageSize: PageSize;
   pageNumber: number;
   pdfDocument: PDFDocumentProxy;
@@ -92,6 +94,7 @@ const PdfPageView = memo(function PdfPageView({
   onUpdateOverlayRect,
   onUpdateOverlayRotation,
   pageOverlays,
+  pageId,
   pageSize,
   pageNumber,
   pdfDocument,
@@ -261,6 +264,7 @@ const PdfPageView = memo(function PdfPageView({
         formEdits={formEdits}
         onCommitFormValue={onCommitFormValue}
         onFormWidgetsChange={onFormWidgetsChange}
+        pageId={pageId}
         pageNumber={pageNumber}
         pdfDocument={pdfDocument}
         scale={scale}

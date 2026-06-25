@@ -12,7 +12,7 @@ describe("overlay capabilities", () => {
       {
         assetId: "image-asset",
         id: "image",
-        pageNumber: 1,
+        pageId: "page-1",
         rect: { height: 20, width: 20, x: 0, y: 0 },
         rotationDegrees: 45,
         sha256Signature: "image-signature",
@@ -21,7 +21,7 @@ describe("overlay capabilities", () => {
       {
         assetId: "signature-asset",
         id: "signature",
-        pageNumber: 1,
+        pageId: "page-1",
         rect: { height: 20, width: 20, x: 0, y: 0 },
         rotationDegrees: 90,
         sha256Signature: "signature-signature",
@@ -39,7 +39,7 @@ describe("overlay capabilities", () => {
         fontId: "helvetica",
         fontSize: 16,
         id: "text",
-        pageNumber: 1,
+        pageId: "page-1",
         rect: { height: 20, width: 20, x: 0, y: 0 },
         text: "Hello",
         type: "text",
@@ -52,7 +52,7 @@ describe("overlay capabilities", () => {
       getOverlayRotationDegrees({
         assetId: "image-asset",
         id: "image",
-        pageNumber: 1,
+        pageId: "page-1",
         rect: { height: 20, width: 20, x: 0, y: 0 },
         rotationDegrees: -45,
         sha256Signature: "image-signature",

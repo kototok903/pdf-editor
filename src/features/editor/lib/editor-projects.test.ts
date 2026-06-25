@@ -29,6 +29,7 @@ function createTestProject(patch: Partial<Project> = {}): Project {
   return {
     createdAt: 100,
     currentPage: 1,
+    documentSources: [],
     fileName: "form.pdf",
     history: createEditorHistory(),
     id: "project-a",
@@ -76,21 +77,22 @@ describe("editor projects", () => {
     });
     const history = createEditorHistory([]);
 
-    expect(
-      updateProjectFromDocument(project, {
-        currentPage: 4,
-        document,
-        history,
-        lastModifiedAt: 700,
-      }),
-    ).toMatchObject({
+    const updatedProject = updateProjectFromDocument(project, {
+      currentPage: 4,
+      document,
+      history,
+      lastModifiedAt: 700,
+    });
+
+    expect(updatedProject).toMatchObject({
       currentPage: 2,
       fileName: "updated.pdf",
-      history,
       lastModifiedAt: 700,
       pageCount: 2,
       pdfBytes: document.bytes,
     });
+    expect(updatedProject.history.present.documentPages).toHaveLength(2);
+    expect(updatedProject.documentSources).toHaveLength(1);
   });
 
   it("preserves the project last modified timestamp by default", () => {

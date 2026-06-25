@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 import type { SignatureCreateInput } from "@/features/editor/components/SignatureCreateDialog";
 import type {
+  DocumentPage,
   EditorOverlay,
   EditorOverlayInput,
   ImageAsset,
@@ -12,6 +13,7 @@ import type {
   WhiteoutOverlayDefaults,
 } from "@/features/editor/editor-types";
 import { readPasteIntentFromAsyncClipboard } from "@/features/editor/lib/editor-clipboard";
+import { getPageIdForVisiblePage } from "@/features/editor/lib/document-pages";
 import { supportedImageTypeListLabel } from "@/features/editor/lib/image-asset-utils";
 import { createImageOverlayRectAtPoint } from "@/features/editor/lib/overlay-coordinate-utils";
 import { getSignatureFontOption } from "@/features/editor/lib/signature-fonts";
@@ -32,6 +34,7 @@ type UseEditorToolsOptions = {
   addOverlay: (input: EditorOverlayInput) => EditorOverlay;
   addSignatureBlob: (blob: Blob, fileName: string) => Promise<ImageAsset>;
   currentPage: number;
+  documentPages: DocumentPage[];
   editOverlay: (overlayId: string | null) => void;
   getCurrentPageSize: () => { height: number; width: number } | null;
   imageAssets: ImageAsset[];
@@ -49,6 +52,7 @@ function useEditorTools({
   addOverlay,
   addSignatureBlob,
   currentPage,
+  documentPages,
   editOverlay,
   getCurrentPageSize,
   imageAssets,
@@ -79,6 +83,10 @@ function useEditorTools({
   }, []);
 
   const resetActiveTool = clearActiveTool;
+  const getOverlayPageId = useCallback(
+    (pageNumber: number) => getPageIdForVisiblePage(documentPages, pageNumber),
+    [documentPages],
+  );
 
   const addRenderableOverlay = useCallback(
     (
@@ -224,13 +232,19 @@ function useEditorTools({
       }
 
       const importAndPlaceImage = async () => {
+        const pageId = getOverlayPageId(currentPage);
+
+        if (!pageId) {
+          return;
+        }
+
         try {
           const asset = await addImageFile(file);
 
           addRenderableOverlay(
             {
               assetId: asset.id,
-              pageNumber: currentPage,
+              pageId,
               rect: createImageOverlayRectAtPoint(
                 { x: pageSize.width / 2, y: pageSize.height / 2 },
                 pageSize,
@@ -254,7 +268,13 @@ function useEditorTools({
 
       void importAndPlaceImage();
     },
-    [addImageFile, addRenderableOverlay, currentPage, getCurrentPageSize],
+    [
+      addImageFile,
+      addRenderableOverlay,
+      currentPage,
+      getCurrentPageSize,
+      getOverlayPageId,
+    ],
   );
 
   const toggleTextTool = useCallback(() => {
@@ -285,10 +305,16 @@ function useEditorTools({
 
   const placeTextOverlay = useCallback(
     (pageNumber: number, rect: PdfRect) => {
+      const pageId = getOverlayPageId(pageNumber);
+
+      if (!pageId) {
+        return;
+      }
+
       setCurrentPage(pageNumber);
       const overlay = addOverlay({
         ...textDefaults,
-        pageNumber,
+        pageId,
         rect,
         type: "text",
       });
@@ -296,22 +322,28 @@ function useEditorTools({
       setActiveTool(null);
       editOverlay(overlay.id);
     },
-    [addOverlay, editOverlay, setCurrentPage, textDefaults],
+    [addOverlay, editOverlay, getOverlayPageId, setCurrentPage, textDefaults],
   );
 
   const placeMarkOverlay = useCallback(
     (pageNumber: number, rect: PdfRect) => {
+      const pageId = getOverlayPageId(pageNumber);
+
+      if (!pageId) {
+        return;
+      }
+
       setCurrentPage(pageNumber);
       addOverlay({
         ...markDefaults,
-        pageNumber,
+        pageId,
         rect,
         type: "mark",
       });
       setActiveTool(null);
       editOverlay(null);
     },
-    [addOverlay, editOverlay, markDefaults, setCurrentPage],
+    [addOverlay, editOverlay, getOverlayPageId, markDefaults, setCurrentPage],
   );
 
   const placeImageOverlay = useCallback(
@@ -319,11 +351,16 @@ function useEditorTools({
       if (!activeImageAsset) {
         return;
       }
+      const pageId = getOverlayPageId(pageNumber);
+
+      if (!pageId) {
+        return;
+      }
 
       setCurrentPage(pageNumber);
       addOverlay({
         assetId: activeImageAsset.id,
-        pageNumber,
+        pageId,
         rect,
         rotationDegrees: 0,
         sha256Signature: activeImageAsset.sha256Signature,
@@ -332,7 +369,13 @@ function useEditorTools({
       setActiveTool(null);
       editOverlay(null);
     },
-    [activeImageAsset, addOverlay, editOverlay, setCurrentPage],
+    [
+      activeImageAsset,
+      addOverlay,
+      editOverlay,
+      getOverlayPageId,
+      setCurrentPage,
+    ],
   );
 
   const placeSignatureOverlay = useCallback(
@@ -340,11 +383,16 @@ function useEditorTools({
       if (!activeSignatureAsset) {
         return;
       }
+      const pageId = getOverlayPageId(pageNumber);
+
+      if (!pageId) {
+        return;
+      }
 
       setCurrentPage(pageNumber);
       addOverlay({
         assetId: activeSignatureAsset.id,
-        pageNumber,
+        pageId,
         rect,
         rotationDegrees: 0,
         sha256Signature: activeSignatureAsset.sha256Signature,
@@ -353,22 +401,40 @@ function useEditorTools({
       setActiveTool(null);
       editOverlay(null);
     },
-    [activeSignatureAsset, addOverlay, editOverlay, setCurrentPage],
+    [
+      activeSignatureAsset,
+      addOverlay,
+      editOverlay,
+      getOverlayPageId,
+      setCurrentPage,
+    ],
   );
 
   const placeWhiteoutOverlay = useCallback(
     (pageNumber: number, rect: PdfRect) => {
+      const pageId = getOverlayPageId(pageNumber);
+
+      if (!pageId) {
+        return;
+      }
+
       setCurrentPage(pageNumber);
       addOverlay({
         color: whiteoutDefaults.color,
-        pageNumber,
+        pageId,
         rect,
         type: "whiteout",
       });
       setActiveTool(null);
       editOverlay(null);
     },
-    [addOverlay, editOverlay, setCurrentPage, whiteoutDefaults.color],
+    [
+      addOverlay,
+      editOverlay,
+      getOverlayPageId,
+      setCurrentPage,
+      whiteoutDefaults.color,
+    ],
   );
 
   return {

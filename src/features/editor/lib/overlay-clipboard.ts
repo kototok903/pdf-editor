@@ -1,4 +1,5 @@
 import type {
+  DocumentPageId,
   EditorOverlay,
   EditorOverlayInput,
   PdfRect,
@@ -17,7 +18,7 @@ type OverlayClipboardPayload = {
 };
 
 type OverlayPasteOptions = {
-  pageNumber: number;
+  pageId: DocumentPageId;
   pageSize: { height: number; width: number };
   pasteCount: number;
 };
@@ -58,7 +59,7 @@ function toOverlayInput(
 ): EditorOverlayInput {
   return {
     ...payload.overlay,
-    pageNumber: options.pageNumber,
+    pageId: options.pageId,
     rect: offsetAndClampRect(
       payload.overlay.rect,
       options.pageSize,
@@ -97,7 +98,7 @@ function overlayToInput(overlay: EditorOverlay): EditorOverlayInput {
     case "signature":
       return {
         assetId: overlay.assetId,
-        pageNumber: overlay.pageNumber,
+        pageId: overlay.pageId,
         rect: overlay.rect,
         rotationDegrees: normalizeRotationDegrees(overlay.rotationDegrees),
         sha256Signature: overlay.sha256Signature,
@@ -107,7 +108,7 @@ function overlayToInput(overlay: EditorOverlay): EditorOverlayInput {
       return {
         color: overlay.color,
         markType: overlay.markType,
-        pageNumber: overlay.pageNumber,
+        pageId: overlay.pageId,
         rect: overlay.rect,
         type: overlay.type,
       };
@@ -116,7 +117,7 @@ function overlayToInput(overlay: EditorOverlay): EditorOverlayInput {
         color: overlay.color,
         fontId: overlay.fontId,
         fontSize: overlay.fontSize,
-        pageNumber: overlay.pageNumber,
+        pageId: overlay.pageId,
         rect: overlay.rect,
         text: overlay.text,
         type: overlay.type,
@@ -124,7 +125,7 @@ function overlayToInput(overlay: EditorOverlay): EditorOverlayInput {
     case "whiteout":
       return {
         color: overlay.color,
-        pageNumber: overlay.pageNumber,
+        pageId: overlay.pageId,
         rect: overlay.rect,
         type: overlay.type,
       };
@@ -164,7 +165,7 @@ function isOverlayInput(value: unknown): value is EditorOverlayInput {
     return false;
   }
 
-  if (!isFiniteNumber(value.pageNumber)) {
+  if (typeof value.pageId !== "string") {
     return false;
   }
 

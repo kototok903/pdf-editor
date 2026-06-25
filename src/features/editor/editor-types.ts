@@ -11,9 +11,26 @@ type PdfRect = {
   y: number;
 };
 
+type DocumentSourceId = string;
+type DocumentPageId = string;
+
+type DocumentSource = {
+  bytes: ArrayBuffer;
+  fileName: string;
+  id: DocumentSourceId;
+  pageCount: number;
+};
+
+type DocumentPage = {
+  id: DocumentPageId;
+  rotationDegrees: 0 | 90 | 180 | 270;
+  sourceId: DocumentSourceId;
+  sourcePageNumber: number;
+};
+
 type BaseOverlay = {
   id: string;
-  pageNumber: number;
+  pageId: DocumentPageId;
   rect: PdfRect;
 };
 
@@ -88,7 +105,7 @@ type EditorOverlayInput =
   | Omit<MarkOverlay, "id">
   | Omit<WhiteoutOverlay, "id">
   | {
-      pageNumber: number;
+      pageId: DocumentPageId;
       rect: PdfRect;
       type: BasicOverlay["type"];
     };
@@ -112,26 +129,27 @@ type WhiteoutOverlayDefaults = {
 
 type ViewportRect = PdfRect;
 
-type PdfFormTextValue = {
+type BasePdfFormValue = {
   fieldName: string;
+  pageId: DocumentPageId;
+};
+
+type PdfFormTextValue = BasePdfFormValue & {
   type: "text";
   value: string;
 };
 
-type PdfFormCheckboxValue = {
+type PdfFormCheckboxValue = BasePdfFormValue & {
   checked: boolean;
-  fieldName: string;
   type: "checkbox";
 };
 
-type PdfFormRadioValue = {
-  fieldName: string;
+type PdfFormRadioValue = BasePdfFormValue & {
   selectedValue: string | null;
   type: "radio";
 };
 
-type PdfFormChoiceValue = {
-  fieldName: string;
+type PdfFormChoiceValue = BasePdfFormValue & {
   type: "choice";
   values: string[];
 };
@@ -147,6 +165,10 @@ type EditorFormEdits = {
 };
 
 export type {
+  DocumentPage,
+  DocumentPageId,
+  DocumentSource,
+  DocumentSourceId,
   EditorOverlay,
   EditorFormEdits,
   EditorOverlayInput,

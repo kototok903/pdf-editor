@@ -8,7 +8,7 @@ import {
 } from "@/features/editor/lib/clipboard-text-utils";
 
 const options = {
-  pageNumber: 2,
+  pageId: "page-2",
   pageSize: { height: 600, width: 400 },
   textSettings: {
     ...defaultTextOverlay,
@@ -26,7 +26,7 @@ describe("clipboard text helpers", () => {
       color: "#111827",
       fontId: "helvetica",
       fontSize: 16,
-      pageNumber: 2,
+      pageId: "page-2",
       text: "Pasted text",
       type: "text",
     });

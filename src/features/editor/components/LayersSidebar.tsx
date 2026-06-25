@@ -65,7 +65,7 @@ const SortableLayerTile = memo(function SortableLayerTile({
 }) {
   const { handleRef, isDragging, ref } = useSortable({
     accept: overlayLayerDragType,
-    group: overlay.pageNumber,
+    group: overlay.pageId,
     id: overlay.id,
     index,
     type: overlayLayerDragType,

@@ -1,20 +1,24 @@
-import type { EditorOverlay } from "@/features/editor/editor-types";
+import type {
+  DocumentPageId,
+  EditorOverlay,
+} from "@/features/editor/editor-types";
 import { getOverlayRotationDegrees } from "@/features/editor/lib/overlay-capabilities";
 import { clampMovedOverlayRect } from "@/features/editor/lib/overlay-coordinate-utils";
 
 type MoveOverlayToPageLayerOptions = {
   insertBelowOverlayId?: string | null;
   overlayId: string;
-  pageNumber: number;
+  pageId: DocumentPageId;
   targetPageSize?: { height: number; width: number } | null;
 };
 
 type LayerMoveDirection = "back" | "backward" | "forward" | "front";
 
-function getPageLayerOverlays(overlays: EditorOverlay[], pageNumber: number) {
-  return overlays
-    .filter((overlay) => overlay.pageNumber === pageNumber)
-    .toReversed();
+function getPageLayerOverlays(
+  overlays: EditorOverlay[],
+  pageId: DocumentPageId,
+) {
+  return overlays.filter((overlay) => overlay.pageId === pageId).toReversed();
 }
 
 function moveOverlayToPageLayer(
@@ -22,7 +26,7 @@ function moveOverlayToPageLayer(
   {
     insertBelowOverlayId,
     overlayId,
-    pageNumber,
+    pageId,
     targetPageSize,
   }: MoveOverlayToPageLayerOptions,
 ) {
@@ -41,9 +45,9 @@ function moveOverlayToPageLayer(
   );
   const movedOverlay = {
     ...overlayToMove,
-    pageNumber,
+    pageId,
     rect:
-      targetPageSize && overlayToMove.pageNumber !== pageNumber
+      targetPageSize && overlayToMove.pageId !== pageId
         ? clampMovedOverlayRect(
             overlayToMove.rect,
             targetPageSize,
@@ -57,8 +61,7 @@ function moveOverlayToPageLayer(
       ? -1
       : remainingOverlays.findIndex(
           (overlay) =>
-            overlay.id === insertBelowOverlayId &&
-            overlay.pageNumber === pageNumber,
+            overlay.id === insertBelowOverlayId && overlay.pageId === pageId,
         );
 
   if (insertBelowOverlayId != null && insertBelowOverlayIndex === -1) {
@@ -67,7 +70,7 @@ function moveOverlayToPageLayer(
 
   const insertionIndex =
     insertBelowOverlayIndex === -1
-      ? getTopLayerInsertionIndex(remainingOverlays, pageNumber)
+      ? getTopLayerInsertionIndex(remainingOverlays, pageId)
       : insertBelowOverlayIndex;
 
   return [
@@ -93,7 +96,7 @@ function moveOverlayLayerRelative(
   const overlayToMove = overlays[currentIndex];
   const pageOverlayIndexes = getPageOverlayIndexes(
     overlays,
-    overlayToMove.pageNumber,
+    overlayToMove.pageId,
   );
   const pageOverlayPosition = pageOverlayIndexes.indexOf(currentIndex);
 
@@ -121,10 +124,10 @@ function moveOverlayLayerRelative(
 
 function getTopLayerInsertionIndex(
   overlays: EditorOverlay[],
-  pageNumber: number,
+  pageId: DocumentPageId,
 ) {
   const lastPageOverlayIndex = overlays.findLastIndex(
-    (overlay) => overlay.pageNumber === pageNumber,
+    (overlay) => overlay.pageId === pageId,
   );
 
   return lastPageOverlayIndex === -1
@@ -132,11 +135,14 @@ function getTopLayerInsertionIndex(
     : lastPageOverlayIndex + 1;
 }
 
-function getPageOverlayIndexes(overlays: EditorOverlay[], pageNumber: number) {
+function getPageOverlayIndexes(
+  overlays: EditorOverlay[],
+  pageId: DocumentPageId,
+) {
   const pageOverlayIndexes: number[] = [];
 
   overlays.forEach((overlay, index) => {
-    if (overlay.pageNumber === pageNumber) {
+    if (overlay.pageId === pageId) {
       pageOverlayIndexes.push(index);
     }
   });

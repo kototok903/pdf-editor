@@ -30,7 +30,7 @@ function createImageOverlay(
   return {
     assetId: "image-1",
     id: "overlay-image-1",
-    pageNumber: 1,
+    pageId: "page-1",
     rect: { height: 40, width: 80, x: 30, y: 40 },
     rotationDegrees: 0,
     sha256Signature: "signature-1",
@@ -45,7 +45,7 @@ function createSignatureOverlay(
   return {
     assetId: "signature-1",
     id: "overlay-signature-1",
-    pageNumber: 1,
+    pageId: "page-1",
     rect: { height: 40, width: 160, x: 30, y: 40 },
     rotationDegrees: 0,
     sha256Signature: "signature-sha-1",

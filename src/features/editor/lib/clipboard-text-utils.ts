@@ -1,4 +1,5 @@
 import type {
+  DocumentPageId,
   EditorOverlayInput,
   TextFontId,
   TextOverlayDefaults,
@@ -6,7 +7,7 @@ import type {
 import { createDefaultOverlayRect } from "@/features/editor/lib/overlay-coordinate-utils";
 
 type ClipboardTextOptions = {
-  pageNumber: number;
+  pageId: DocumentPageId;
   pageSize: { height: number; width: number };
   textSettings: TextOverlayDefaults;
 };
@@ -30,7 +31,7 @@ function textOverlayInputUsingCurrentSettings(
 
   return {
     ...options.textSettings,
-    pageNumber: options.pageNumber,
+    pageId: options.pageId,
     rect: createDefaultOverlayRect(options.pageSize),
     text: normalizedText,
     type: "text",
@@ -55,7 +56,7 @@ function textOverlayInputFromHtml(
   return {
     ...options.textSettings,
     ...styles,
-    pageNumber: options.pageNumber,
+    pageId: options.pageId,
     rect: createDefaultOverlayRect(options.pageSize),
     text,
     type: "text",

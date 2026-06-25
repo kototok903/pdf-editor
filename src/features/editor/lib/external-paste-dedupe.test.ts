@@ -11,7 +11,7 @@ const overlay: EditorOverlay = {
   fontId: "helvetica",
   fontSize: 16,
   id: "overlay-1",
-  pageNumber: 1,
+  pageId: "page-1",
   rect: { height: 32, width: 140, x: 40, y: 50 },
   text: "Pasted",
   type: "text",

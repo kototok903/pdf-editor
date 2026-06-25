@@ -1,7 +1,12 @@
+import { AppErrorBoundary } from "@/app/AppErrorBoundary";
 import { AppShell } from "@/app/AppShell";
 
 function App() {
-  return <AppShell />;
+  return (
+    <AppErrorBoundary>
+      <AppShell />
+    </AppErrorBoundary>
+  );
 }
 
 export default App;

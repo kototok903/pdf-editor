@@ -1,13 +1,19 @@
 import { useEffect } from "react";
 
-import type { EditorOverlay, PdfRect } from "@/features/editor/editor-types";
+import type {
+  DocumentPage,
+  EditorOverlay,
+  PdfRect,
+} from "@/features/editor/editor-types";
 import type { LayerMoveDirection } from "@/features/editor/lib/layer-sidebar-utils";
+import { getVisiblePageNumberForPageId } from "@/features/editor/lib/document-pages";
 import { getOverlayRotationDegrees } from "@/features/editor/lib/overlay-capabilities";
 import { nudgeOverlayRect } from "@/features/editor/lib/overlay-coordinate-utils";
 import { isPlatformModKey } from "@/lib/platform-utils";
 import type { PageSize } from "@/features/pdf/pdf-types";
 
 type UseEditorKeyboardShortcutsOptions = {
+  documentPages: DocumentPage[];
   editingOverlayId: string | null;
   hasActiveTool: boolean;
   onClearActiveTool: () => void;
@@ -31,6 +37,7 @@ type UseEditorKeyboardShortcutsOptions = {
 };
 
 function useEditorKeyboardShortcuts({
+  documentPages,
   editingOverlayId,
   hasActiveTool,
   onClearActiveTool,
@@ -136,7 +143,14 @@ function useEditorKeyboardShortcuts({
         return;
       }
 
-      const pageSize = pageSizes[selectedOverlay.pageNumber];
+      const selectedOverlayPageNumber = getVisiblePageNumberForPageId(
+        documentPages,
+        selectedOverlay.pageId,
+      );
+      const pageSize =
+        selectedOverlayPageNumber === null
+          ? null
+          : pageSizes[selectedOverlayPageNumber];
 
       if (!pageSize) {
         return;
@@ -183,6 +197,7 @@ function useEditorKeyboardShortcuts({
     };
   }, [
     editingOverlayId,
+    documentPages,
     hasActiveTool,
     onClearActiveTool,
     onClearSelection,

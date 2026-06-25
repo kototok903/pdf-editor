@@ -16,6 +16,10 @@ import {
   type EditorHistoryState,
 } from "@/features/editor/lib/editor-history";
 import {
+  createDocumentPagesForSource,
+  createDocumentSource,
+} from "@/features/editor/lib/document-pages";
+import {
   imageAssetFromPersistedRecord,
   toPersistedImageAssetRecord,
 } from "@/features/editor/lib/persisted-image-assets";
@@ -229,6 +233,7 @@ async function persistActiveDraft({
   await writeActiveDraft({
     activeProjectId: activeProject.id,
     currentPage: activeProject.currentPage,
+    documentSources: activeProject.documentSources,
     fileName: activeProject.fileName,
     history: activeProject.history,
     id: activeDraftKey,
@@ -241,6 +246,7 @@ async function persistActiveDraft({
     projects: projectsToPersist.map((project) => ({
       createdAt: project.createdAt,
       currentPage: project.currentPage,
+      documentSources: project.documentSources,
       fileName: project.fileName,
       history: project.history,
       id: project.id,
@@ -275,11 +281,32 @@ function getProjectsToPersist({
 
   const activeProject =
     projects.find((project) => project.id === activeProjectId) ?? null;
+  const fallbackDocumentSource =
+    activeProject?.documentSources[0] ??
+    createDocumentSource({
+      bytes: document.bytes,
+      fileName: document.fileName,
+      pageCount: document.pageCount,
+    });
+  const nextDocumentSources = activeProject?.documentSources ?? [
+    fallbackDocumentSource,
+  ];
+  const nextHistory =
+    history.present.documentPages.length > 0
+      ? history
+      : {
+          ...history,
+          present: {
+            ...history.present,
+            documentPages: createDocumentPagesForSource(fallbackDocumentSource),
+          },
+        };
   const nextActiveProject: Project = {
     createdAt: activeProject?.createdAt ?? Date.now(),
     currentPage: Math.min(document.pageCount, Math.max(1, currentPage)),
+    documentSources: nextDocumentSources,
     fileName: document.fileName,
-    history,
+    history: nextHistory,
     id: activeProjectId,
     lastModifiedAt: activeProject
       ? getProjectLastModifiedAt(activeProject, history, modifiedAtCache)

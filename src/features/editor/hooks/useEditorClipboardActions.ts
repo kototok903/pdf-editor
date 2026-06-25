@@ -2,11 +2,16 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import type {
+  DocumentPage,
   EditorOverlay,
   EditorOverlayInput,
   ImageAsset,
   TextOverlayDefaults,
 } from "@/features/editor/editor-types";
+import {
+  getPageIdForVisiblePage,
+  getVisiblePageNumberForPageId,
+} from "@/features/editor/lib/document-pages";
 import {
   extractPlainTextFromHtml,
   textOverlayInputFromHtml,
@@ -52,6 +57,7 @@ type UseEditorClipboardActionsOptions = {
   addSignatureBlob: (blob: Blob, name?: string) => Promise<ImageAsset>;
   addRenderableOverlay: AddRenderableOverlay;
   currentPage: number;
+  documentPages: DocumentPage[];
   getCurrentPageSize: () => PageBounds | null;
   getCurrentTextDefaults: () => TextOverlayDefaults;
   imageAssets: ImageAsset[];
@@ -66,6 +72,7 @@ function useEditorClipboardActions({
   addSignatureBlob,
   addRenderableOverlay,
   currentPage,
+  documentPages,
   getCurrentPageSize,
   getCurrentTextDefaults,
   imageAssets,
@@ -111,7 +118,13 @@ function useEditorClipboardActions({
       return;
     }
 
-    const pageSize = pageSizes[selectedOverlay.pageNumber];
+    const selectedOverlayPageNumber = getVisiblePageNumberForPageId(
+      documentPages,
+      selectedOverlay.pageId,
+    );
+    const pageSize = selectedOverlayPageNumber
+      ? pageSizes[selectedOverlayPageNumber]
+      : null;
 
     if (!pageSize) {
       return;
@@ -125,7 +138,7 @@ function useEditorClipboardActions({
         },
       }),
     );
-  }, [addRenderableOverlay, pageSizes, selectedOverlay, zoom]);
+  }, [addRenderableOverlay, documentPages, pageSizes, selectedOverlay, zoom]);
 
   const addPastedImageOverlay = useCallback(
     async (image: Blob, pageSize: PageBounds, sha256Signature?: string) => {
@@ -141,8 +154,14 @@ function useEditorClipboardActions({
       }
 
       const asset = await addImageBlob(image, nextSha256Signature);
+      const pageId = getPageIdForVisiblePage(documentPages, currentPage);
+
+      if (!pageId) {
+        return;
+      }
+
       const overlay = addRenderableOverlay(
-        createCenteredImageOverlayInput(asset, currentPage, pageSize),
+        createCenteredImageOverlayInput(asset, pageId, pageSize),
         { additionalRenderableImageAssetIds: [asset.id] },
       );
 
@@ -154,6 +173,7 @@ function useEditorClipboardActions({
       addImageBlob,
       addRenderableOverlay,
       currentPage,
+      documentPages,
       lastExternalPaste,
       overlays,
     ],
@@ -178,8 +198,14 @@ function useEditorClipboardActions({
       pageSize: PageBounds,
     ) => {
       const { pasteCount, payloadKey } = getNextOverlayPaste(intent.payload);
+      const pageId = getPageIdForVisiblePage(documentPages, currentPage);
+
+      if (!pageId) {
+        return;
+      }
+
       const input = toOverlayInput(intent.payload, {
-        pageNumber: currentPage,
+        pageId,
         pageSize,
         pasteCount,
       });
@@ -229,6 +255,7 @@ function useEditorClipboardActions({
       addSignatureBlob,
       addRenderableOverlay,
       currentPage,
+      documentPages,
       getNextOverlayPaste,
       imageAssets,
     ],
@@ -248,14 +275,20 @@ function useEditorClipboardActions({
         return;
       }
 
+      const pageId = getPageIdForVisiblePage(documentPages, currentPage);
+
+      if (!pageId) {
+        return;
+      }
+
       const input = intent.html
         ? textOverlayInputFromHtml(intent.html, intent.text, {
-            pageNumber: currentPage,
+            pageId,
             pageSize,
             textSettings,
           })
         : textOverlayInputFromPlainText(intent.text, {
-            pageNumber: currentPage,
+            pageId,
             pageSize,
             textSettings,
           });
@@ -270,7 +303,13 @@ function useEditorClipboardActions({
         setLastExternalPaste(createExternalPasteRecord(overlay, signature));
       }
     },
-    [addRenderableOverlay, currentPage, lastExternalPaste, overlays],
+    [
+      addRenderableOverlay,
+      currentPage,
+      documentPages,
+      lastExternalPaste,
+      overlays,
+    ],
   );
 
   const pasteTextWithCurrentSettingsIntent = useCallback(
@@ -298,8 +337,14 @@ function useEditorClipboardActions({
         return;
       }
 
+      const pageId = getPageIdForVisiblePage(documentPages, currentPage);
+
+      if (!pageId) {
+        return;
+      }
+
       const input = textOverlayInputUsingCurrentSettings(text, {
-        pageNumber: currentPage,
+        pageId,
         pageSize,
         textSettings,
       });
@@ -314,7 +359,13 @@ function useEditorClipboardActions({
         setLastExternalPaste(createExternalPasteRecord(overlay, signature));
       }
     },
-    [addRenderableOverlay, currentPage, lastExternalPaste, overlays],
+    [
+      addRenderableOverlay,
+      currentPage,
+      documentPages,
+      lastExternalPaste,
+      overlays,
+    ],
   );
 
   const handlePasteIntent = useCallback(
@@ -419,12 +470,12 @@ function createImageClipboardSignature(
 
 function createCenteredImageOverlayInput(
   asset: Pick<ImageAsset, "height" | "id" | "sha256Signature" | "width">,
-  pageNumber: number,
+  pageId: string,
   pageSize: PageBounds,
 ): EditorOverlayInput {
   return {
     assetId: asset.id,
-    pageNumber,
+    pageId,
     rect: createImageOverlayRectAtPoint(
       { x: pageSize.width / 2, y: pageSize.height / 2 },
       pageSize,

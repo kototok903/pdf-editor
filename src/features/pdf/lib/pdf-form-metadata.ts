@@ -1,4 +1,5 @@
 import type {
+  DocumentPageId,
   EditorFormEdits,
   PdfFormValue,
 } from "@/features/editor/editor-types";
@@ -20,6 +21,7 @@ type PdfFormWidget = {
   id: string;
   multiSelect?: boolean;
   options?: PdfChoiceOption[];
+  pageId: DocumentPageId;
   pageNumber: number;
   readOnly: boolean;
   rect: [number, number, number, number];
@@ -95,6 +97,7 @@ type AnnotationStorageLike = {
 function extractPdfFormWidgets(
   annotations: PdfJsAnnotation[],
   pageNumber: number,
+  pageId: DocumentPageId,
 ): PdfFormWidget[] {
   return annotations.flatMap((annotation) => {
     if (
@@ -126,6 +129,7 @@ function extractPdfFormWidgets(
             ? annotation.multiSelect
             : false,
         options: parseChoiceOptions(annotation.options),
+        pageId,
         pageNumber,
         readOnly:
           typeof annotation.readOnly === "boolean"
@@ -190,11 +194,19 @@ function applyFormEditsToAnnotationStorage({
   }
 
   const formValuesByFieldName = new Map(
-    formEdits.values.map((value) => [value.fieldName, value]),
+    formEdits.values.map((value) => [
+      getPdfFormValueWidgetKey(value.pageId, value.fieldName),
+      value,
+    ]),
   );
 
   for (const [fieldName, fieldWidgets] of widgetsByFieldName) {
-    const value = formValuesByFieldName.get(fieldName);
+    const firstWidget = fieldWidgets[0];
+    const value = firstWidget
+      ? formValuesByFieldName.get(
+          getPdfFormValueWidgetKey(firstWidget.pageId, fieldName),
+        )
+      : undefined;
 
     if (value) {
       applyFormValueToAnnotationStorage(annotationStorage, value, fieldWidgets);
@@ -239,11 +251,19 @@ function syncFormControlsWithFormEdits({
   }
 
   const formValuesByFieldName = new Map(
-    formEdits.values.map((value) => [value.fieldName, value]),
+    formEdits.values.map((value) => [
+      getPdfFormValueWidgetKey(value.pageId, value.fieldName),
+      value,
+    ]),
   );
 
   for (const [fieldName, fieldWidgets] of widgetsByFieldName) {
-    const value = formValuesByFieldName.get(fieldName);
+    const firstWidget = fieldWidgets[0];
+    const value = firstWidget
+      ? formValuesByFieldName.get(
+          getPdfFormValueWidgetKey(firstWidget.pageId, fieldName),
+        )
+      : undefined;
 
     if (value) {
       syncFormValueToElements(value, fieldWidgets, elementsByWidgetId);
@@ -273,6 +293,7 @@ function createPdfFormValueFromElement({
   if (element instanceof HTMLTextAreaElement) {
     return {
       fieldName: widget.fieldName,
+      pageId: widget.pageId,
       type: "text",
       value: element.value,
     };
@@ -281,6 +302,7 @@ function createPdfFormValueFromElement({
   if (element instanceof HTMLSelectElement) {
     return {
       fieldName: widget.fieldName,
+      pageId: widget.pageId,
       type: "choice",
       values: Array.from(element.selectedOptions, (option) => option.value),
     };
@@ -291,6 +313,7 @@ function createPdfFormValueFromElement({
       return {
         checked: element.checked,
         fieldName: widget.fieldName,
+        pageId: widget.pageId,
         type: "checkbox",
       };
     }
@@ -298,6 +321,7 @@ function createPdfFormValueFromElement({
     if (element.type === "radio") {
       return {
         fieldName: widget.fieldName,
+        pageId: widget.pageId,
         selectedValue: element.checked ? (widget.buttonValue ?? null) : null,
         type: "radio",
       };
@@ -305,6 +329,7 @@ function createPdfFormValueFromElement({
 
     return {
       fieldName: widget.fieldName,
+      pageId: widget.pageId,
       type: "text",
       value: element.value,
     };
@@ -319,6 +344,10 @@ function getFormElementWidgetId(element: EventTarget | null): string | null {
   }
 
   return element.getAttribute("data-element-id");
+}
+
+function getPdfFormValueWidgetKey(pageId: DocumentPageId, fieldName: string) {
+  return `${pageId}:${fieldName}`;
 }
 
 function createPdfFormField(

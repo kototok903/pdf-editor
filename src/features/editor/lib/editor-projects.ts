@@ -1,5 +1,10 @@
+import type { DocumentSource } from "@/features/editor/editor-types";
 import type { EditorHistoryState } from "@/features/editor/lib/editor-history";
 import { createEditorHistory } from "@/features/editor/lib/editor-history";
+import {
+  createDocumentPagesForSource,
+  createDocumentSource,
+} from "@/features/editor/lib/document-pages";
 import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import { clonePdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
@@ -7,6 +12,7 @@ import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 type Project = {
   createdAt: number;
   currentPage: number;
+  documentSources: DocumentSource[];
   fileName: string;
   history: EditorHistoryState;
   id: string;
@@ -49,11 +55,19 @@ function createProject({
   now = Date.now(),
   originalMetadata = metadata,
 }: CreateProjectInput): Project {
+  const documentSource = createDocumentSource({
+    bytes: document.bytes,
+    fileName: document.fileName,
+    pageCount: document.pageCount,
+  });
+  const documentPages = createDocumentPagesForSource(documentSource);
+
   return {
     createdAt: now,
     currentPage: clampProjectPage(currentPage, document.pageCount),
+    documentSources: [documentSource],
     fileName: document.fileName,
-    history,
+    history: ensureHistoryDocumentPages(history, documentPages),
     id,
     lastModifiedAt: now,
     metadata: cloneOptionalPdfProjectMetadata(metadata),
@@ -81,11 +95,27 @@ function updateProjectFromDocument(
     originalMetadata?: PdfProjectMetadata;
   },
 ): Project {
+  const documentSources =
+    project.documentSources.length > 0
+      ? project.documentSources
+      : [
+          createDocumentSource({
+            bytes: document.bytes,
+            fileName: document.fileName,
+            pageCount: document.pageCount,
+          }),
+        ];
+  const documentPages =
+    history.present.documentPages.length > 0
+      ? history.present.documentPages
+      : createDocumentPagesForSource(documentSources[0]);
+
   return {
     ...project,
     currentPage: clampProjectPage(currentPage, document.pageCount),
+    documentSources,
     fileName: document.fileName,
-    history,
+    history: ensureHistoryDocumentPages(history, documentPages),
     lastModifiedAt,
     metadata: cloneOptionalPdfProjectMetadata(metadata),
     originalMetadata: cloneOptionalPdfProjectMetadata(originalMetadata),
@@ -142,6 +172,22 @@ function cloneOptionalPdfProjectMetadata(
   metadata: PdfProjectMetadata | undefined,
 ) {
   return metadata ? clonePdfProjectMetadata(metadata) : undefined;
+}
+
+function ensureHistoryDocumentPages(
+  history: EditorHistoryState,
+  documentPages: EditorHistoryState["present"]["documentPages"],
+) {
+  if (history.present.documentPages.length > 0) {
+    return history;
+  }
+
+  return createEditorHistory(
+    history.present.overlays,
+    history.present.selectedOverlayId,
+    history.present.formEdits,
+    documentPages,
+  );
 }
 
 export {
