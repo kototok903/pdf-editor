@@ -122,10 +122,7 @@ function moveOverlayLayerRelative(
   return moveOverlayToIndex(overlays, currentIndex, insertionIndex);
 }
 
-function getTopLayerInsertionIndex(
-  overlays: EditorOverlay[],
-  pageId: DocumentPageId,
-) {
+function getTopLayerInsertionIndex(overlays: EditorOverlay[], pageId: string) {
   const lastPageOverlayIndex = overlays.findLastIndex(
     (overlay) => overlay.pageId === pageId,
   );
@@ -135,10 +132,7 @@ function getTopLayerInsertionIndex(
     : lastPageOverlayIndex + 1;
 }
 
-function getPageOverlayIndexes(
-  overlays: EditorOverlay[],
-  pageId: DocumentPageId,
-) {
+function getPageOverlayIndexes(overlays: EditorOverlay[], pageId: string) {
   const pageOverlayIndexes: number[] = [];
 
   overlays.forEach((overlay, index) => {

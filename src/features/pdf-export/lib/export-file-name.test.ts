@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { createExportFileName } from "@/features/pdf-export/lib/export-file-name";
+import {
+  createExportFileName,
+  createSelectedPagesExportFileName,
+} from "@/features/pdf-export/lib/export-file-name";
 
 describe("createExportFileName", () => {
   it("uses the original file name when it has not been exported in this session", () => {
@@ -26,5 +29,13 @@ describe("createExportFileName", () => {
         new Set(["form.pdf", "form (1).pdf", "form (2).pdf"]),
       ),
     ).toBe("form (3).pdf");
+  });
+});
+
+describe("createSelectedPagesExportFileName", () => {
+  it("adds compact selected range label before extension", () => {
+    expect(
+      createSelectedPagesExportFileName("form.pdf", "2-3, 5", new Set()),
+    ).toBe("form_2-3_5.pdf");
   });
 });

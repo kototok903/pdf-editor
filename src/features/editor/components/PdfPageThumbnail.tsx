@@ -18,6 +18,7 @@ type PdfPageThumbnailProps = {
   pageNumber: number;
   pdfDocument: PDFDocumentProxy;
   shouldRender: boolean;
+  sourcePageNumber: number;
 };
 
 type ThumbnailState = {
@@ -29,6 +30,7 @@ type ThumbnailState = {
 type RenderState = {
   pageNumber: number;
   pdfDocument: PDFDocumentProxy;
+  sourcePageNumber: number;
   status: "error" | "rendered";
 };
 
@@ -38,6 +40,7 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
   pageNumber,
   pdfDocument,
   shouldRender,
+  sourcePageNumber,
 }: PdfPageThumbnailProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [renderState, setRenderState] = useState<RenderState | null>(null);
@@ -46,6 +49,7 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
   );
   const isCurrentRenderState =
     renderState?.pageNumber === pageNumber &&
+    renderState.sourcePageNumber === sourcePageNumber &&
     renderState.pdfDocument === pdfDocument;
   const error =
     isCurrentRenderState && renderState.status === "error"
@@ -71,7 +75,7 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
 
     async function renderThumbnail() {
       try {
-        page = await pdfDocument.getPage(pageNumber);
+        page = await pdfDocument.getPage(sourcePageNumber);
 
         if (isCancelled) {
           try {
@@ -118,6 +122,7 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
           setRenderState({
             pageNumber,
             pdfDocument,
+            sourcePageNumber,
             status: "rendered",
           });
           cleanupPdfPageResources(page);
@@ -134,6 +139,7 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
         setRenderState({
           pageNumber,
           pdfDocument,
+          sourcePageNumber,
           status: "error",
         });
       }
@@ -150,7 +156,7 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
       });
       setRenderState(null);
     };
-  }, [pageNumber, pdfDocument, shouldRender]);
+  }, [pageNumber, pdfDocument, shouldRender, sourcePageNumber]);
 
   return (
     <div

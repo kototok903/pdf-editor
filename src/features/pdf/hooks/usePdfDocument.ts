@@ -2,6 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { loadPdfDocument } from "@/features/pdf/lib/pdfjs";
 import type {
+  DocumentSource,
+  DocumentSourceId,
+} from "@/features/editor/editor-types";
+import type {
   LoadedPdfDocument,
   PDFDocumentProxy,
   PdfLoadStatus,
@@ -124,4 +128,113 @@ function usePdfDocument() {
   };
 }
 
-export { usePdfDocument };
+function usePdfSourceDocuments(
+  documentSources: readonly DocumentSource[],
+  primaryDocument: LoadedPdfDocument | null = null,
+) {
+  const [documentsBySourceId, setDocumentsBySourceId] =
+    useState<ReadonlyMap<DocumentSourceId, LoadedPdfDocument>>(
+      emptySourceDocuments,
+    );
+  const loadedDocumentsRef = useRef<Map<DocumentSourceId, LoadedPdfDocument>>(
+    new Map(),
+  );
+
+  useEffect(() => {
+    let isCancelled = false;
+    const loadedDocuments = loadedDocumentsRef.current;
+    const sourceIds = new Set(documentSources.map((source) => source.id));
+
+    for (const [sourceId, loadedDocument] of loadedDocuments) {
+      if (!sourceIds.has(sourceId)) {
+        void loadedDocument.pdfDocument.destroy();
+        loadedDocuments.delete(sourceId);
+      }
+    }
+
+    async function loadSources() {
+      const nextDocumentsBySourceId = new Map<
+        DocumentSourceId,
+        LoadedPdfDocument
+      >();
+
+      for (const source of documentSources) {
+        if (
+          primaryDocument &&
+          primaryDocument.bytes === source.bytes &&
+          primaryDocument.fileName === source.fileName
+        ) {
+          nextDocumentsBySourceId.set(source.id, primaryDocument);
+          continue;
+        }
+
+        const loadedDocument = loadedDocuments.get(source.id);
+
+        if (loadedDocument?.bytes === source.bytes) {
+          nextDocumentsBySourceId.set(source.id, loadedDocument);
+          continue;
+        }
+
+        if (loadedDocument) {
+          void loadedDocument.pdfDocument.destroy();
+          loadedDocuments.delete(source.id);
+        }
+
+        const pdfDocument = await loadPdfDocument(source.bytes);
+
+        if (isCancelled) {
+          void pdfDocument.destroy();
+          return;
+        }
+
+        const nextLoadedDocument: LoadedPdfDocument = {
+          bytes: source.bytes,
+          fileName: source.fileName,
+          pageCount: pdfDocument.numPages,
+          pdfDocument,
+        };
+
+        loadedDocuments.set(source.id, nextLoadedDocument);
+        nextDocumentsBySourceId.set(source.id, nextLoadedDocument);
+      }
+
+      if (!isCancelled) {
+        setDocumentsBySourceId(nextDocumentsBySourceId);
+      }
+    }
+
+    if (documentSources.length === 0) {
+      queueMicrotask(() => {
+        if (!isCancelled) {
+          setDocumentsBySourceId(emptySourceDocuments);
+        }
+      });
+      return () => {
+        isCancelled = true;
+      };
+    }
+
+    void loadSources();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [documentSources, primaryDocument]);
+
+  useEffect(() => {
+    const loadedDocuments = loadedDocumentsRef.current;
+
+    return () => {
+      for (const loadedDocument of loadedDocuments.values()) {
+        void loadedDocument.pdfDocument.destroy();
+      }
+      loadedDocuments.clear();
+    };
+  }, []);
+
+  return documentsBySourceId;
+}
+
+const emptySourceDocuments = new Map<DocumentSourceId, LoadedPdfDocument>();
+
+export { usePdfDocument, usePdfSourceDocuments };

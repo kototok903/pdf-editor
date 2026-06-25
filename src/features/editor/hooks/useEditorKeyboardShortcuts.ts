@@ -5,8 +5,8 @@ import type {
   EditorOverlay,
   PdfRect,
 } from "@/features/editor/editor-types";
-import type { LayerMoveDirection } from "@/features/editor/lib/layer-sidebar-utils";
 import { getVisiblePageNumberForPageId } from "@/features/editor/lib/document-pages";
+import type { LayerMoveDirection } from "@/features/editor/lib/layer-sidebar-utils";
 import { getOverlayRotationDegrees } from "@/features/editor/lib/overlay-capabilities";
 import { nudgeOverlayRect } from "@/features/editor/lib/overlay-coordinate-utils";
 import { isPlatformModKey } from "@/lib/platform-utils";

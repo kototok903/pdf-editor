@@ -30,7 +30,7 @@ import {
   SettingsDialog,
 } from "@/features/editor/components/SettingsDialog";
 import type {
-  DocumentPage,
+  DocumentSource,
   EditorOverlay,
   ImageAsset,
   MarkOverlay,
@@ -42,6 +42,10 @@ import type {
   WhiteoutOverlay,
   WhiteoutOverlayPatch,
 } from "@/features/editor/editor-types";
+import {
+  getPageIdForVisiblePage,
+  getVisiblePageNumberForPageId,
+} from "@/features/editor/lib/document-pages";
 import { useEditorClipboardActions } from "@/features/editor/hooks/useEditorClipboardActions";
 import { useEditorOverlays } from "@/features/editor/hooks/useEditorOverlays";
 import { useEditorKeyboardShortcuts } from "@/features/editor/hooks/useEditorKeyboardShortcuts";
@@ -55,10 +59,6 @@ import {
 } from "@/features/editor/hooks/useEditorPreferences";
 import { supportedImageAcceptValue } from "@/features/editor/lib/image-asset-utils";
 import { getPageLayerOverlays } from "@/features/editor/lib/layer-sidebar-utils";
-import {
-  getPageIdForVisiblePage,
-  getVisiblePageNumberForPageId,
-} from "@/features/editor/lib/document-pages";
 import { defaultMarkSettings } from "@/features/editor/lib/mark-definitions";
 import {
   defaultTextOverlay,
@@ -80,7 +80,10 @@ import {
   type DocumentTextFontOption,
 } from "@/features/editor/lib/text-fonts";
 import { createExportFileName } from "@/features/pdf-export/lib/export-file-name";
-import { usePdfDocument } from "@/features/pdf/hooks/usePdfDocument";
+import {
+  usePdfDocument,
+  usePdfSourceDocuments,
+} from "@/features/pdf/hooks/usePdfDocument";
 import { usePdfPageSizes } from "@/features/pdf/hooks/usePdfPageSizes";
 import {
   createPdfFormFieldRegistry,
@@ -91,7 +94,7 @@ import {
 import { updatePdfFormValue } from "@/features/editor/lib/editor-form-edits";
 import { isDocumentFontExtractionEnabled } from "@/features/pdf/lib/pdf-font-extraction-config";
 import { scalePageSizes } from "@/features/pdf/lib/pdf-page-size-utils";
-import type { PageSize } from "@/features/pdf/pdf-types";
+import type { LoadedPdfDocument, PageSize } from "@/features/pdf/pdf-types";
 
 const zoomStep = 0.1;
 
@@ -109,7 +112,7 @@ function AppShell() {
     Record<number, PageSize>
   >({});
   const [formWidgetsByPage, setFormWidgetsByPage] = useState<
-    Record<number, PdfFormWidget[]>
+    Record<string, PdfFormWidget[]>
   >({});
   const [scrollToPageRequest, setScrollToPageRequest] = useState<{
     behavior: ScrollBehavior;
@@ -540,6 +543,19 @@ function AppShell() {
     status,
   });
 
+  const activeDocumentSources = useMemo(
+    () =>
+      getActiveDocumentSources(activeProject?.documentSources ?? [], {
+        documentPages,
+        loadedDocument,
+      }),
+    [activeProject?.documentSources, documentPages, loadedDocument],
+  );
+  const sourceDocumentsById = usePdfSourceDocuments(
+    activeDocumentSources,
+    loadedDocument,
+  );
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -586,6 +602,10 @@ function AppShell() {
         imageAssets,
         metadata: exportProject?.metadata ?? activeProject?.metadata ?? null,
         documentPages,
+        documentSources:
+          exportProject?.documentSources ??
+          activeProject?.documentSources ??
+          [],
         originalPdfBytes: loadedDocument.bytes,
         overlays,
       });
@@ -606,12 +626,12 @@ function AppShell() {
     clearEditing,
     commitPendingTextEdit,
     documentFontOptions,
-    documentPages,
     formEdits,
     formFieldRegistry,
     imageAssets,
     isExporting,
     loadedDocument,
+    documentPages,
     overlays,
     activeProject,
     ensureActiveProjectMetadata,
@@ -654,9 +674,9 @@ function AppShell() {
   );
 
   const handleFormWidgetsChange = useCallback(
-    (pageNumber: number, widgets: PdfFormWidget[]) => {
+    (pageId: string, widgets: PdfFormWidget[]) => {
       setFormWidgetsByPage((currentWidgetsByPage) => {
-        const currentWidgets = currentWidgetsByPage[pageNumber] ?? [];
+        const currentWidgets = currentWidgetsByPage[pageId] ?? [];
 
         if (arePdfFormWidgetArraysEqual(currentWidgets, widgets)) {
           return currentWidgetsByPage;
@@ -665,14 +685,14 @@ function AppShell() {
         if (widgets.length === 0) {
           const nextWidgetsByPage = { ...currentWidgetsByPage };
 
-          delete nextWidgetsByPage[pageNumber];
+          delete nextWidgetsByPage[pageId];
 
           return nextWidgetsByPage;
         }
 
         return {
           ...currentWidgetsByPage,
-          [pageNumber]: widgets,
+          [pageId]: widgets,
         };
       });
     },
@@ -975,36 +995,6 @@ function AppShell() {
     },
     [handleRequestWorkspacePageScroll],
   );
-  const handleMoveOverlayLayerByVisiblePage = useCallback(
-    ({
-      insertBelowOverlayId,
-      overlayId,
-      pageNumber,
-      targetPageSize,
-      trackHistory,
-    }: {
-      insertBelowOverlayId?: string | null;
-      overlayId: string;
-      pageNumber: number;
-      targetPageSize?: { height: number; width: number } | null;
-      trackHistory?: boolean;
-    }) => {
-      const pageId = getPageIdForVisiblePage(documentPages, pageNumber);
-
-      if (!pageId) {
-        return;
-      }
-
-      moveOverlayLayer({
-        insertBelowOverlayId,
-        overlayId,
-        pageId,
-        targetPageSize,
-        trackHistory,
-      });
-    },
-    [documentPages, moveOverlayLayer],
-  );
 
   return (
     <TooltipProvider delayDuration={700}>
@@ -1075,7 +1065,7 @@ function AppShell() {
           onUndo={handleUndo}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
-          pageCount={loadedDocument?.pageCount ?? 0}
+          pageCount={documentPages.length}
           pageSizes={basePageSizes}
           projects={toolbarProjects}
           signatureAssets={recentSignatureAssets}
@@ -1092,7 +1082,7 @@ function AppShell() {
             onCommitHistoryFromBase={commitHistoryFromBase}
             currentPage={currentPage}
             documentPages={documentPages}
-            moveOverlayLayer={handleMoveOverlayLayerByVisiblePage}
+            moveOverlayLayer={moveOverlayLayer}
             onCurrentPageChange={setCurrentPage}
             onGetHistoryEntrySnapshot={getHistoryEntrySnapshot}
             onRequestWorkspacePageScroll={handleRequestWorkspacePageScroll}
@@ -1106,10 +1096,12 @@ function AppShell() {
               <PagesSidebar
                 currentPage={currentPage}
                 document={loadedDocument}
+                documentPages={documentPages}
                 imageAssetById={imageAssetById}
                 onSelectPage={handleSelectSidebarPage}
                 overlaysByPage={overlaysByPage}
-                pageCount={loadedDocument?.pageCount ?? 0}
+                pageCount={documentPages.length}
+                sourceDocumentsById={sourceDocumentsById}
               />
             )}
             {editorPreferences.isLayersSidebarOpen && (
@@ -1158,6 +1150,7 @@ function AppShell() {
             onUpdateOverlayRotation={updateOverlayRotation}
             overlaysByPage={overlaysByPage}
             pageSizes={pageSizes}
+            sourceDocumentsById={sourceDocumentsById}
             selectedOverlayId={selectedOverlayId}
             selectedOverlayPageNumber={selectedOverlayPageNumber}
             status={displayStatus}
@@ -1246,11 +1239,41 @@ function getExportErrorMessage(error: unknown) {
   return "Please try again.";
 }
 
+function getActiveDocumentSources(
+  documentSources: DocumentSource[],
+  {
+    documentPages,
+    loadedDocument,
+  }: {
+    documentPages: readonly { sourceId: string }[];
+    loadedDocument: LoadedPdfDocument | null;
+  },
+) {
+  if (documentSources.length > 0) {
+    return documentSources;
+  }
+
+  const sourceId = documentPages[0]?.sourceId;
+
+  if (!sourceId || !loadedDocument) {
+    return [];
+  }
+
+  return [
+    {
+      bytes: loadedDocument.bytes,
+      fileName: loadedDocument.fileName,
+      id: sourceId,
+      pageCount: loadedDocument.pageCount,
+    },
+  ];
+}
+
 const emptyEditorOverlays: EditorOverlay[] = [];
 
 function useStableOverlaysByPage(
   overlays: EditorOverlay[],
-  documentPages: DocumentPage[],
+  documentPages: readonly { id: string }[],
 ) {
   const previousOverlaysByPageRef =
     useRef<ReadonlyMap<number, EditorOverlay[]>>(emptyOverlaysByPage);
@@ -1274,12 +1297,12 @@ const emptyOverlaysByPage = new Map<number, EditorOverlay[]>();
 
 function groupOverlaysByPage(
   overlays: EditorOverlay[],
-  documentPages: DocumentPage[],
+  documentPages: readonly { id: string }[],
   previousOverlaysByPage: ReadonlyMap<number, EditorOverlay[]>,
 ) {
   const nextOverlaysByPage = new Map<number, EditorOverlay[]>();
   const visiblePageById = new Map(
-    documentPages.map((page, index) => [page.id, index + 1] as const),
+    documentPages.map((page, index) => [page.id, index + 1]),
   );
 
   for (const overlay of overlays) {

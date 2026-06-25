@@ -20,12 +20,13 @@ import "@/features/pdf/components/pdf-annotation-layer.css";
 type PdfAnnotationLayerProps = {
   formEdits: EditorFormEdits;
   onCommitFormValue: (value: PdfFormValue) => void;
-  onFormWidgetsChange: (pageNumber: number, widgets: PdfFormWidget[]) => void;
+  onFormWidgetsChange: (pageId: string, widgets: PdfFormWidget[]) => void;
   pageId: DocumentPageId;
   pageNumber: number;
   pdfDocument: PDFDocumentProxy;
   scale: number;
   shouldRender: boolean;
+  sourcePageNumber: number;
 };
 
 const PdfAnnotationLayer = memo(function PdfAnnotationLayer({
@@ -37,6 +38,7 @@ const PdfAnnotationLayer = memo(function PdfAnnotationLayer({
   pdfDocument,
   scale,
   shouldRender,
+  sourcePageNumber,
 }: PdfAnnotationLayerProps) {
   const annotationLayerRef = useRef<HTMLDivElement | null>(null);
   const formEditsRef = useRef(formEdits);
@@ -60,7 +62,7 @@ const PdfAnnotationLayer = memo(function PdfAnnotationLayer({
 
     annotationLayerContainer.replaceChildren();
     setWidgets(emptyFormWidgets);
-    onFormWidgetsChange(pageNumber, emptyFormWidgets);
+    onFormWidgetsChange(pageId, emptyFormWidgets);
 
     if (!shouldRender) {
       return;
@@ -68,7 +70,7 @@ const PdfAnnotationLayer = memo(function PdfAnnotationLayer({
 
     async function renderAnnotationLayer() {
       try {
-        const page = await pdfDocument.getPage(pageNumber);
+        const page = await pdfDocument.getPage(sourcePageNumber);
 
         if (isCancelled) {
           return;
@@ -133,7 +135,7 @@ const PdfAnnotationLayer = memo(function PdfAnnotationLayer({
 
         if (!isCancelled) {
           setWidgets(nextWidgets);
-          onFormWidgetsChange(pageNumber, nextWidgets);
+          onFormWidgetsChange(pageId, nextWidgets);
         }
       } catch (error) {
         if (isCancelled) {
@@ -146,7 +148,7 @@ const PdfAnnotationLayer = memo(function PdfAnnotationLayer({
 
         annotationLayerContainer.replaceChildren();
         setWidgets(emptyFormWidgets);
-        onFormWidgetsChange(pageNumber, emptyFormWidgets);
+        onFormWidgetsChange(pageId, emptyFormWidgets);
       }
     }
 
@@ -156,7 +158,7 @@ const PdfAnnotationLayer = memo(function PdfAnnotationLayer({
       isCancelled = true;
       annotationLayerContainer.replaceChildren();
       setWidgets(emptyFormWidgets);
-      onFormWidgetsChange(pageNumber, emptyFormWidgets);
+      onFormWidgetsChange(pageId, emptyFormWidgets);
     };
   }, [
     onFormWidgetsChange,
@@ -165,6 +167,7 @@ const PdfAnnotationLayer = memo(function PdfAnnotationLayer({
     pdfDocument,
     scale,
     shouldRender,
+    sourcePageNumber,
   ]);
 
   useEffect(() => {

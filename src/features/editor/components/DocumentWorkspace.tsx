@@ -59,7 +59,7 @@ type DocumentWorkspaceProps = {
   onDropImageFile: (file: File) => void;
   onDropPdfFile: (file: File) => void;
   onEditOverlay: (overlayId: string | null) => void;
-  onFormWidgetsChange: (pageNumber: number, widgets: PdfFormWidget[]) => void;
+  onFormWidgetsChange: (pageId: string, widgets: PdfFormWidget[]) => void;
   onOpenFile: () => void;
   onPageSizeChange: (pageNumber: number, pageSize: PageSize) => void;
   onPlaceImageOverlay: (pageNumber: number, rect: PdfRect) => void;
@@ -75,6 +75,7 @@ type DocumentWorkspaceProps = {
   pageSizes: Record<number, PageSize>;
   selectedOverlayId: string | null;
   selectedOverlayPageNumber: number | null;
+  sourceDocumentsById: ReadonlyMap<string, LoadedPdfDocument>;
   status: PdfLoadStatus;
   scrollToPageRequest: ScrollToPageRequest | null;
   whiteoutColor: string;
@@ -126,6 +127,7 @@ const DocumentWorkspace = memo(function DocumentWorkspace({
   pageSizes,
   selectedOverlayId,
   selectedOverlayPageNumber,
+  sourceDocumentsById,
   status,
   scrollToPageRequest,
   whiteoutColor,
@@ -476,6 +478,7 @@ const DocumentWorkspace = memo(function DocumentWorkspace({
           scale={zoom}
           selectedOverlayId={selectedOverlayId}
           selectedOverlayPageNumber={selectedOverlayPageNumber}
+          sourceDocumentsById={sourceDocumentsById}
           whiteoutColor={whiteoutColor}
         />
       )}

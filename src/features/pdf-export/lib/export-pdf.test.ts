@@ -206,6 +206,78 @@ describe("export pdf form fields", () => {
   });
 });
 
+describe("export pdf document pages", () => {
+  it("exports document pages in draft order", async () => {
+    const originalPdfBytes = await createSizedPdf([
+      [200, 300],
+      [250, 350],
+      [300, 400],
+    ]);
+    const source = {
+      bytes: originalPdfBytes,
+      fileName: "pages.pdf",
+      id: "source-1",
+      pageCount: 3,
+    };
+    const documentPages = [
+      createDocumentPage("page-3", 3),
+      createDocumentPage("page-1", 1),
+    ];
+    const exportedBytes = await exportPdf({
+      documentPages,
+      documentSources: [source],
+      imageAssets: [],
+      originalPdfBytes,
+      overlays: [],
+    });
+    const exportedPdf = await PDFDocument.load(exportedBytes);
+
+    expect(exportedPdf.getPageCount()).toBe(2);
+    expect(exportedPdf.getPage(0).getSize()).toEqual({
+      height: 400,
+      width: 300,
+    });
+    expect(exportedPdf.getPage(1).getSize()).toEqual({
+      height: 300,
+      width: 200,
+    });
+  });
+
+  it("exports only selected page ids", async () => {
+    const originalPdfBytes = await createSizedPdf([
+      [200, 300],
+      [250, 350],
+      [300, 400],
+    ]);
+    const source = {
+      bytes: originalPdfBytes,
+      fileName: "pages.pdf",
+      id: "source-1",
+      pageCount: 3,
+    };
+    const documentPages = [
+      createDocumentPage("page-1", 1),
+      createDocumentPage("page-2", 2),
+      createDocumentPage("page-3", 3),
+    ];
+    const exportedBytes = await exportPdf({
+      documentPages,
+      documentSources: [source],
+      imageAssets: [],
+      originalPdfBytes,
+      overlays: [],
+      selectedPageIds: ["page-2"],
+    });
+    const exportedPdf = await PDFDocument.load(exportedBytes);
+
+    expect(exportedPdf.getPageCount()).toBe(1);
+    expect(exportedPdf.getPage(0).getSize()).toEqual({
+      height: 350,
+      width: 250,
+    });
+  });
+});
+
 async function createFormPdf() {
   const pdfDocument = await PDFDocument.create();
   const page = pdfDocument.addPage([400, 500]);
@@ -249,6 +321,25 @@ async function createFormPdf() {
     x: 50,
     y: 300,
   });
+
+  return copyBytesToArrayBuffer(await pdfDocument.save());
+}
+
+function createDocumentPage(id: string, sourcePageNumber: number) {
+  return {
+    id,
+    rotationDegrees: 0 as const,
+    sourceId: "source-1",
+    sourcePageNumber,
+  };
+}
+
+async function createSizedPdf(pageSizes: [number, number][]) {
+  const pdfDocument = await PDFDocument.create();
+
+  for (const pageSize of pageSizes) {
+    pdfDocument.addPage(pageSize);
+  }
 
   return copyBytesToArrayBuffer(await pdfDocument.save());
 }

@@ -17,9 +17,11 @@ import {
 } from "pdf-lib";
 
 import type {
+  DocumentPage,
+  DocumentPageId,
+  DocumentSource,
   EditorFormEdits,
   EditorOverlay,
-  DocumentPage,
   ImageAsset,
   ImageOverlay,
   MarkOverlay,
@@ -49,6 +51,7 @@ import {
 
 type ExportPdfOptions = {
   documentPages?: DocumentPage[];
+  documentSources?: DocumentSource[];
   documentFonts?: DocumentTextFontOption[];
   flattenForms?: boolean;
   formEdits?: EditorFormEdits;
@@ -57,6 +60,7 @@ type ExportPdfOptions = {
   metadata?: PdfProjectMetadata | null;
   originalPdfBytes: ArrayBuffer;
   overlays: EditorOverlay[];
+  selectedPageIds?: DocumentPageId[];
 };
 
 type ExportContext = {
@@ -72,6 +76,7 @@ const exportedPdfProducer = "PDF Editor by kototok903";
 
 async function exportPdf({
   documentPages = [],
+  documentSources = [],
   documentFonts = [],
   flattenForms = false,
   formEdits = { values: [] },
@@ -80,9 +85,16 @@ async function exportPdf({
   metadata = null,
   originalPdfBytes,
   overlays,
+  selectedPageIds,
 }: ExportPdfOptions) {
-  const pdfDocument = await PDFDocument.load(originalPdfBytes, {
-    updateMetadata: false,
+  const exportPages =
+    documentPages.length > 0
+      ? getExportDocumentPages(documentPages, selectedPageIds)
+      : [];
+  const pdfDocument = await createExportPdfDocument({
+    documentPages: exportPages,
+    documentSources,
+    originalPdfBytes,
   });
   applyPdfMetadata(pdfDocument, metadata);
   pdfDocument.setModificationDate(new Date());
@@ -101,9 +113,17 @@ async function exportPdf({
   };
 
   const pages = pdfDocument.getPages();
-  const pageIndexById = new Map(
-    documentPages.map((documentPage, index) => [documentPage.id, index]),
-  );
+  const pageById = new Map<DocumentPageId, PDFPage>();
+
+  if (exportPages.length > 0) {
+    for (let index = 0; index < exportPages.length; index += 1) {
+      const page = pages[index];
+
+      if (page) {
+        pageById.set(exportPages[index].id, page);
+      }
+    }
+  }
 
   await applyFormEdits(context, formEdits, {
     flattenForms,
@@ -111,8 +131,10 @@ async function exportPdf({
   });
 
   for (const overlay of overlays) {
-    const pageIndex = pageIndexById.get(overlay.pageId);
-    const page = pageIndex === undefined ? null : pages[pageIndex];
+    const page =
+      pageById.size > 0
+        ? pageById.get(overlay.pageId)
+        : pages[getFallbackPageIndex(overlay.pageId)];
 
     if (!page) {
       continue;
@@ -130,6 +152,104 @@ async function exportPdf({
   }
 
   return pdfDocument.save();
+}
+
+function getFallbackPageIndex(pageId: DocumentPageId) {
+  const match = /(\d+)$/.exec(pageId);
+
+  return match ? Number(match[1]) - 1 : -1;
+}
+
+async function createExportPdfDocument({
+  documentPages,
+  documentSources,
+  originalPdfBytes,
+}: {
+  documentPages: DocumentPage[];
+  documentSources: DocumentSource[];
+  originalPdfBytes: ArrayBuffer;
+}) {
+  if (
+    documentPages.length === 0 ||
+    isOriginalSourceOrder(documentPages, documentSources, originalPdfBytes)
+  ) {
+    return PDFDocument.load(originalPdfBytes, {
+      updateMetadata: false,
+    });
+  }
+
+  const outputDocument = await PDFDocument.create();
+  const sourceDocumentsById = new Map<string, PDFDocument>();
+
+  for (const documentPage of documentPages) {
+    const source = documentSources.find(
+      (documentSource) => documentSource.id === documentPage.sourceId,
+    );
+
+    if (!source) {
+      continue;
+    }
+
+    let sourceDocument = sourceDocumentsById.get(source.id);
+
+    if (!sourceDocument) {
+      sourceDocument = await PDFDocument.load(source.bytes, {
+        updateMetadata: false,
+      });
+      sourceDocumentsById.set(source.id, sourceDocument);
+    }
+
+    const [copiedPage] = await outputDocument.copyPages(sourceDocument, [
+      documentPage.sourcePageNumber - 1,
+    ]);
+
+    if (copiedPage) {
+      outputDocument.addPage(copiedPage);
+    }
+  }
+
+  return outputDocument;
+}
+
+function getExportDocumentPages(
+  documentPages: DocumentPage[],
+  selectedPageIds: DocumentPageId[] | undefined,
+) {
+  if (!selectedPageIds || selectedPageIds.length === 0) {
+    return documentPages;
+  }
+
+  const selectedPageIdSet = new Set(selectedPageIds);
+
+  return documentPages.filter((documentPage) =>
+    selectedPageIdSet.has(documentPage.id),
+  );
+}
+
+function isOriginalSourceOrder(
+  documentPages: DocumentPage[],
+  documentSources: DocumentSource[],
+  originalPdfBytes: ArrayBuffer,
+) {
+  if (documentSources.length !== 1) {
+    return false;
+  }
+
+  const [source] = documentSources;
+
+  if (!source || source.bytes !== originalPdfBytes) {
+    return false;
+  }
+
+  if (documentPages.length !== source.pageCount) {
+    return false;
+  }
+
+  return documentPages.every(
+    (documentPage, index) =>
+      documentPage.sourceId === source.id &&
+      documentPage.sourcePageNumber === index + 1,
+  );
 }
 
 function applyPdfMetadata(

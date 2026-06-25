@@ -261,10 +261,6 @@ function areDocumentPagesEqual(
   left: readonly DocumentPage[],
   right: readonly DocumentPage[],
 ) {
-  if (left === right) {
-    return true;
-  }
-
   return (
     left.length === right.length &&
     left.every((page, index) => areDocumentPageEqual(page, right[index]))
@@ -331,14 +327,7 @@ function areOverlayListsEqual(left: EditorOverlay[], right: EditorOverlay[]) {
   );
 }
 
-function areOverlaysEqual(
-  left: EditorOverlay,
-  right: EditorOverlay | undefined,
-) {
-  if (!right) {
-    return false;
-  }
-
+function areOverlaysEqual(left: EditorOverlay, right: EditorOverlay) {
   return (
     left === right ||
     (left.type === right.type &&

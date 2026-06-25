@@ -32,7 +32,7 @@ type PdfDocumentViewProps = {
   onClearSelection: () => void;
   onCommitFormValue: (value: PdfFormValue) => void;
   onEditOverlay: (overlayId: string | null) => void;
-  onFormWidgetsChange: (pageNumber: number, widgets: PdfFormWidget[]) => void;
+  onFormWidgetsChange: (pageId: string, widgets: PdfFormWidget[]) => void;
   onPageElementChange: (
     pageNumber: number,
     element: HTMLElement | null,
@@ -52,6 +52,7 @@ type PdfDocumentViewProps = {
   scale: number;
   selectedOverlayId: string | null;
   selectedOverlayPageNumber: number | null;
+  sourceDocumentsById: ReadonlyMap<string, LoadedPdfDocument>;
   whiteoutColor: string;
 };
 
@@ -90,56 +91,68 @@ const PdfDocumentView = memo(function PdfDocumentView({
   scale,
   selectedOverlayId,
   selectedOverlayPageNumber,
+  sourceDocumentsById,
   whiteoutColor,
 }: PdfDocumentViewProps) {
   return (
     <div className="space-y-7">
-      {Array.from({ length: document.pageCount }, (_, index) => (
-        <PdfPageView
-          activeImageAsset={activeImageAsset}
-          activeSignatureAsset={activeSignatureAsset}
-          editingOverlayId={editingOverlayId}
-          formEdits={formEdits}
-          imageAssetById={imageAssetById}
-          isImageToolActive={isImageToolActive}
-          isMarkToolActive={isMarkToolActive}
-          isSignatureToolActive={isSignatureToolActive}
-          isTextToolActive={isTextToolActive}
-          isWhiteoutToolActive={isWhiteoutToolActive}
-          key={index + 1}
-          onCancelActiveTool={onCancelActiveTool}
-          onClearSelection={onClearSelection}
-          onCommitFormValue={onCommitFormValue}
-          onEditOverlay={onEditOverlay}
-          onFormWidgetsChange={onFormWidgetsChange}
-          onPageElementChange={onPageElementChange}
-          onPageSizeChange={onPageSizeChange}
-          onPlaceImageOverlay={onPlaceImageOverlay}
-          onPlaceMarkOverlay={onPlaceMarkOverlay}
-          onPlaceSignatureOverlay={onPlaceSignatureOverlay}
-          onPlaceTextOverlay={onPlaceTextOverlay}
-          onPlaceWhiteoutOverlay={onPlaceWhiteoutOverlay}
-          onSelectOverlay={onSelectOverlay}
-          onUpdateTextOverlay={onUpdateTextOverlay}
-          onUpdateOverlayRect={onUpdateOverlayRect}
-          onUpdateOverlayRotation={onUpdateOverlayRotation}
-          pageOverlays={overlaysByPage.get(index + 1) ?? emptyPageOverlays}
-          pageId={documentPages[index]?.id ?? String(index + 1)}
-          pageSize={pageSizes[index + 1] ?? getDefaultPageSize(scale)}
-          pageNumber={index + 1}
-          pdfDocument={document.pdfDocument}
-          scale={scale}
-          selectedOverlayId={
-            selectedOverlayPageNumber === index + 1 ? selectedOverlayId : null
-          }
-          shouldRender={isPageInRenderWindow({
-            currentPage,
-            overscan: workspacePageRenderOverscan,
-            pageNumber: index + 1,
-          })}
-          whiteoutColor={whiteoutColor}
-        />
-      ))}
+      {documentPages.map((documentPage, index) => {
+        const pageNumber = index + 1;
+        const sourceDocument = sourceDocumentsById.get(documentPage.sourceId);
+
+        return (
+          <PdfPageView
+            activeImageAsset={activeImageAsset}
+            activeSignatureAsset={activeSignatureAsset}
+            editingOverlayId={editingOverlayId}
+            formEdits={formEdits}
+            imageAssetById={imageAssetById}
+            isImageToolActive={isImageToolActive}
+            isMarkToolActive={isMarkToolActive}
+            isSignatureToolActive={isSignatureToolActive}
+            isTextToolActive={isTextToolActive}
+            isWhiteoutToolActive={isWhiteoutToolActive}
+            key={documentPage.id}
+            onCancelActiveTool={onCancelActiveTool}
+            onClearSelection={onClearSelection}
+            onCommitFormValue={onCommitFormValue}
+            onEditOverlay={onEditOverlay}
+            onFormWidgetsChange={onFormWidgetsChange}
+            onPageElementChange={onPageElementChange}
+            onPageSizeChange={onPageSizeChange}
+            onPlaceImageOverlay={onPlaceImageOverlay}
+            onPlaceMarkOverlay={onPlaceMarkOverlay}
+            onPlaceSignatureOverlay={onPlaceSignatureOverlay}
+            onPlaceTextOverlay={onPlaceTextOverlay}
+            onPlaceWhiteoutOverlay={onPlaceWhiteoutOverlay}
+            onSelectOverlay={onSelectOverlay}
+            onUpdateTextOverlay={onUpdateTextOverlay}
+            onUpdateOverlayRect={onUpdateOverlayRect}
+            onUpdateOverlayRotation={onUpdateOverlayRotation}
+            pageId={documentPage.id}
+            pageOverlays={overlaysByPage.get(pageNumber) ?? emptyPageOverlays}
+            pageSize={pageSizes[pageNumber] ?? getDefaultPageSize(scale)}
+            pageNumber={pageNumber}
+            pdfDocument={sourceDocument?.pdfDocument ?? document.pdfDocument}
+            scale={scale}
+            selectedOverlayId={
+              selectedOverlayPageNumber === pageNumber
+                ? selectedOverlayId
+                : null
+            }
+            shouldRender={
+              Boolean(sourceDocument) &&
+              isPageInRenderWindow({
+                currentPage,
+                overscan: workspacePageRenderOverscan,
+                pageNumber,
+              })
+            }
+            sourcePageNumber={documentPage.sourcePageNumber}
+            whiteoutColor={whiteoutColor}
+          />
+        );
+      })}
     </div>
   );
 });

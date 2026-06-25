@@ -18,6 +18,23 @@ function createExportFileName(
   }
 }
 
+function createSelectedPagesExportFileName(
+  originalFileName: string,
+  pageRangeLabel: string,
+  takenFileNames: ReadonlySet<string>,
+) {
+  const { baseName, extension } = splitFileName(originalFileName);
+  const normalizedRangeLabel = pageRangeLabel
+    .trim()
+    .replace(/\s*,\s*/g, "_")
+    .replace(/\s+/g, "");
+
+  return createExportFileName(
+    `${baseName}_${normalizedRangeLabel}${extension || ".pdf"}`,
+    takenFileNames,
+  );
+}
+
 function splitFileName(fileName: string) {
   const extensionStart = fileName.lastIndexOf(".");
 
@@ -47,4 +64,4 @@ function getNumberedBaseName(baseName: string) {
   };
 }
 
-export { createExportFileName };
+export { createExportFileName, createSelectedPagesExportFileName };

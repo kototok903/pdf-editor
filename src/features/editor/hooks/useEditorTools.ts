@@ -12,8 +12,8 @@ import type {
   TextOverlayDefaults,
   WhiteoutOverlayDefaults,
 } from "@/features/editor/editor-types";
-import { readPasteIntentFromAsyncClipboard } from "@/features/editor/lib/editor-clipboard";
 import { getPageIdForVisiblePage } from "@/features/editor/lib/document-pages";
+import { readPasteIntentFromAsyncClipboard } from "@/features/editor/lib/editor-clipboard";
 import { supportedImageTypeListLabel } from "@/features/editor/lib/image-asset-utils";
 import { createImageOverlayRectAtPoint } from "@/features/editor/lib/overlay-coordinate-utils";
 import { getSignatureFontOption } from "@/features/editor/lib/signature-fonts";
@@ -83,7 +83,7 @@ function useEditorTools({
   }, []);
 
   const resetActiveTool = clearActiveTool;
-  const getOverlayPageId = useCallback(
+  const getPageId = useCallback(
     (pageNumber: number) => getPageIdForVisiblePage(documentPages, pageNumber),
     [documentPages],
   );
@@ -223,8 +223,9 @@ function useEditorTools({
   const dropImageFile = useCallback(
     (file: File) => {
       const pageSize = getCurrentPageSize();
+      const pageId = getPageId(currentPage);
 
-      if (!pageSize) {
+      if (!pageSize || !pageId) {
         toast.error("Unable to place image", {
           description: "Open a PDF and wait for the page to finish rendering.",
         });
@@ -232,12 +233,6 @@ function useEditorTools({
       }
 
       const importAndPlaceImage = async () => {
-        const pageId = getOverlayPageId(currentPage);
-
-        if (!pageId) {
-          return;
-        }
-
         try {
           const asset = await addImageFile(file);
 
@@ -273,7 +268,7 @@ function useEditorTools({
       addRenderableOverlay,
       currentPage,
       getCurrentPageSize,
-      getOverlayPageId,
+      getPageId,
     ],
   );
 
@@ -305,7 +300,7 @@ function useEditorTools({
 
   const placeTextOverlay = useCallback(
     (pageNumber: number, rect: PdfRect) => {
-      const pageId = getOverlayPageId(pageNumber);
+      const pageId = getPageId(pageNumber);
 
       if (!pageId) {
         return;
@@ -322,12 +317,12 @@ function useEditorTools({
       setActiveTool(null);
       editOverlay(overlay.id);
     },
-    [addOverlay, editOverlay, getOverlayPageId, setCurrentPage, textDefaults],
+    [addOverlay, editOverlay, getPageId, setCurrentPage, textDefaults],
   );
 
   const placeMarkOverlay = useCallback(
     (pageNumber: number, rect: PdfRect) => {
-      const pageId = getOverlayPageId(pageNumber);
+      const pageId = getPageId(pageNumber);
 
       if (!pageId) {
         return;
@@ -343,7 +338,7 @@ function useEditorTools({
       setActiveTool(null);
       editOverlay(null);
     },
-    [addOverlay, editOverlay, getOverlayPageId, markDefaults, setCurrentPage],
+    [addOverlay, editOverlay, getPageId, markDefaults, setCurrentPage],
   );
 
   const placeImageOverlay = useCallback(
@@ -351,7 +346,7 @@ function useEditorTools({
       if (!activeImageAsset) {
         return;
       }
-      const pageId = getOverlayPageId(pageNumber);
+      const pageId = getPageId(pageNumber);
 
       if (!pageId) {
         return;
@@ -369,13 +364,7 @@ function useEditorTools({
       setActiveTool(null);
       editOverlay(null);
     },
-    [
-      activeImageAsset,
-      addOverlay,
-      editOverlay,
-      getOverlayPageId,
-      setCurrentPage,
-    ],
+    [activeImageAsset, addOverlay, editOverlay, getPageId, setCurrentPage],
   );
 
   const placeSignatureOverlay = useCallback(
@@ -383,7 +372,7 @@ function useEditorTools({
       if (!activeSignatureAsset) {
         return;
       }
-      const pageId = getOverlayPageId(pageNumber);
+      const pageId = getPageId(pageNumber);
 
       if (!pageId) {
         return;
@@ -401,18 +390,12 @@ function useEditorTools({
       setActiveTool(null);
       editOverlay(null);
     },
-    [
-      activeSignatureAsset,
-      addOverlay,
-      editOverlay,
-      getOverlayPageId,
-      setCurrentPage,
-    ],
+    [activeSignatureAsset, addOverlay, editOverlay, getPageId, setCurrentPage],
   );
 
   const placeWhiteoutOverlay = useCallback(
     (pageNumber: number, rect: PdfRect) => {
-      const pageId = getOverlayPageId(pageNumber);
+      const pageId = getPageId(pageNumber);
 
       if (!pageId) {
         return;
@@ -431,7 +414,7 @@ function useEditorTools({
     [
       addOverlay,
       editOverlay,
-      getOverlayPageId,
+      getPageId,
       setCurrentPage,
       whiteoutDefaults.color,
     ],

@@ -90,6 +90,7 @@ function useEditorOverlays() {
       nextOverlays: EditorOverlay[],
       nextSelectedOverlayId = selectedOverlayIdRef.current,
       nextFormEdits = historyRef.current.present.formEdits,
+      nextDocumentPages = historyRef.current.present.documentPages,
     ) => {
       setHistory((currentHistory) =>
         replaceEditorHistoryPresent(
@@ -98,7 +99,7 @@ function useEditorOverlays() {
             nextOverlays,
             nextSelectedOverlayId,
             nextFormEdits,
-            historyRef.current.present.documentPages,
+            nextDocumentPages,
           ),
         ),
       );
@@ -167,7 +168,8 @@ function useEditorOverlays() {
       nextOverlays: EditorOverlay[] = [],
       nextSelectedOverlayId: string | null = null,
       nextHistory?: EditorHistoryState,
-      nextDocumentPages = historyRef.current.present.documentPages,
+      nextDocumentPages: EditorHistoryEntry["documentPages"] = historyRef
+        .current.present.documentPages,
     ) => {
       if (nextHistory) {
         setHistory(restoreEditorHistory(nextHistory));
@@ -425,8 +427,8 @@ function useEditorOverlays() {
     clearSelection,
     commitHistoryFromBase,
     getHistoryEntrySnapshot,
-    documentPages,
     formEdits,
+    documentPages,
     history,
     moveOverlayLayer,
     moveOverlayLayerInPage,

@@ -91,8 +91,8 @@ describe("editor projects", () => {
       pageCount: 2,
       pdfBytes: document.bytes,
     });
-    expect(updatedProject.history.present.documentPages).toHaveLength(2);
     expect(updatedProject.documentSources).toHaveLength(1);
+    expect(updatedProject.history.present.documentPages).toHaveLength(2);
   });
 
   it("preserves the project last modified timestamp by default", () => {

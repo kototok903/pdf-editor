@@ -9,9 +9,11 @@ import { isSortableOperation } from "@dnd-kit/react/sortable";
 
 import type {
   DocumentPage,
+  DocumentPageId,
   EditorOverlay,
 } from "@/features/editor/editor-types";
 import type { EditorHistoryEntry } from "@/features/editor/lib/editor-history";
+import { getPageIdForVisiblePage } from "@/features/editor/lib/document-pages";
 import {
   getPageNumberFromPageDropId,
   overlayLayerDragType,
@@ -20,7 +22,6 @@ import {
   sidebarDndSensors,
 } from "@/features/editor/components/sidebar-dnd";
 import { getPageLayerOverlays } from "@/features/editor/lib/layer-sidebar-utils";
-import { getPageIdForVisiblePage } from "@/features/editor/lib/document-pages";
 
 type LayerDragSnapshot = {
   currentPage: number;
@@ -36,13 +37,13 @@ type SidebarDragDropProviderProps = {
   moveOverlayLayer: ({
     insertBelowOverlayId,
     overlayId,
-    pageNumber,
+    pageId,
     targetPageSize,
     trackHistory,
   }: {
     insertBelowOverlayId?: string | null;
     overlayId: string;
-    pageNumber: number;
+    pageId: DocumentPageId;
     targetPageSize?: { height: number; width: number } | null;
     trackHistory?: boolean;
   }) => void;
@@ -98,9 +99,15 @@ function SidebarDragDropProvider({
 
   const moveDraggedOverlayToPage = useCallback(
     (overlayId: string, pageNumber: number) => {
+      const pageId = getPageIdForVisiblePage(documentPages, pageNumber);
+
+      if (!pageId) {
+        return;
+      }
+
       moveOverlayLayer({
         overlayId,
-        pageNumber,
+        pageId,
         targetPageSize: pageSizes[pageNumber] ?? null,
         trackHistory: false,
       });
@@ -109,7 +116,13 @@ function SidebarDragDropProvider({
       onStopEditingOverlay();
       pendingWorkspaceScrollPageRef.current = pageNumber;
     },
-    [moveOverlayLayer, onCurrentPageChange, onStopEditingOverlay, pageSizes],
+    [
+      documentPages,
+      moveOverlayLayer,
+      onCurrentPageChange,
+      onStopEditingOverlay,
+      pageSizes,
+    ],
   );
 
   const scheduleDraggedOverlayPageMove = useCallback(
@@ -244,12 +257,18 @@ function SidebarDragDropProvider({
             typeof sortableSource.group === "number"
               ? sortableSource.group
               : currentPage;
-          const pageId = getPageIdForVisiblePage(documentPages, pageNumber);
-          const pageOverlayIds = pageId
-            ? getPageLayerOverlays(overlays, pageId).map(
-                (overlay) => overlay.id,
-              )
-            : [];
+          const pageId =
+            typeof sortableSource.group === "string"
+              ? sortableSource.group
+              : getPageIdForVisiblePage(documentPages, pageNumber);
+
+          if (!pageId) {
+            return;
+          }
+
+          const pageOverlayIds = getPageLayerOverlays(overlays, pageId).map(
+            (overlay) => overlay.id,
+          );
           const pageOverlayIdsWithoutActive = pageOverlayIds.filter(
             (overlayId) => overlayId !== activeOverlayId,
           );
@@ -261,7 +280,7 @@ function SidebarDragDropProvider({
           moveOverlayLayer({
             insertBelowOverlayId,
             overlayId: activeOverlayId,
-            pageNumber,
+            pageId,
             targetPageSize: pageSizes[pageNumber] ?? null,
             trackHistory: false,
           });

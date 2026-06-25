@@ -40,7 +40,7 @@ type PdfPageViewProps = {
   onClearSelection: () => void;
   onCommitFormValue: (value: PdfFormValue) => void;
   onEditOverlay: (overlayId: string | null) => void;
-  onFormWidgetsChange: (pageNumber: number, widgets: PdfFormWidget[]) => void;
+  onFormWidgetsChange: (pageId: string, widgets: PdfFormWidget[]) => void;
   onPageElementChange: (
     pageNumber: number,
     element: HTMLElement | null,
@@ -63,6 +63,7 @@ type PdfPageViewProps = {
   scale: number;
   selectedOverlayId: string | null;
   shouldRender: boolean;
+  sourcePageNumber: number;
   whiteoutColor: string;
 };
 
@@ -101,6 +102,7 @@ const PdfPageView = memo(function PdfPageView({
   scale,
   selectedOverlayId,
   shouldRender,
+  sourcePageNumber,
   whiteoutColor,
 }: PdfPageViewProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -108,6 +110,7 @@ const PdfPageView = memo(function PdfPageView({
   const displayPageSize = pageSize;
   const isCurrentRenderState =
     renderState?.pageNumber === pageNumber &&
+    renderState.sourcePageNumber === sourcePageNumber &&
     renderState.pdfDocument === pdfDocument &&
     renderState.scale === scale;
   const error =
@@ -140,7 +143,7 @@ const PdfPageView = memo(function PdfPageView({
 
     async function renderPage() {
       try {
-        page = await pdfDocument.getPage(pageNumber);
+        page = await pdfDocument.getPage(sourcePageNumber);
 
         if (isCancelled) {
           try {
@@ -184,6 +187,7 @@ const PdfPageView = memo(function PdfPageView({
             pageNumber,
             pdfDocument,
             scale,
+            sourcePageNumber,
             status: "rendered",
           });
         }
@@ -203,6 +207,7 @@ const PdfPageView = memo(function PdfPageView({
           pageNumber,
           pdfDocument,
           scale,
+          sourcePageNumber,
           status: "error",
         });
       }
@@ -219,7 +224,14 @@ const PdfPageView = memo(function PdfPageView({
       });
       setRenderState(null);
     };
-  }, [onPageSizeChange, pageNumber, pdfDocument, scale, shouldRender]);
+  }, [
+    onPageSizeChange,
+    pageNumber,
+    pdfDocument,
+    scale,
+    shouldRender,
+    sourcePageNumber,
+  ]);
 
   return (
     <article
@@ -255,10 +267,10 @@ const PdfPageView = memo(function PdfPageView({
       )}
       <canvas className="relative z-0 block" ref={canvasRef} />
       <PdfTextLayer
-        pageNumber={pageNumber}
         pdfDocument={pdfDocument}
         scale={scale}
         shouldRender={shouldRender}
+        sourcePageNumber={sourcePageNumber}
       />
       <PdfAnnotationLayer
         formEdits={formEdits}
@@ -269,6 +281,7 @@ const PdfPageView = memo(function PdfPageView({
         pdfDocument={pdfDocument}
         scale={scale}
         shouldRender={shouldRender}
+        sourcePageNumber={sourcePageNumber}
       />
       {displayPageSize && (
         <OverlayLayer
@@ -310,6 +323,7 @@ type RenderState = {
   pageNumber: number;
   pdfDocument: PDFDocumentProxy;
   scale: number;
+  sourcePageNumber: number;
   status: "error" | "rendered";
 };
 

@@ -7,7 +7,11 @@ import {
   overlayLayerDragType,
   pageDropType,
 } from "@/features/editor/components/sidebar-dnd";
-import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
+import type {
+  DocumentPage,
+  EditorOverlay,
+  ImageAsset,
+} from "@/features/editor/editor-types";
 import { getSidebarThumbnailRenderPages } from "@/features/editor/lib/pages-sidebar-utils";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 import { cn } from "@/lib/utils";
@@ -15,19 +19,23 @@ import { cn } from "@/lib/utils";
 type PagesSidebarProps = {
   currentPage: number;
   document: LoadedPdfDocument | null;
+  documentPages: DocumentPage[];
   imageAssetById: ReadonlyMap<string, ImageAsset>;
   onSelectPage: (pageNumber: number) => void;
   overlaysByPage: ReadonlyMap<number, EditorOverlay[]>;
   pageCount: number;
+  sourceDocumentsById: ReadonlyMap<string, LoadedPdfDocument>;
 };
 
 const PagesSidebar = memo(function PagesSidebar({
   currentPage,
   document,
+  documentPages,
   imageAssetById,
   onSelectPage,
   overlaysByPage,
   pageCount,
+  sourceDocumentsById,
 }: PagesSidebarProps) {
   const pageButtonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const sidebarScrollerRef = useRef<HTMLDivElement | null>(null);
@@ -52,7 +60,10 @@ const PagesSidebar = memo(function PagesSidebar({
       }),
     [currentPage, pageCount, pdfDocument, thumbnailPageState],
   );
-  const pages = Array.from({ length: pageCount }, (_, index) => index + 1);
+  const pages = documentPages.map((documentPage, index) => ({
+    documentPage,
+    pageNumber: index + 1,
+  }));
   const registerPageButton = useCallback(
     (pageNumber: number, element: HTMLButtonElement | null) => {
       if (element) {
@@ -150,19 +161,33 @@ const PagesSidebar = memo(function PagesSidebar({
         ref={sidebarScrollerRef}
       >
         {pages.length > 0 && document ? (
-          pages.map((page) => (
-            <SidebarPageButton
-              imageAssetById={imageAssetById}
-              isActive={page === currentPage}
-              key={page}
-              onSelectPage={onSelectPage}
-              pageOverlays={overlaysByPage.get(page) ?? emptyPageOverlays}
-              pageNumber={page}
-              pdfDocument={document.pdfDocument}
-              registerPageButton={registerPageButton}
-              shouldRenderThumbnail={renderableThumbnailPages.has(page)}
-            />
-          ))
+          pages.map(({ documentPage, pageNumber }) => {
+            const sourceDocument = sourceDocumentsById.get(
+              documentPage.sourceId,
+            );
+
+            return (
+              <SidebarPageButton
+                imageAssetById={imageAssetById}
+                isActive={pageNumber === currentPage}
+                key={documentPage.id}
+                onSelectPage={onSelectPage}
+                pageOverlays={
+                  overlaysByPage.get(pageNumber) ?? emptyPageOverlays
+                }
+                pageNumber={pageNumber}
+                pdfDocument={
+                  sourceDocument?.pdfDocument ?? document.pdfDocument
+                }
+                registerPageButton={registerPageButton}
+                shouldRenderThumbnail={
+                  Boolean(sourceDocument) &&
+                  renderableThumbnailPages.has(pageNumber)
+                }
+                sourcePageNumber={documentPage.sourcePageNumber}
+              />
+            );
+          })
         ) : (
           <div className="w-15 h-20 rounded-md border border-dashed" />
         )}
@@ -182,6 +207,7 @@ const SidebarPageButton = memo(function SidebarPageButton({
   pdfDocument,
   registerPageButton,
   shouldRenderThumbnail,
+  sourcePageNumber,
 }: {
   imageAssetById: ReadonlyMap<string, ImageAsset>;
   isActive: boolean;
@@ -194,6 +220,7 @@ const SidebarPageButton = memo(function SidebarPageButton({
     element: HTMLButtonElement | null,
   ) => void;
   shouldRenderThumbnail: boolean;
+  sourcePageNumber: number;
 }) {
   const { isDropTarget, ref } = useDroppable({
     accept: overlayLayerDragType,
@@ -232,6 +259,7 @@ const SidebarPageButton = memo(function SidebarPageButton({
         pageNumber={pageNumber}
         pdfDocument={pdfDocument}
         shouldRender={shouldRenderThumbnail}
+        sourcePageNumber={sourcePageNumber}
       />
       <span
         className={cn(

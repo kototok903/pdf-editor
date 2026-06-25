@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 import type {
   DocumentPage,
+  DocumentPageId,
   EditorOverlay,
   EditorOverlayInput,
   ImageAsset,
@@ -85,6 +86,7 @@ function useEditorClipboardActions({
     useState<LastOverlayPaste | null>(null);
   const [lastExternalPaste, setLastExternalPaste] =
     useState<ExternalPasteRecord | null>(null);
+  const currentPageId = getPageIdForVisiblePage(documentPages, currentPage);
 
   const clearClipboardHistory = useCallback(() => {
     setLastOverlayPaste(null);
@@ -122,9 +124,10 @@ function useEditorClipboardActions({
       documentPages,
       selectedOverlay.pageId,
     );
-    const pageSize = selectedOverlayPageNumber
-      ? pageSizes[selectedOverlayPageNumber]
-      : null;
+    const pageSize =
+      selectedOverlayPageNumber === null
+        ? null
+        : pageSizes[selectedOverlayPageNumber];
 
     if (!pageSize) {
       return;
@@ -154,14 +157,12 @@ function useEditorClipboardActions({
       }
 
       const asset = await addImageBlob(image, nextSha256Signature);
-      const pageId = getPageIdForVisiblePage(documentPages, currentPage);
-
-      if (!pageId) {
+      if (!currentPageId) {
         return;
       }
 
       const overlay = addRenderableOverlay(
-        createCenteredImageOverlayInput(asset, pageId, pageSize),
+        createCenteredImageOverlayInput(asset, currentPageId, pageSize),
         { additionalRenderableImageAssetIds: [asset.id] },
       );
 
@@ -172,8 +173,7 @@ function useEditorClipboardActions({
     [
       addImageBlob,
       addRenderableOverlay,
-      currentPage,
-      documentPages,
+      currentPageId,
       lastExternalPaste,
       overlays,
     ],
@@ -198,14 +198,12 @@ function useEditorClipboardActions({
       pageSize: PageBounds,
     ) => {
       const { pasteCount, payloadKey } = getNextOverlayPaste(intent.payload);
-      const pageId = getPageIdForVisiblePage(documentPages, currentPage);
-
-      if (!pageId) {
+      if (!currentPageId) {
         return;
       }
 
       const input = toOverlayInput(intent.payload, {
-        pageId,
+        pageId: currentPageId,
         pageSize,
         pasteCount,
       });
@@ -254,8 +252,7 @@ function useEditorClipboardActions({
       addImageBlob,
       addSignatureBlob,
       addRenderableOverlay,
-      currentPage,
-      documentPages,
+      currentPageId,
       getNextOverlayPaste,
       imageAssets,
     ],
@@ -275,20 +272,18 @@ function useEditorClipboardActions({
         return;
       }
 
-      const pageId = getPageIdForVisiblePage(documentPages, currentPage);
-
-      if (!pageId) {
+      if (!currentPageId) {
         return;
       }
 
       const input = intent.html
         ? textOverlayInputFromHtml(intent.html, intent.text, {
-            pageId,
+            pageId: currentPageId,
             pageSize,
             textSettings,
           })
         : textOverlayInputFromPlainText(intent.text, {
-            pageId,
+            pageId: currentPageId,
             pageSize,
             textSettings,
           });
@@ -303,13 +298,7 @@ function useEditorClipboardActions({
         setLastExternalPaste(createExternalPasteRecord(overlay, signature));
       }
     },
-    [
-      addRenderableOverlay,
-      currentPage,
-      documentPages,
-      lastExternalPaste,
-      overlays,
-    ],
+    [addRenderableOverlay, currentPageId, lastExternalPaste, overlays],
   );
 
   const pasteTextWithCurrentSettingsIntent = useCallback(
@@ -337,14 +326,12 @@ function useEditorClipboardActions({
         return;
       }
 
-      const pageId = getPageIdForVisiblePage(documentPages, currentPage);
-
-      if (!pageId) {
+      if (!currentPageId) {
         return;
       }
 
       const input = textOverlayInputUsingCurrentSettings(text, {
-        pageId,
+        pageId: currentPageId,
         pageSize,
         textSettings,
       });
@@ -359,13 +346,7 @@ function useEditorClipboardActions({
         setLastExternalPaste(createExternalPasteRecord(overlay, signature));
       }
     },
-    [
-      addRenderableOverlay,
-      currentPage,
-      documentPages,
-      lastExternalPaste,
-      overlays,
-    ],
+    [addRenderableOverlay, currentPageId, lastExternalPaste, overlays],
   );
 
   const handlePasteIntent = useCallback(
@@ -470,7 +451,7 @@ function createImageClipboardSignature(
 
 function createCenteredImageOverlayInput(
   asset: Pick<ImageAsset, "height" | "id" | "sha256Signature" | "width">,
-  pageId: string,
+  pageId: DocumentPageId,
   pageSize: PageBounds,
 ): EditorOverlayInput {
   return {

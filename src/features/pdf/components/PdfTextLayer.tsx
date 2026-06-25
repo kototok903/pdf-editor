@@ -9,17 +9,17 @@ let textLayerSelectionAbortController: AbortController | null = null;
 let previousSelectionRange: Range | null = null;
 
 type PdfTextLayerProps = {
-  pageNumber: number;
   pdfDocument: PDFDocumentProxy;
   scale: number;
   shouldRender: boolean;
+  sourcePageNumber: number;
 };
 
 function PdfTextLayer({
-  pageNumber,
   pdfDocument,
   scale,
   shouldRender,
+  sourcePageNumber,
 }: PdfTextLayerProps) {
   const textLayerRef = useRef<HTMLDivElement | null>(null);
 
@@ -42,7 +42,7 @@ function PdfTextLayer({
 
     async function renderTextLayer() {
       try {
-        const page = await pdfDocument.getPage(pageNumber);
+        const page = await pdfDocument.getPage(sourcePageNumber);
 
         if (isCancelled) {
           return;
@@ -100,7 +100,7 @@ function PdfTextLayer({
       textLayer?.cancel();
       textLayerContainer.replaceChildren();
     };
-  }, [pageNumber, pdfDocument, scale, shouldRender]);
+  }, [pdfDocument, scale, shouldRender, sourcePageNumber]);
 
   return <div aria-hidden="true" className="textLayer" ref={textLayerRef} />;
 }
