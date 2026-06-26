@@ -4,9 +4,9 @@ import {
   ExternalLinkIcon,
   FileDownIcon,
   FileIcon,
+  FileStackIcon,
   FileTextIcon,
   InfoIcon,
-  Rows3Icon,
   XIcon,
 } from "lucide-react";
 
@@ -122,7 +122,7 @@ const ProjectDropdown = memo(function ProjectDropdown({
                 onOpenOrganizePages();
               }}
             >
-              <Rows3Icon aria-hidden="true" /> Organize pages
+              <FileStackIcon aria-hidden="true" /> Organize pages
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={!activeProject}

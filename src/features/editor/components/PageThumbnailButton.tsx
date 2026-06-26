@@ -57,7 +57,6 @@ const PageThumbnailButton = memo(function PageThumbnailButton({
       <PdfPageThumbnail
         imageAssetById={imageAssetById}
         pageOverlays={pageOverlays}
-        pageNumber={pageNumber}
         pageRotationDegrees={pageRotationDegrees}
         pdfDocument={pdfDocument}
         shouldRender={shouldRenderThumbnail}

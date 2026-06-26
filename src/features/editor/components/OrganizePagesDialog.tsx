@@ -171,7 +171,7 @@ function OrganizePagesDialog({
     dialogDescriptionClauses.push(`${summary.editedPages} edited`);
   if (summary.deletedPages > 0)
     dialogDescriptionClauses.push(`${summary.deletedPages} deleted`);
-  const dialogDescription = dialogDescriptionClauses.join(", ") || "No edits";
+  const dialogDescription = `${draftPages.length} pages · ${dialogDescriptionClauses.join(", ") || "no edits"}`;
 
   const applyRangeInput = useCallback(() => {
     if (!rangeParseResult.ok) {

@@ -16,7 +16,6 @@ type PdfPageThumbnailProps = {
   imageAssetById: ReadonlyMap<string, ImageAsset>;
   pageOverlays: EditorOverlay[];
   pageRotationDegrees?: number;
-  pageNumber: number;
   pdfDocument: PDFDocumentProxy;
   shouldRender: boolean;
   sourcePageNumber: number;
@@ -30,7 +29,7 @@ type ThumbnailState = {
 };
 
 type RenderState = {
-  pageNumber: number;
+  pageRotationDegrees: number;
   pdfDocument: PDFDocumentProxy;
   sourcePageNumber: number;
   status: "error" | "rendered";
@@ -40,7 +39,6 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
   imageAssetById,
   pageOverlays,
   pageRotationDegrees = 0,
-  pageNumber,
   pdfDocument,
   shouldRender,
   sourcePageNumber,
@@ -52,14 +50,14 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
     null,
   );
   const isCurrentRenderState =
-    renderState?.pageNumber === pageNumber &&
+    renderState?.pageRotationDegrees === pageRotationDegrees &&
     renderState.sourcePageNumber === sourcePageNumber &&
     renderState.pdfDocument === pdfDocument;
   const error =
     isCurrentRenderState && renderState.status === "error"
       ? "Unable to render preview."
       : null;
-  const isRendering = shouldRender && !isCurrentRenderState;
+  const isRendering = shouldRender && !thumbnailState && !isCurrentRenderState;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -130,7 +128,7 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
 
         if (!isCancelled) {
           setRenderState({
-            pageNumber,
+            pageRotationDegrees,
             pdfDocument,
             sourcePageNumber,
             status: "rendered",
@@ -147,7 +145,7 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
         }
 
         setRenderState({
-          pageNumber,
+          pageRotationDegrees,
           pdfDocument,
           sourcePageNumber,
           status: "error",
@@ -162,12 +160,11 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
       cleanupPdfRender({
         canvas: canvasElement,
         page,
+        releaseCanvas: false,
         renderTask,
       });
-      setRenderState(null);
     };
   }, [
-    pageNumber,
     pageRotationDegrees,
     pdfDocument,
     shouldRender,
@@ -311,9 +308,6 @@ function ThumbnailOverlay({
   }
 }
 
-const defaultThumbnailWidth = 60;
-const thumbnailPlaceholderHeight = 78;
-
 function isExpectedPdfTeardownError(error: unknown) {
   return (
     error instanceof Error &&
@@ -321,5 +315,8 @@ function isExpectedPdfTeardownError(error: unknown) {
       error.message === "Transport destroyed")
   );
 }
+
+const defaultThumbnailWidth = 60;
+const thumbnailPlaceholderHeight = 78;
 
 export { PdfPageThumbnail };

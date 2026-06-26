@@ -47,10 +47,12 @@ function cleanupPdfPageAfterRender({
 function cleanupPdfRender({
   canvas,
   page,
+  releaseCanvas = true,
   renderTask,
 }: {
   canvas: HTMLCanvasElement;
   page: PDFPageProxy | null;
+  releaseCanvas?: boolean;
   renderTask: PdfRenderTask | null;
 }) {
   try {
@@ -59,7 +61,10 @@ function cleanupPdfRender({
     // A render task can already be settled by the time React cleans up.
   }
 
-  releaseCanvasBitmap(canvas);
+  if (releaseCanvas) {
+    releaseCanvasBitmap(canvas);
+  }
+
   cleanupPdfPageAfterRender({ page, renderTask });
 }
 
