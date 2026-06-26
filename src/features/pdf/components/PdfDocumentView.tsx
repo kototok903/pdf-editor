@@ -131,6 +131,7 @@ const PdfDocumentView = memo(function PdfDocumentView({
             onUpdateOverlayRotation={onUpdateOverlayRotation}
             pageId={documentPage.id}
             pageOverlays={overlaysByPage.get(pageNumber) ?? emptyPageOverlays}
+            pageRotationDegrees={documentPage.rotationDegrees}
             pageSize={pageSizes[pageNumber] ?? getDefaultPageSize(scale)}
             pageNumber={pageNumber}
             pdfDocument={sourceDocument?.pdfDocument ?? document.pdfDocument}

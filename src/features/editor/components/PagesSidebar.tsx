@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDroppable } from "@dnd-kit/react";
 
-import { PdfPageThumbnail } from "@/features/editor/components/PdfPageThumbnail";
+import { PageThumbnailButton } from "@/features/editor/components/PageThumbnailButton";
 import {
   getPageDropId,
   overlayLayerDragType,
@@ -14,7 +14,6 @@ import type {
 } from "@/features/editor/editor-types";
 import { getSidebarThumbnailRenderPages } from "@/features/editor/lib/pages-sidebar-utils";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
-import { cn } from "@/lib/utils";
 
 type PagesSidebarProps = {
   currentPage: number;
@@ -240,38 +239,18 @@ const SidebarPageButton = memo(function SidebarPageButton({
   }, [onSelectPage, pageNumber]);
 
   return (
-    <button
-      aria-current={isActive ? "page" : undefined}
-      aria-label={`Go to page ${pageNumber}`}
-      className={cn(
-        "relative mx-auto block overflow-hidden rounded-md border-2 border-border bg-page text-page-foreground shadow-sm transition-colors data-[active=true]:border-primary",
-        isDropTarget && "border-primary ring-2 ring-primary/35",
-      )}
-      data-active={isActive}
-      data-page-number={pageNumber}
+    <PageThumbnailButton
       onClick={handleClick}
-      ref={setButtonRef}
-      type="button"
-    >
-      <PdfPageThumbnail
-        imageAssetById={imageAssetById}
-        pageOverlays={pageOverlays}
-        pageNumber={pageNumber}
-        pdfDocument={pdfDocument}
-        shouldRender={shouldRenderThumbnail}
-        sourcePageNumber={sourcePageNumber}
-      />
-      <span
-        className={cn(
-          "absolute right-0 bottom-0 min-w-5 rounded-tl-lg px-1 py-0.5 -mr-px -mb-px ring-2 text-center text-xs font-semibold leading-none",
-          isActive
-            ? "bg-primary text-primary-foreground ring-primary"
-            : "bg-toolbar-button text-toolbar-foreground ring-border",
-        )}
-      >
-        {pageNumber}
-      </span>
-    </button>
+      buttonRef={setButtonRef}
+      imageAssetById={imageAssetById}
+      isActive={isActive}
+      isDropTarget={isDropTarget}
+      pageNumber={pageNumber}
+      pageOverlays={pageOverlays}
+      pdfDocument={pdfDocument}
+      shouldRenderThumbnail={shouldRenderThumbnail}
+      sourcePageNumber={sourcePageNumber}
+    />
   );
 });
 

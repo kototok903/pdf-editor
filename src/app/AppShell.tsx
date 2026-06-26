@@ -23,6 +23,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { DocumentWorkspace } from "@/features/editor/components/DocumentWorkspace";
 import { EditorToolbar } from "@/features/editor/components/EditorToolbar";
 import { LayersSidebar } from "@/features/editor/components/LayersSidebar";
+import {
+  OrganizePagesDialog,
+  type OrganizePagesDialogExportInput,
+  type OrganizePagesDialogSaveInput,
+} from "@/features/editor/components/OrganizePagesDialog";
 import { PagesSidebar } from "@/features/editor/components/PagesSidebar";
 import { SidebarDragDropProvider } from "@/features/editor/components/SidebarDragDropProvider";
 import {
@@ -79,7 +84,10 @@ import {
   type DocumentTextFontMenuOption,
   type DocumentTextFontOption,
 } from "@/features/editor/lib/text-fonts";
-import { createExportFileName } from "@/features/pdf-export/lib/export-file-name";
+import {
+  createExportFileName,
+  createSelectedPagesExportFileName,
+} from "@/features/pdf-export/lib/export-file-name";
 import {
   usePdfDocument,
   usePdfSourceDocuments,
@@ -95,6 +103,7 @@ import { updatePdfFormValue } from "@/features/editor/lib/editor-form-edits";
 import { isDocumentFontExtractionEnabled } from "@/features/pdf/lib/pdf-font-extraction-config";
 import { scalePageSizes } from "@/features/pdf/lib/pdf-page-size-utils";
 import type { LoadedPdfDocument, PageSize } from "@/features/pdf/pdf-types";
+import type { EditorHistoryEntry } from "@/features/editor/lib/editor-history";
 
 const zoomStep = 0.1;
 
@@ -108,6 +117,10 @@ function AppShell() {
     useState(false);
   const [isClearingLocalData, setIsClearingLocalData] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [isOrganizePagesDialogOpen, setIsOrganizePagesDialogOpen] =
+    useState(false);
+  const [organizerBaseEntry, setOrganizerBaseEntry] =
+    useState<EditorHistoryEntry | null>(null);
   const [renderedBasePageSizes, setRenderedBasePageSizes] = useState<
     Record<number, PageSize>
   >({});
@@ -138,6 +151,7 @@ function AppShell() {
     canRedo,
     canUndo,
     clearSelection,
+    commitEditorStateFromBase,
     commitHistoryFromBase,
     documentPages,
     getHistoryEntrySnapshot,
@@ -524,6 +538,7 @@ function AppShell() {
     setIsLocalDraftReady,
     toolbarProjects,
     ensureActiveProjectMetadata,
+    updateActiveProjectDocumentSources,
     updateActiveProjectMetadata,
   } = useEditorProjectSession({
     clearFile,
@@ -637,6 +652,132 @@ function AppShell() {
     ensureActiveProjectMetadata,
     updateFormValue,
   ]);
+
+  const handleOpenOrganizePagesDialog = useCallback(() => {
+    if (!loadedDocument) {
+      return;
+    }
+
+    commitPendingTextEdit();
+    const focusedFormValue = getFocusedFormValue(formFieldRegistry.widgetsById);
+
+    if (focusedFormValue) {
+      updateFormValue(focusedFormValue);
+    }
+
+    setOrganizerBaseEntry(getHistoryEntrySnapshot());
+    setIsOrganizePagesDialogOpen(true);
+    clearEditing();
+  }, [
+    clearEditing,
+    commitPendingTextEdit,
+    formFieldRegistry,
+    getHistoryEntrySnapshot,
+    loadedDocument,
+    updateFormValue,
+  ]);
+
+  const handleSaveOrganizePages = useCallback(
+    (input: OrganizePagesDialogSaveInput) => {
+      if (!loadedDocument) {
+        return;
+      }
+
+      const baseEntry = organizerBaseEntry ?? getHistoryEntrySnapshot();
+
+      updateActiveProjectDocumentSources(input.documentSources);
+      commitEditorStateFromBase(baseEntry, {
+        documentPages: input.documentPages,
+        formEdits: input.formEdits,
+        overlays: input.overlays,
+        selectedOverlayId: null,
+      });
+      clearSelection();
+      setOrganizerBaseEntry(null);
+
+      const nextCurrentPage = Math.min(
+        Math.max(1, currentPage),
+        input.documentPages.length,
+      );
+
+      setCurrentPage(nextCurrentPage);
+      setScrollToPageRequest((currentRequest) => ({
+        behavior: "auto",
+        pageNumber: nextCurrentPage,
+        requestId: (currentRequest?.requestId ?? 0) + 1,
+      }));
+      toast.success("Updated pages");
+    },
+    [
+      clearSelection,
+      commitEditorStateFromBase,
+      currentPage,
+      getHistoryEntrySnapshot,
+      loadedDocument,
+      organizerBaseEntry,
+      setScrollToPageRequest,
+      updateActiveProjectDocumentSources,
+    ],
+  );
+
+  const handleExportOrganizedPages = useCallback(
+    async (input: OrganizePagesDialogExportInput) => {
+      if (
+        !loadedDocument ||
+        isExporting ||
+        input.selectedPageIds.length === 0
+      ) {
+        return;
+      }
+
+      setIsExporting(true);
+
+      try {
+        const { exportPdf } =
+          await import("@/features/pdf-export/lib/export-pdf");
+        const exportProject = await ensureActiveProjectMetadata();
+        const exportedBytes = await exportPdf({
+          documentFonts: documentFontOptions.filter(
+            (fontOption): fontOption is DocumentTextFontOption =>
+              fontOption.isAvailable,
+          ),
+          documentPages: input.documentPages,
+          documentSources: input.documentSources,
+          formEdits: input.formEdits,
+          imageAssets,
+          metadata: exportProject?.metadata ?? activeProject?.metadata ?? null,
+          originalPdfBytes: loadedDocument.bytes,
+          overlays: input.overlays,
+          selectedPageIds: input.selectedPageIds,
+        });
+        const fileName = createSelectedPagesExportFileName(
+          loadedDocument.fileName,
+          input.selectedRangesLabel,
+          exportedFileNamesRef.current,
+        );
+
+        downloadBytes(exportedBytes, fileName);
+        exportedFileNamesRef.current.add(fileName);
+        toast.success("Exported selected pages", {
+          description: fileName,
+        });
+      } catch (error) {
+        toast.error("Unable to export selected pages", {
+          description: getExportErrorMessage(error),
+        });
+      } finally {
+        setIsExporting(false);
+      }
+    },
+    [
+      activeProject,
+      documentFontOptions,
+      ensureActiveProjectMetadata,
+      imageAssets,
+      isExporting,
+      loadedDocument,
+    ],
+  );
 
   const handleOpenImageDialog = useCallback(() => {
     imageInputRef.current?.click();
@@ -1048,6 +1189,7 @@ function AppShell() {
           onImportImageFromClipboard={handleImportImageFromClipboard}
           onOpenFile={handleOpenFileDialog}
           onOpenImageDialog={handleOpenImageDialog}
+          onOpenOrganizePages={handleOpenOrganizePagesDialog}
           onOpenSettings={handleOpenSettings}
           onRedo={handleRedo}
           onRemoveImageAssetFromRecents={hideImageAssetFromRecents}
@@ -1159,6 +1301,27 @@ function AppShell() {
             zoom={zoom}
           />
         </div>
+        {isOrganizePagesDialogOpen && (
+          <OrganizePagesDialog
+            document={loadedDocument}
+            documentPages={documentPages}
+            documentSources={activeDocumentSources}
+            formEdits={formEdits}
+            imageAssetById={imageAssetById}
+            isExporting={isExporting}
+            onExportSelectedPages={handleExportOrganizedPages}
+            onOpenChange={(isOpen) => {
+              setIsOrganizePagesDialogOpen(isOpen);
+
+              if (!isOpen) {
+                setOrganizerBaseEntry(null);
+              }
+            }}
+            onSave={handleSaveOrganizePages}
+            open={isOrganizePagesDialogOpen}
+            overlays={overlays}
+          />
+        )}
         <SettingsDialog
           onClearLocalDataClick={() => {
             setIsSettingsDialogOpen(false);

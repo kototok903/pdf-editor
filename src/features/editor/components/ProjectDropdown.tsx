@@ -6,6 +6,7 @@ import {
   FileIcon,
   FileTextIcon,
   InfoIcon,
+  Rows3Icon,
   XIcon,
 } from "lucide-react";
 
@@ -38,6 +39,7 @@ type ProjectDropdownProps = {
   canCloseProject: boolean;
   onExportPdf: () => void;
   onOpenFile: () => void;
+  onOpenOrganizePages: () => void;
   onCloseActiveProject: () => void;
   onOpenProjectInNewTab: (projectId: string) => void;
   onSelectProject: (projectId: string) => void;
@@ -57,6 +59,7 @@ const ProjectDropdown = memo(function ProjectDropdown({
   canCloseProject,
   onExportPdf,
   onOpenFile,
+  onOpenOrganizePages,
   onCloseActiveProject,
   onOpenProjectInNewTab,
   onSelectProject,
@@ -111,6 +114,15 @@ const ProjectDropdown = memo(function ProjectDropdown({
             >
               <FileDownIcon aria-hidden="true" />{" "}
               {isExporting ? "Exporting..." : "Export PDF"}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={!hasPdf}
+              onSelect={() => {
+                setIsOpen(false);
+                onOpenOrganizePages();
+              }}
+            >
+              <Rows3Icon aria-hidden="true" /> Organize pages
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={!activeProject}

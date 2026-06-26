@@ -62,6 +62,7 @@ type EditorToolbarProps = {
   onExportPdf: () => void;
   onOpenFile: () => void;
   onOpenImageDialog: () => void;
+  onOpenOrganizePages: () => void;
   onRedo: () => void;
   onRemoveImageAssetFromRecents: (assetId: string) => void;
   onRemoveSignatureAssetFromRecents: (assetId: string) => void;
@@ -134,6 +135,7 @@ const EditorToolbar = memo(function EditorToolbar({
   onMarkToolClick,
   onOpenFile,
   onOpenImageDialog,
+  onOpenOrganizePages,
   onRedo,
   onRemoveImageAssetFromRecents,
   onRemoveSignatureAssetFromRecents,
@@ -187,6 +189,7 @@ const EditorToolbar = memo(function EditorToolbar({
           canCloseProject={canCloseProject}
           onExportPdf={onExportPdf}
           onOpenFile={onOpenFile}
+          onOpenOrganizePages={onOpenOrganizePages}
           onCloseActiveProject={onCloseActiveProject}
           onOpenProjectInNewTab={onOpenProjectInNewTab}
           onSelectProject={onSelectProject}

@@ -109,17 +109,18 @@ function updateProjectFromDocument(
     history.present.documentPages.length > 0
       ? history.present.documentPages
       : createDocumentPagesForSource(documentSources[0]);
+  const pageCount = documentPages.length || document.pageCount;
 
   return {
     ...project,
-    currentPage: clampProjectPage(currentPage, document.pageCount),
+    currentPage: clampProjectPage(currentPage, pageCount),
     documentSources,
     fileName: document.fileName,
     history: ensureHistoryDocumentPages(history, documentPages),
     lastModifiedAt,
     metadata: cloneOptionalPdfProjectMetadata(metadata),
     originalMetadata: cloneOptionalPdfProjectMetadata(originalMetadata),
-    pageCount: document.pageCount,
+    pageCount,
     pdfBytes: document.bytes,
   };
 }

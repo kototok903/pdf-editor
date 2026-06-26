@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
+import type {
+  DocumentSource,
+  EditorOverlay,
+  ImageAsset,
+} from "@/features/editor/editor-types";
 import { useLocalDraftPersistence } from "@/features/editor/hooks/useLocalDraftPersistence";
 import {
   createEditorHistory,
@@ -829,6 +833,27 @@ function useEditorProjectSession({
     [activeProjectId],
   );
 
+  const updateActiveProjectDocumentSources = useCallback(
+    (documentSources: DocumentSource[]) => {
+      if (!activeProjectId) {
+        return;
+      }
+
+      setProjects((currentProjects) =>
+        currentProjects.map((project) =>
+          project.id === activeProjectId
+            ? {
+                ...project,
+                documentSources,
+                lastModifiedAt: Date.now(),
+              }
+            : project,
+        ),
+      );
+    },
+    [activeProjectId],
+  );
+
   const ensureActiveProjectMetadata = useCallback(async () => {
     if (!activeProject || !document) {
       return null;
@@ -986,6 +1011,7 @@ function useEditorProjectSession({
     setIsLocalDraftReady,
     toolbarProjects,
     ensureActiveProjectMetadata,
+    updateActiveProjectDocumentSources,
     updateActiveProjectMetadata,
   };
 }

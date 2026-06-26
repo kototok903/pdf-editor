@@ -57,6 +57,7 @@ type PdfPageViewProps = {
   onUpdateOverlayRotation: (overlayId: string, rotationDegrees: number) => void;
   pageOverlays: EditorOverlay[];
   pageId: DocumentPageId;
+  pageRotationDegrees: number;
   pageSize: PageSize;
   pageNumber: number;
   pdfDocument: PDFDocumentProxy;
@@ -96,6 +97,7 @@ const PdfPageView = memo(function PdfPageView({
   onUpdateOverlayRotation,
   pageOverlays,
   pageId,
+  pageRotationDegrees,
   pageSize,
   pageNumber,
   pdfDocument,
@@ -110,6 +112,7 @@ const PdfPageView = memo(function PdfPageView({
   const displayPageSize = pageSize;
   const isCurrentRenderState =
     renderState?.pageNumber === pageNumber &&
+    renderState.pageRotationDegrees === pageRotationDegrees &&
     renderState.sourcePageNumber === sourcePageNumber &&
     renderState.pdfDocument === pdfDocument &&
     renderState.scale === scale;
@@ -154,7 +157,10 @@ const PdfPageView = memo(function PdfPageView({
           return;
         }
 
-        const viewport = page.getViewport({ scale });
+        const viewport = page.getViewport({
+          rotation: page.rotate + pageRotationDegrees,
+          scale,
+        });
         const outputScale = window.devicePixelRatio || 1;
         const canvasContext = canvasElement.getContext("2d");
 
@@ -185,6 +191,7 @@ const PdfPageView = memo(function PdfPageView({
         if (!isCancelled) {
           setRenderState({
             pageNumber,
+            pageRotationDegrees,
             pdfDocument,
             scale,
             sourcePageNumber,
@@ -205,6 +212,7 @@ const PdfPageView = memo(function PdfPageView({
 
         setRenderState({
           pageNumber,
+          pageRotationDegrees,
           pdfDocument,
           scale,
           sourcePageNumber,
@@ -227,6 +235,7 @@ const PdfPageView = memo(function PdfPageView({
   }, [
     onPageSizeChange,
     pageNumber,
+    pageRotationDegrees,
     pdfDocument,
     scale,
     shouldRender,
@@ -321,6 +330,7 @@ PdfPageView.displayName = "PdfPageView";
 
 type RenderState = {
   pageNumber: number;
+  pageRotationDegrees: number;
   pdfDocument: PDFDocumentProxy;
   scale: number;
   sourcePageNumber: number;

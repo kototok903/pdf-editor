@@ -419,12 +419,26 @@ function useEditorOverlays() {
     );
   }, []);
 
+  const commitEditorStateFromBase = useCallback(
+    (baseEntry: EditorHistoryEntry, nextEntry: EditorHistoryEntry) => {
+      setHistory((currentHistory) =>
+        commitEditorHistoryFromBase(currentHistory, baseEntry, nextEntry),
+      );
+      setValidSelectedOverlayId(
+        nextEntry.selectedOverlayId,
+        nextEntry.overlays,
+      );
+    },
+    [setValidSelectedOverlayId],
+  );
+
   return {
     addOverlay,
     canRedo: history.future.length > 0,
     canUndo: history.past.length > 0,
     clearOverlays,
     clearSelection,
+    commitEditorStateFromBase,
     commitHistoryFromBase,
     getHistoryEntrySnapshot,
     formEdits,

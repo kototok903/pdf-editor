@@ -204,11 +204,25 @@ async function createExportPdfDocument({
     ]);
 
     if (copiedPage) {
+      if (documentPage.rotationDegrees !== 0) {
+        copiedPage.setRotation(
+          degrees(
+            normalizePageRotationDegrees(
+              copiedPage.getRotation().angle + documentPage.rotationDegrees,
+            ),
+          ),
+        );
+      }
+
       outputDocument.addPage(copiedPage);
     }
   }
 
   return outputDocument;
+}
+
+function normalizePageRotationDegrees(rotationDegrees: number) {
+  return ((rotationDegrees % 360) + 360) % 360;
 }
 
 function getExportDocumentPages(
@@ -231,6 +245,10 @@ function isOriginalSourceOrder(
   documentSources: DocumentSource[],
   originalPdfBytes: ArrayBuffer,
 ) {
+  if (documentPages.some((page) => page.rotationDegrees !== 0)) {
+    return false;
+  }
+
   if (documentSources.length !== 1) {
     return false;
   }

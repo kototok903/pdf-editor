@@ -15,10 +15,12 @@ import type { PDFDocumentProxy, PDFPageProxy } from "@/features/pdf/pdf-types";
 type PdfPageThumbnailProps = {
   imageAssetById: ReadonlyMap<string, ImageAsset>;
   pageOverlays: EditorOverlay[];
+  pageRotationDegrees?: number;
   pageNumber: number;
   pdfDocument: PDFDocumentProxy;
   shouldRender: boolean;
   sourcePageNumber: number;
+  width?: number;
 };
 
 type ThumbnailState = {
@@ -37,10 +39,12 @@ type RenderState = {
 const PdfPageThumbnail = memo(function PdfPageThumbnail({
   imageAssetById,
   pageOverlays,
+  pageRotationDegrees = 0,
   pageNumber,
   pdfDocument,
   shouldRender,
   sourcePageNumber,
+  width = defaultThumbnailWidth,
 }: PdfPageThumbnailProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [renderState, setRenderState] = useState<RenderState | null>(null);
@@ -86,9 +90,15 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
           return;
         }
 
-        const baseViewport = page.getViewport({ scale: 1 });
-        const scale = thumbnailWidth / baseViewport.width;
-        const viewport = page.getViewport({ scale });
+        const baseViewport = page.getViewport({
+          rotation: page.rotate + pageRotationDegrees,
+          scale: 1,
+        });
+        const scale = width / baseViewport.width;
+        const viewport = page.getViewport({
+          rotation: page.rotate + pageRotationDegrees,
+          scale,
+        });
         const outputScale = window.devicePixelRatio || 1;
         const canvasContext = canvasElement.getContext("2d");
 
@@ -156,14 +166,21 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
       });
       setRenderState(null);
     };
-  }, [pageNumber, pdfDocument, shouldRender, sourcePageNumber]);
+  }, [
+    pageNumber,
+    pageRotationDegrees,
+    pdfDocument,
+    shouldRender,
+    sourcePageNumber,
+    width,
+  ]);
 
   return (
     <div
       className="relative overflow-hidden rounded-[inherit] bg-page"
       style={{
         height: thumbnailState?.height ?? thumbnailPlaceholderHeight,
-        width: thumbnailState?.width ?? thumbnailWidth,
+        width: thumbnailState?.width ?? width,
       }}
     >
       <canvas className="block" ref={canvasRef} />
@@ -294,7 +311,7 @@ function ThumbnailOverlay({
   }
 }
 
-const thumbnailWidth = 60;
+const defaultThumbnailWidth = 60;
 const thumbnailPlaceholderHeight = 78;
 
 function isExpectedPdfTeardownError(error: unknown) {
