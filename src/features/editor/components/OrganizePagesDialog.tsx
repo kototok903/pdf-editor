@@ -672,6 +672,10 @@ function SortableOrganizerPage({
       shouldRenderThumbnail
       sourcePageNumber={page.sourcePageNumber}
       thumbnailWidth={128}
+      cornerSlots={{
+        ...(page.rotationDegrees !== 0 && { bl: `${page.rotationDegrees}°` }),
+        br: pageNumber,
+      }}
     />
   );
 }

@@ -1,9 +1,24 @@
-import { memo, type ComponentProps, type RefCallback } from "react";
+import {
+  memo,
+  type ComponentProps,
+  type ReactNode,
+  type RefCallback,
+} from "react";
 
 import { PdfPageThumbnail } from "@/features/editor/components/PdfPageThumbnail";
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 import { cn } from "@/lib/utils";
+
+const CORNERS = ["tl", "tr", "bl", "br"] as const;
+type Corner = (typeof CORNERS)[number];
+
+const cornerSlotPositionStyles = {
+  tl: "top-0 left-0 rounded-br-lg -mt-px -ml-px",
+  tr: "top-0 right-0 rounded-bl-lg -mt-px -mr-px",
+  bl: "bottom-0 left-0 rounded-tr-lg -mb-px -ml-px",
+  br: "bottom-0 right-0 rounded-tl-lg -mb-px -mr-px",
+};
 
 type PageThumbnailButtonProps = Omit<ComponentProps<"button">, "children"> & {
   buttonRef?: RefCallback<HTMLButtonElement>;
@@ -18,6 +33,9 @@ type PageThumbnailButtonProps = Omit<ComponentProps<"button">, "children"> & {
   shouldRenderThumbnail: boolean;
   sourcePageNumber: number;
   thumbnailWidth?: number;
+  cornerSlots?: {
+    [k in Corner]?: ReactNode;
+  };
 };
 
 const PageThumbnailButton = memo(function PageThumbnailButton({
@@ -34,6 +52,7 @@ const PageThumbnailButton = memo(function PageThumbnailButton({
   shouldRenderThumbnail,
   sourcePageNumber,
   thumbnailWidth,
+  cornerSlots,
   ...props
 }: PageThumbnailButtonProps) {
   const isHighlighted = isActive || isSelected;
@@ -63,21 +82,23 @@ const PageThumbnailButton = memo(function PageThumbnailButton({
         sourcePageNumber={sourcePageNumber}
         width={thumbnailWidth}
       />
-      <span
-        className={cn(
-          "absolute right-0 bottom-0 min-w-5 rounded-tl-lg px-1 py-0.5 -mr-px -mb-px text-center text-xs leading-none font-semibold ring-2",
-          isHighlighted
-            ? "bg-primary text-primary-foreground ring-primary"
-            : "bg-toolbar-button text-toolbar-foreground ring-border",
-        )}
-      >
-        {pageNumber}
-      </span>
-      {pageRotationDegrees !== 0 && (
-        <span className="absolute bottom-0 left-0 rounded-tr-lg bg-toolbar-button px-1 py-0.5 -mb-px -ml-px text-[10px] leading-none font-semibold text-toolbar-foreground ring-2 ring-border">
-          {pageRotationDegrees} deg
-        </span>
-      )}
+      {cornerSlots &&
+        CORNERS.filter(
+          (c) => cornerSlots[c] !== undefined && cornerSlots[c] !== null,
+        ).map((c) => (
+          <span
+            key={c}
+            className={cn(
+              "absolute min-w-5 px-1 py-0.5 text-center text-xs leading-none font-semibold ring-2",
+              cornerSlotPositionStyles[c],
+              "bg-toolbar-button text-toolbar-foreground ring-border",
+              "data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:ring-primary",
+            )}
+            data-active={isHighlighted}
+          >
+            {cornerSlots[c]}
+          </span>
+        ))}
     </button>
   );
 });

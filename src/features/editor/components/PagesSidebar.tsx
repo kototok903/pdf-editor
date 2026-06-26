@@ -250,6 +250,7 @@ const SidebarPageButton = memo(function SidebarPageButton({
       pdfDocument={pdfDocument}
       shouldRenderThumbnail={shouldRenderThumbnail}
       sourcePageNumber={sourcePageNumber}
+      cornerSlots={{ br: pageNumber }}
     />
   );
 });
