@@ -164,13 +164,7 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
         renderTask,
       });
     };
-  }, [
-    pageRotationDegrees,
-    pdfDocument,
-    shouldRender,
-    sourcePageNumber,
-    width,
-  ]);
+  }, [pageRotationDegrees, pdfDocument, shouldRender, sourcePageNumber, width]);
 
   return (
     <div
