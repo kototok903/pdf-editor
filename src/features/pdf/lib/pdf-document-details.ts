@@ -1,14 +1,12 @@
 import {
-  createPdfProjectMetadata,
   normalizeMetadataString,
   standardMetadataInfoKeys,
   type PdfCustomMetadataProperty,
-  type PdfProjectMetadata,
   type PdfTrappedStatus,
 } from "@/features/pdf/lib/pdf-metadata";
 import type { PDFDocumentProxy } from "@/features/pdf/pdf-types";
 
-type PdfDocumentMetadata = {
+export type PdfDocumentMetadata = {
   author: string | null;
   creator: string | null;
   createdAt: Date | null;
@@ -33,7 +31,7 @@ type RawPdfMetadataResult = {
   } | null;
 };
 
-async function getPdfDocumentMetadata(
+export async function getPdfDocumentMetadata(
   pdfDocument: PDFDocumentProxy,
 ): Promise<PdfDocumentMetadata> {
   const { info, metadata } =
@@ -165,11 +163,3 @@ function parsePdfDate(value: string) {
 
   return new Date(utcTimestamp - offsetMs);
 }
-
-export { createPdfProjectMetadata, getPdfDocumentMetadata };
-export type {
-  PdfCustomMetadataProperty,
-  PdfDocumentMetadata,
-  PdfProjectMetadata,
-  PdfTrappedStatus,
-};

@@ -61,7 +61,7 @@ type SidebarDragDropProviderProps = {
   selectedOverlayId: string | null;
 };
 
-function SidebarDragDropProvider({
+export function SidebarDragDropProvider({
   children,
   currentPage,
   documentPages,
@@ -324,5 +324,3 @@ function SidebarDragDropProvider({
     </DragDropProvider>
   );
 }
-
-export { SidebarDragDropProvider };

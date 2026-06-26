@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
-const Toaster = ({ ...props }: ToasterProps) => {
+export const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       className="toaster group"
@@ -48,5 +48,3 @@ const Toaster = ({ ...props }: ToasterProps) => {
     />
   );
 };
-
-export { Toaster };

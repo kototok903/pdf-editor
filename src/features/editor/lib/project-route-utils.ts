@@ -1,8 +1,8 @@
-function createProjectPath(projectId: string) {
+export function createProjectPath(projectId: string) {
   return `/projects/${encodeURIComponent(projectId)}`;
 }
 
-function getProjectIdFromPath(pathname: string) {
+export function getProjectIdFromPath(pathname: string) {
   const match = pathname.match(/^\/projects\/([^/]+)\/?$/);
 
   if (!match) {
@@ -12,8 +12,6 @@ function getProjectIdFromPath(pathname: string) {
   return decodeURIComponent(match[1]);
 }
 
-function isProjectPath(pathname: string) {
+export function isProjectPath(pathname: string) {
   return /^\/projects(?:\/|$)/.test(pathname);
 }
-
-export { createProjectPath, getProjectIdFromPath, isProjectPath };

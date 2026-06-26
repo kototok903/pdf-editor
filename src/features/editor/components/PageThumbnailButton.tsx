@@ -38,7 +38,7 @@ type PageThumbnailButtonProps = Omit<ComponentProps<"button">, "children"> & {
   };
 };
 
-const PageThumbnailButton = memo(function PageThumbnailButton({
+export const PageThumbnailButton = memo(function PageThumbnailButton({
   buttonRef,
   className,
   imageAssetById,
@@ -104,5 +104,3 @@ const PageThumbnailButton = memo(function PageThumbnailButton({
 });
 
 PageThumbnailButton.displayName = "PageThumbnailButton";
-
-export { PageThumbnailButton };

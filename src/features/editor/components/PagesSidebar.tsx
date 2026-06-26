@@ -26,7 +26,7 @@ type PagesSidebarProps = {
   sourceDocumentsById: ReadonlyMap<string, LoadedPdfDocument>;
 };
 
-const PagesSidebar = memo(function PagesSidebar({
+export const PagesSidebar = memo(function PagesSidebar({
   currentPage,
   document,
   documentPages,
@@ -260,5 +260,3 @@ SidebarPageButton.displayName = "SidebarPageButton";
 const emptyPageSet = new Set<number>();
 const emptyPageOverlays: EditorOverlay[] = [];
 const sidebarCurrentPageThumbnailOverscan = 2;
-
-export { PagesSidebar };

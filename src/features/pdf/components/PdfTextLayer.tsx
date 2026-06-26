@@ -15,7 +15,7 @@ type PdfTextLayerProps = {
   sourcePageNumber: number;
 };
 
-function PdfTextLayer({
+export function PdfTextLayer({
   pdfDocument,
   scale,
   shouldRender,
@@ -104,8 +104,6 @@ function PdfTextLayer({
 
   return <div aria-hidden="true" className="textLayer" ref={textLayerRef} />;
 }
-
-export { PdfTextLayer };
 
 function bindTextLayerSelection(
   textLayer: HTMLDivElement,

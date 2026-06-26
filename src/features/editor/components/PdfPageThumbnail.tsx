@@ -35,7 +35,7 @@ type RenderState = {
   status: "error" | "rendered";
 };
 
-const PdfPageThumbnail = memo(function PdfPageThumbnail({
+export const PdfPageThumbnail = memo(function PdfPageThumbnail({
   imageAssetById,
   pageOverlays,
   pageRotationDegrees = 0,
@@ -312,5 +312,3 @@ function isExpectedPdfTeardownError(error: unknown) {
 
 const defaultThumbnailWidth = 60;
 const thumbnailPlaceholderHeight = 78;
-
-export { PdfPageThumbnail };

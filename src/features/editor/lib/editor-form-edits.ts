@@ -3,11 +3,11 @@ import type {
   PdfFormValue,
 } from "@/features/editor/editor-types";
 
-const emptyEditorFormEdits: EditorFormEdits = {
+export const emptyEditorFormEdits: EditorFormEdits = {
   values: [],
 };
 
-function normalizeEditorFormEdits(
+export function normalizeEditorFormEdits(
   formEdits: EditorFormEdits | null | undefined,
 ): EditorFormEdits {
   if (
@@ -23,7 +23,7 @@ function normalizeEditorFormEdits(
   };
 }
 
-function cloneEditorFormEdits(
+export function cloneEditorFormEdits(
   formEdits: EditorFormEdits | null | undefined,
 ): EditorFormEdits {
   const normalizedFormEdits = normalizeEditorFormEdits(formEdits);
@@ -37,7 +37,7 @@ function cloneEditorFormEdits(
   };
 }
 
-function updatePdfFormValue(
+export function updatePdfFormValue(
   formEdits: EditorFormEdits,
   value: PdfFormValue,
 ): EditorFormEdits {
@@ -72,19 +72,19 @@ function updatePdfFormValue(
   };
 }
 
-function getPdfFormValue(formEdits: EditorFormEdits, valueKey: string) {
+export function getPdfFormValue(formEdits: EditorFormEdits, valueKey: string) {
   return formEdits.values.find(
     (value) => getPdfFormValueKey(value) === valueKey,
   );
 }
 
-function getPdfFormValueKey(
+export function getPdfFormValueKey(
   value: Pick<PdfFormValue, "fieldName" | "pageId" | "type">,
 ) {
   return `${value.pageId}:${value.type}:${value.fieldName}`;
 }
 
-function areEditorFormEditsEqual(
+export function areEditorFormEditsEqual(
   left: EditorFormEdits | null | undefined,
   right: EditorFormEdits | null | undefined,
 ) {
@@ -110,7 +110,7 @@ function areEditorFormEditsEqual(
   });
 }
 
-function arePdfFormValuesEqual(left: PdfFormValue, right: PdfFormValue) {
+export function arePdfFormValuesEqual(left: PdfFormValue, right: PdfFormValue) {
   if (left === right) {
     return true;
   }
@@ -157,14 +157,3 @@ function areStringArraysEqual(left: string[], right: string[]) {
     left.every((leftValue, index) => leftValue === right[index])
   );
 }
-
-export {
-  areEditorFormEditsEqual,
-  arePdfFormValuesEqual,
-  cloneEditorFormEdits,
-  emptyEditorFormEdits,
-  getPdfFormValue,
-  getPdfFormValueKey,
-  normalizeEditorFormEdits,
-  updatePdfFormValue,
-};

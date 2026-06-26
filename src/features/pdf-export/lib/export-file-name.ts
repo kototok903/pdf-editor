@@ -1,4 +1,4 @@
-function createExportFileName(
+export function createExportFileName(
   originalFileName: string,
   takenFileNames: ReadonlySet<string>,
 ) {
@@ -18,7 +18,7 @@ function createExportFileName(
   }
 }
 
-function createSelectedPagesExportFileName(
+export function createSelectedPagesExportFileName(
   originalFileName: string,
   pageRangeLabel: string,
   takenFileNames: ReadonlySet<string>,
@@ -63,5 +63,3 @@ function getNumberedBaseName(baseName: string) {
     nextIndex: Number(match[2]) + 1,
   };
 }
-
-export { createExportFileName, createSelectedPagesExportFileName };

@@ -107,7 +107,7 @@ import type { EditorHistoryEntry } from "@/features/editor/lib/editor-history";
 
 const zoomStep = 0.1;
 
-function AppShell() {
+export function AppShell() {
   const exportedFileNamesRef = useRef<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
@@ -1633,5 +1633,3 @@ function areWhiteoutSettingsEqual(
 ) {
   return left.color === right.color;
 }
-
-export { AppShell };

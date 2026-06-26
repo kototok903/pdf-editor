@@ -1,3 +1,1 @@
-const isDocumentFontExtractionEnabled = false;
-
-export { isDocumentFontExtractionEnabled };
+export const isDocumentFontExtractionEnabled = false;

@@ -22,7 +22,11 @@ import {
 import type { Project } from "@/features/editor/lib/editor-projects";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 
-type LocalDraftHydrationState = "idle" | "hydrating" | "hydrated" | "error";
+export type LocalDraftHydrationState =
+  | "idle"
+  | "hydrating"
+  | "hydrated"
+  | "error";
 
 type LocalDraftHydrationResult = {
   draft: PersistedEditorDraftRecord | null;
@@ -45,7 +49,7 @@ type UseLocalDraftPersistenceOptions = {
   projects: Project[];
 };
 
-function useLocalDraftPersistence({
+export function useLocalDraftPersistence({
   activeProjectId,
   currentPage,
   document,
@@ -336,7 +340,7 @@ function getProjectLastModifiedAt(
   return lastModifiedAt;
 }
 
-function getPersistedDraftImageAssetIds(
+export function getPersistedDraftImageAssetIds(
   imageAssets: ImageAsset[],
   overlays: EditorOverlay[],
   history?: EditorHistoryState,
@@ -363,7 +367,7 @@ function getPersistedDraftImageAssetIds(
     .map((asset) => asset.id);
 }
 
-function getPersistedProjectImageAssetIds(
+export function getPersistedProjectImageAssetIds(
   imageAssets: ImageAsset[],
   histories: EditorHistoryState[],
 ) {
@@ -382,10 +386,3 @@ function getPersistedProjectImageAssetIds(
     )
     .map((asset) => asset.id);
 }
-
-export {
-  getPersistedDraftImageAssetIds,
-  getPersistedProjectImageAssetIds,
-  useLocalDraftPersistence,
-};
-export type { LocalDraftHydrationState };

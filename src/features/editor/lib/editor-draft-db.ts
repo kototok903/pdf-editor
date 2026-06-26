@@ -6,7 +6,7 @@ import type {
 import type { EditorHistoryState } from "@/features/editor/lib/editor-history";
 import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 
-type PersistedImageAssetRecord = {
+export type PersistedImageAssetRecord = {
   bytes: ArrayBuffer;
   createdAt: number;
   formatLabel: string;
@@ -21,7 +21,7 @@ type PersistedImageAssetRecord = {
   width: number;
 };
 
-type PersistedEditorProjectRecord = {
+export type PersistedEditorProjectRecord = {
   createdAt: number;
   currentPage: number;
   documentSources: DocumentSource[];
@@ -35,7 +35,7 @@ type PersistedEditorProjectRecord = {
   updatedAt: number;
 };
 
-type PersistedEditorDraftRecord = {
+export type PersistedEditorDraftRecord = {
   activeProjectId?: string;
   currentPage: number;
   documentSources: DocumentSource[];
@@ -52,7 +52,7 @@ type PersistedEditorDraftRecord = {
   updatedAt: number;
 };
 
-type EditorDraftStorage = {
+export type EditorDraftStorage = {
   clearActiveDraft: () => Promise<void>;
   deletePersistedImageAsset: (assetId: string) => Promise<void>;
   putPersistedImageAsset: (asset: PersistedImageAssetRecord) => Promise<void>;
@@ -70,55 +70,55 @@ const editorDraftDbName = "pdf-editor:drafts";
 const editorDraftDbVersion = 1;
 const imageAssetsStoreName = "imageAssets";
 const activeDraftStoreName = "activeDraft";
-const activeDraftKey = "active";
+export const activeDraftKey = "active";
 
-async function readPersistedImageAssets(
+export async function readPersistedImageAssets(
   storage: EditorDraftStorage = createIndexedDbEditorDraftStorage(),
 ) {
   return storage.readPersistedImageAssets();
 }
 
-async function putPersistedImageAsset(
+export async function putPersistedImageAsset(
   asset: PersistedImageAssetRecord,
   storage: EditorDraftStorage = createIndexedDbEditorDraftStorage(),
 ) {
   await storage.putPersistedImageAsset(asset);
 }
 
-async function putPersistedImageAssets(
+export async function putPersistedImageAssets(
   assets: PersistedImageAssetRecord[],
   storage: EditorDraftStorage = createIndexedDbEditorDraftStorage(),
 ) {
   await storage.putPersistedImageAssets(assets);
 }
 
-async function deletePersistedImageAsset(
+export async function deletePersistedImageAsset(
   assetId: string,
   storage: EditorDraftStorage = createIndexedDbEditorDraftStorage(),
 ) {
   await storage.deletePersistedImageAsset(assetId);
 }
 
-async function readActiveDraft(
+export async function readActiveDraft(
   storage: EditorDraftStorage = createIndexedDbEditorDraftStorage(),
 ) {
   return storage.readActiveDraft();
 }
 
-async function writeActiveDraft(
+export async function writeActiveDraft(
   draft: PersistedEditorDraftRecord,
   storage: EditorDraftStorage = createIndexedDbEditorDraftStorage(),
 ) {
   await storage.writeActiveDraft({ ...draft, id: activeDraftKey });
 }
 
-async function clearActiveDraft(
+export async function clearActiveDraft(
   storage: EditorDraftStorage = createIndexedDbEditorDraftStorage(),
 ) {
   await storage.clearActiveDraft();
 }
 
-function clearEditorDraftDatabase(
+export function clearEditorDraftDatabase(
   indexedDb: EditorDraftDatabaseDeleter | undefined = getIndexedDb(),
 ) {
   if (!indexedDb) {
@@ -135,7 +135,7 @@ function clearEditorDraftDatabase(
   });
 }
 
-function createMemoryEditorDraftStorage({
+export function createMemoryEditorDraftStorage({
   failWrites = false,
 }: {
   failWrites?: boolean;
@@ -365,22 +365,3 @@ function requestToPromise<Result>(request: IDBRequest<Result>) {
     request.onsuccess = () => resolve(request.result);
   });
 }
-
-export {
-  activeDraftKey,
-  clearActiveDraft,
-  clearEditorDraftDatabase,
-  createMemoryEditorDraftStorage,
-  deletePersistedImageAsset,
-  putPersistedImageAsset,
-  putPersistedImageAssets,
-  readActiveDraft,
-  readPersistedImageAssets,
-  writeActiveDraft,
-};
-export type {
-  EditorDraftStorage,
-  PersistedEditorDraftRecord,
-  PersistedEditorProjectRecord,
-  PersistedImageAssetRecord,
-};

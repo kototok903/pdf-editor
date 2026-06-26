@@ -88,7 +88,7 @@ type ScrollToPageRequest = {
   requestId: number;
 };
 
-const DocumentWorkspace = memo(function DocumentWorkspace({
+export const DocumentWorkspace = memo(function DocumentWorkspace({
   activeImageAsset,
   activeSignatureAsset,
   currentPage,
@@ -526,5 +526,3 @@ function WorkspaceMessage({
     </div>
   );
 }
-
-export { DocumentWorkspace };

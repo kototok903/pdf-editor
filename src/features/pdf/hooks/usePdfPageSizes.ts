@@ -4,7 +4,7 @@ import type { LoadedPdfDocument, PageSize } from "@/features/pdf/pdf-types";
 
 const pageSizeScanBatchSize = 8;
 
-function usePdfPageSizes(document: LoadedPdfDocument | null) {
+export function usePdfPageSizes(document: LoadedPdfDocument | null) {
   const [pageSizeState, setPageSizeState] = useState<{
     document: LoadedPdfDocument;
     pageSizes: Record<number, PageSize>;
@@ -78,5 +78,3 @@ function yieldToBrowser() {
     window.setTimeout(resolve, 0);
   });
 }
-
-export { usePdfPageSizes };

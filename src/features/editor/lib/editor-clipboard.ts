@@ -9,7 +9,7 @@ import {
 } from "@/features/editor/lib/overlay-clipboard";
 import { findSupportedImageMimeType } from "@/features/editor/lib/image-asset-utils";
 
-type ClipboardWritePlan = {
+export type ClipboardWritePlan = {
   customPayload: OverlayClipboardPayload;
   eventItems: {
     strings: Record<string, string>;
@@ -18,7 +18,7 @@ type ClipboardWritePlan = {
   systemItems: Record<string, Blob>;
 };
 
-type PasteIntent =
+export type PasteIntent =
   | {
       imageBlob?: Blob;
       kind: "overlay";
@@ -37,7 +37,7 @@ type PasteIntent =
       kind: "empty";
     };
 
-function buildOverlayClipboardWritePlan(
+export function buildOverlayClipboardWritePlan(
   overlay: EditorOverlay,
   imageAssets: ImageAsset[],
 ): ClipboardWritePlan {
@@ -92,7 +92,7 @@ function buildOverlayClipboardWritePlan(
   };
 }
 
-function writeClipboardPlanToEvent(
+export function writeClipboardPlanToEvent(
   plan: ClipboardWritePlan,
   clipboardData: DataTransfer,
 ) {
@@ -101,7 +101,9 @@ function writeClipboardPlanToEvent(
   }
 }
 
-async function writeClipboardPlanToSystemClipboard(plan: ClipboardWritePlan) {
+export async function writeClipboardPlanToSystemClipboard(
+  plan: ClipboardWritePlan,
+) {
   if (!navigator.clipboard) {
     return;
   }
@@ -139,7 +141,7 @@ async function writeClipboardPlanToSystemClipboard(plan: ClipboardWritePlan) {
   }
 }
 
-function readPasteIntentFromClipboardData(
+export function readPasteIntentFromClipboardData(
   clipboardData: DataTransfer | null,
 ): PasteIntent {
   if (!clipboardData) {
@@ -180,7 +182,7 @@ function readPasteIntentFromClipboardData(
   return { kind: "empty" };
 }
 
-async function readPasteIntentFromAsyncClipboard(): Promise<PasteIntent> {
+export async function readPasteIntentFromAsyncClipboard(): Promise<PasteIntent> {
   if (navigator.clipboard && "read" in navigator.clipboard) {
     try {
       const items = await navigator.clipboard.read();
@@ -265,7 +267,7 @@ async function readPasteIntentFromAsyncClipboard(): Promise<PasteIntent> {
   }
 }
 
-function getSupportedImageFileFromClipboardData(
+export function getSupportedImageFileFromClipboardData(
   clipboardData: Pick<DataTransfer, "items"> | null,
 ) {
   if (!clipboardData) {
@@ -296,13 +298,3 @@ async function getImageBlobFromClipboardItem(item: ClipboardItem) {
 function blobToText(blob: Blob) {
   return blob.text();
 }
-
-export {
-  buildOverlayClipboardWritePlan,
-  getSupportedImageFileFromClipboardData,
-  readPasteIntentFromAsyncClipboard,
-  readPasteIntentFromClipboardData,
-  writeClipboardPlanToEvent,
-  writeClipboardPlanToSystemClipboard,
-};
-export type { ClipboardWritePlan, PasteIntent };

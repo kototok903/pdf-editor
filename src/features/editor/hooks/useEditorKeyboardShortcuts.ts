@@ -36,7 +36,7 @@ type UseEditorKeyboardShortcutsOptions = {
   selectedOverlay: EditorOverlay | null;
 };
 
-function useEditorKeyboardShortcuts({
+export function useEditorKeyboardShortcuts({
   documentPages,
   editingOverlayId,
   hasActiveTool,
@@ -288,5 +288,3 @@ function isEditableTarget(target: EventTarget | null) {
     ),
   );
 }
-
-export { useEditorKeyboardShortcuts };

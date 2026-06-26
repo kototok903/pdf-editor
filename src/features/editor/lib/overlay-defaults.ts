@@ -3,15 +3,13 @@ import type {
   WhiteoutOverlayDefaults,
 } from "@/features/editor/editor-types";
 
-const defaultTextOverlay: TextOverlayDefaults = {
+export const defaultTextOverlay: TextOverlayDefaults = {
   color: "#111827",
   fontId: "helvetica",
   fontSize: 16,
   text: "Text",
 };
 
-const defaultWhiteoutOverlay: WhiteoutOverlayDefaults = {
+export const defaultWhiteoutOverlay: WhiteoutOverlayDefaults = {
   color: "#ffffff",
 };
-
-export { defaultTextOverlay, defaultWhiteoutOverlay };

@@ -1,12 +1,12 @@
 import type { DocumentPage } from "@/features/editor/editor-types";
 
-type DocumentPageChangeSummary = {
+export type DocumentPageChangeSummary = {
   addedPages: number;
   deletedPages: number;
   editedPages: number;
 };
 
-function getDocumentPageChangeSummary(
+export function getDocumentPageChangeSummary(
   originalPages: readonly DocumentPage[],
   draftPages: readonly DocumentPage[],
 ): DocumentPageChangeSummary {
@@ -40,7 +40,3 @@ function isDocumentPageContentEdited(
     originalPage.sourcePageNumber !== draftPage.sourcePageNumber
   );
 }
-
-export type { DocumentPageChangeSummary };
-
-export { getDocumentPageChangeSummary };

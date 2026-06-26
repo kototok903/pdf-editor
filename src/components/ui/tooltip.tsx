@@ -5,7 +5,7 @@ import { Tooltip as TooltipPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
-function TooltipProvider({
+export function TooltipProvider({
   delayDuration = 0,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
@@ -18,19 +18,19 @@ function TooltipProvider({
   );
 }
 
-function TooltipRoot({
+export function TooltipRoot({
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
   return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
 }
 
-function TooltipTrigger({
+export function TooltipTrigger({
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
 }
 
-function TooltipContent({
+export function TooltipContent({
   className,
   sideOffset = 0,
   children,
@@ -60,7 +60,7 @@ type TooltipProps = {
   disabled?: boolean;
 };
 
-function Tooltip({ children, tooltip, disabled }: TooltipProps) {
+export function Tooltip({ children, tooltip, disabled }: TooltipProps) {
   const [open, setOpen] = React.useState(false);
 
   if (disabled && open) {
@@ -74,11 +74,3 @@ function Tooltip({ children, tooltip, disabled }: TooltipProps) {
     </TooltipRoot>
   );
 }
-
-export {
-  TooltipRoot,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-  Tooltip,
-};

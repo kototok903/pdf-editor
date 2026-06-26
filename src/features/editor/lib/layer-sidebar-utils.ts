@@ -12,16 +12,16 @@ type MoveOverlayToPageLayerOptions = {
   targetPageSize?: { height: number; width: number } | null;
 };
 
-type LayerMoveDirection = "back" | "backward" | "forward" | "front";
+export type LayerMoveDirection = "back" | "backward" | "forward" | "front";
 
-function getPageLayerOverlays(
+export function getPageLayerOverlays(
   overlays: EditorOverlay[],
   pageId: DocumentPageId,
 ) {
   return overlays.filter((overlay) => overlay.pageId === pageId).toReversed();
 }
 
-function moveOverlayToPageLayer(
+export function moveOverlayToPageLayer(
   overlays: EditorOverlay[],
   {
     insertBelowOverlayId,
@@ -80,7 +80,7 @@ function moveOverlayToPageLayer(
   ];
 }
 
-function moveOverlayLayerRelative(
+export function moveOverlayLayerRelative(
   overlays: EditorOverlay[],
   overlayId: string,
   direction: LayerMoveDirection,
@@ -191,10 +191,3 @@ function moveOverlayToIndex(
     ...remainingOverlays.slice(insertionIndex),
   ];
 }
-
-export {
-  getPageLayerOverlays,
-  moveOverlayLayerRelative,
-  moveOverlayToPageLayer,
-  type LayerMoveDirection,
-};

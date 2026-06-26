@@ -1,12 +1,12 @@
 import type { SignatureFontOption } from "@/features/editor/lib/signature-fonts";
 
-type RasterizeSignatureOptions = {
+export type RasterizeSignatureOptions = {
   color: string;
   font: SignatureFontOption;
   text: string;
 };
 
-type RasterizedSignature = {
+export type RasterizedSignature = {
   blob: Blob;
   height: number;
   width: number;
@@ -19,14 +19,14 @@ type PixelBounds = {
   y: number;
 };
 
-const signatureFontSize = 96;
+export const signatureFontSize = 96;
 const signatureHorizontalPadding = 28;
 const signatureVerticalPadding = 22;
 const signatureRasterScale = 2;
 const fallbackTextHeight = signatureFontSize * 1.25;
 const drawnSignaturePadding = 12;
 
-async function rasterizeTypedSignature({
+export async function rasterizeTypedSignature({
   color,
   font,
   text,
@@ -91,7 +91,7 @@ async function rasterizeTypedSignature({
   };
 }
 
-async function rasterizeDrawnSignature(
+export async function rasterizeDrawnSignature(
   sourceCanvas: HTMLCanvasElement,
 ): Promise<RasterizedSignature> {
   const sourceContext = sourceCanvas.getContext("2d");
@@ -177,7 +177,7 @@ function getFinitePositiveMetric(value: number, fallback: number) {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
-function getOpaquePixelBounds(imageData: ImageData): PixelBounds | null {
+export function getOpaquePixelBounds(imageData: ImageData): PixelBounds | null {
   let minX = imageData.width;
   let minY = imageData.height;
   let maxX = -1;
@@ -209,11 +209,3 @@ function getOpaquePixelBounds(imageData: ImageData): PixelBounds | null {
     y: minY,
   };
 }
-
-export {
-  getOpaquePixelBounds,
-  rasterizeDrawnSignature,
-  rasterizeTypedSignature,
-  signatureFontSize,
-};
-export type { RasterizedSignature, RasterizeSignatureOptions };

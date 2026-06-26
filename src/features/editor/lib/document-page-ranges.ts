@@ -3,12 +3,12 @@ import type {
   DocumentPageId,
 } from "@/features/editor/editor-types";
 
-type PageRange = {
+export type PageRange = {
   end: number;
   start: number;
 };
 
-type PageRangeParseResult =
+export type PageRangeParseResult =
   | {
       ok: true;
       pageNumbers: number[];
@@ -19,7 +19,7 @@ type PageRangeParseResult =
       ok: false;
     };
 
-type PageIdsParseResult =
+export type PageIdsParseResult =
   | {
       ok: true;
       pageIds: DocumentPageId[];
@@ -31,7 +31,7 @@ type PageIdsParseResult =
       ok: false;
     };
 
-function parsePageRanges(
+export function parsePageRanges(
   input: string,
   pageCount: number,
 ): PageRangeParseResult {
@@ -89,7 +89,7 @@ function parsePageRanges(
   };
 }
 
-function parseVisiblePageRangesToPageIds(
+export function parseVisiblePageRangesToPageIds(
   input: string,
   documentPages: readonly DocumentPage[],
 ): PageIdsParseResult {
@@ -109,7 +109,7 @@ function parseVisiblePageRangesToPageIds(
   };
 }
 
-function formatPageRanges(pageNumbers: readonly number[]): string {
+export function formatPageRanges(pageNumbers: readonly number[]): string {
   return toPageRanges(
     [...new Set(pageNumbers)].sort((left, right) => left - right),
   )
@@ -121,7 +121,7 @@ function formatPageRanges(pageNumbers: readonly number[]): string {
     .join(", ");
 }
 
-function formatPageIdsAsVisibleRanges(
+export function formatPageIdsAsVisibleRanges(
   documentPages: readonly DocumentPage[],
   pageIds: Iterable<DocumentPageId>,
 ): string {
@@ -130,7 +130,7 @@ function formatPageIdsAsVisibleRanges(
   );
 }
 
-function getVisiblePageNumbersForPageIds(
+export function getVisiblePageNumbersForPageIds(
   documentPages: readonly DocumentPage[],
   pageIds: Iterable<DocumentPageId>,
 ): number[] {
@@ -141,7 +141,7 @@ function getVisiblePageNumbersForPageIds(
   );
 }
 
-function toggleAllDocumentPageIds(
+export function toggleAllDocumentPageIds(
   documentPages: readonly DocumentPage[],
   selectedPageIds: Iterable<DocumentPageId>,
 ): DocumentPageId[] {
@@ -150,7 +150,7 @@ function toggleAllDocumentPageIds(
     : documentPages.map((page) => page.id);
 }
 
-function areAllDocumentPagesSelected(
+export function areAllDocumentPagesSelected(
   documentPages: readonly DocumentPage[],
   selectedPageIds: Iterable<DocumentPageId>,
 ) {
@@ -178,15 +178,3 @@ function toPageRanges(pageNumbers: readonly number[]): PageRange[] {
 
   return ranges;
 }
-
-export type { PageIdsParseResult, PageRange, PageRangeParseResult };
-
-export {
-  areAllDocumentPagesSelected,
-  formatPageIdsAsVisibleRanges,
-  formatPageRanges,
-  getVisiblePageNumbersForPageIds,
-  parsePageRanges,
-  parseVisiblePageRangesToPageIds,
-  toggleAllDocumentPageIds,
-};

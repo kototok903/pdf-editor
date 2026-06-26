@@ -14,7 +14,7 @@ type TextOverlayContentProps = {
   viewportWidth: number;
 };
 
-function TextOverlayContent({
+export function TextOverlayContent({
   isEditing,
   isSelected,
   onHeightChange,
@@ -183,5 +183,3 @@ function getMeasuredTextOverlayHeight(
 function shouldRenderDisplayLinePlaceholder(text: string) {
   return text === "" || text.endsWith("\n");
 }
-
-export { TextOverlayContent };

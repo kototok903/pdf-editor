@@ -92,7 +92,7 @@ type UseEditorProjectSessionOptions = {
 
 const rootPath = "/";
 
-function useEditorProjectSession({
+export function useEditorProjectSession({
   clearFile,
   commitPendingTextEdit,
   currentPage,
@@ -1086,5 +1086,3 @@ function createProjectFromPersistedRecord(
     pdfBytes: record.pdfBytes,
   };
 }
-
-export { useEditorProjectSession };

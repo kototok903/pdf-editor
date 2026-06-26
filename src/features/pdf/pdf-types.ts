@@ -1,23 +1,22 @@
-import type { PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist/types/src/pdf";
+import type {
+  PDFDocumentProxy as PdfJsPDFDocumentProxy,
+  PDFPageProxy as PdfJsPDFPageProxy,
+} from "pdfjs-dist/types/src/pdf";
 
-type PdfLoadStatus = "empty" | "loading" | "loaded" | "error";
+export type PDFDocumentProxy = PdfJsPDFDocumentProxy;
 
-type PageSize = {
+export type PDFPageProxy = PdfJsPDFPageProxy;
+
+export type PdfLoadStatus = "empty" | "loading" | "loaded" | "error";
+
+export type PageSize = {
   height: number;
   width: number;
 };
 
-type LoadedPdfDocument = {
+export type LoadedPdfDocument = {
   bytes: ArrayBuffer;
   fileName: string;
   pageCount: number;
   pdfDocument: PDFDocumentProxy;
-};
-
-export type {
-  LoadedPdfDocument,
-  PageSize,
-  PDFDocumentProxy,
-  PDFPageProxy,
-  PdfLoadStatus,
 };

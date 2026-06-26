@@ -14,10 +14,10 @@ import {
 } from "@/features/editor/lib/overlay-defaults";
 import { isStandardTextFontId } from "@/features/editor/lib/text-font-id-utils";
 
-type ResolvedEditorThemeName = "dark" | "light";
-type EditorThemeName = "system" | ResolvedEditorThemeName;
+export type ResolvedEditorThemeName = "dark" | "light";
+export type EditorThemeName = "system" | ResolvedEditorThemeName;
 
-type EditorPreferences = {
+export type EditorPreferences = {
   isLayersSidebarOpen: boolean;
   isPagesSidebarOpen: boolean;
   markDefaults: {
@@ -34,10 +34,10 @@ type PersistedEditorPreferencesV1 = EditorPreferences & {
   version: 1;
 };
 
-const editorPreferencesStorageKey = "pdf-editor:editor-preferences:v1";
-const minEditorZoom = 0.5;
-const maxEditorZoom = 2;
-const defaultEditorPreferences: EditorPreferences = {
+export const editorPreferencesStorageKey = "pdf-editor:editor-preferences:v1";
+export const minEditorZoom = 0.5;
+export const maxEditorZoom = 2;
+export const defaultEditorPreferences: EditorPreferences = {
   isLayersSidebarOpen: false,
   isPagesSidebarOpen: true,
   markDefaults: defaultMarkSettings,
@@ -47,7 +47,7 @@ const defaultEditorPreferences: EditorPreferences = {
   zoom: 1,
 };
 
-function readEditorPreferences(
+export function readEditorPreferences(
   storage: Storage | undefined = getBrowserStorage(),
 ): EditorPreferences {
   if (!storage) {
@@ -63,7 +63,7 @@ function readEditorPreferences(
   }
 }
 
-function writeEditorPreferences(
+export function writeEditorPreferences(
   preferences: EditorPreferences,
   storage: Storage | undefined = getBrowserStorage(),
 ) {
@@ -86,7 +86,7 @@ function writeEditorPreferences(
   }
 }
 
-function clearEditorPreferences(
+export function clearEditorPreferences(
   storage: Storage | undefined = getBrowserStorage(),
 ) {
   if (!storage) {
@@ -221,7 +221,7 @@ function asThemeName(value: unknown, fallback: EditorThemeName) {
     : fallback;
 }
 
-function resolveEditorThemeName(
+export function resolveEditorThemeName(
   themeName: EditorThemeName,
   systemPrefersDark: boolean,
 ): ResolvedEditorThemeName {
@@ -231,15 +231,3 @@ function resolveEditorThemeName(
 
   return themeName;
 }
-
-export {
-  clearEditorPreferences,
-  defaultEditorPreferences,
-  editorPreferencesStorageKey,
-  maxEditorZoom,
-  minEditorZoom,
-  readEditorPreferences,
-  resolveEditorThemeName,
-  writeEditorPreferences,
-};
-export type { EditorPreferences, EditorThemeName, ResolvedEditorThemeName };

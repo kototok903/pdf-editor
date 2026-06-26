@@ -8,12 +8,12 @@ import { createDocumentPageId } from "@/features/editor/lib/document-pages";
 type DocumentPageIdFactory = () => DocumentPageId;
 type DocumentPageRotationDegrees = DocumentPage["rotationDegrees"];
 
-type DocumentPageInsertTarget =
+export type DocumentPageInsertTarget =
   | { placement: "beginning" }
   | { placement: "end" }
   | { pageNumber: number; placement: "after" | "before" };
 
-type DocumentPageInsertIndexResult =
+export type DocumentPageInsertIndexResult =
   | {
       insertIndex: number;
       ok: true;
@@ -23,17 +23,17 @@ type DocumentPageInsertIndexResult =
       ok: false;
     };
 
-type DuplicateDocumentPagesResult = {
+export type DuplicateDocumentPagesResult = {
   documentPages: DocumentPage[];
   duplicatedPageIdMap: Map<DocumentPageId, DocumentPageId>;
 };
 
-type MergeDocumentSourcePagesResult = {
+export type MergeDocumentSourcePagesResult = {
   addedPageIds: DocumentPageId[];
   documentPages: DocumentPage[];
 };
 
-function rotateDocumentPages(
+export function rotateDocumentPages(
   documentPages: readonly DocumentPage[],
   pageIds: Iterable<DocumentPageId>,
   rotationDeltaDegrees: number,
@@ -52,7 +52,7 @@ function rotateDocumentPages(
   );
 }
 
-function deleteDocumentPages(
+export function deleteDocumentPages(
   documentPages: readonly DocumentPage[],
   pageIds: Iterable<DocumentPageId>,
 ): DocumentPage[] {
@@ -61,7 +61,7 @@ function deleteDocumentPages(
   return documentPages.filter((page) => !selectedPageIds.has(page.id));
 }
 
-function duplicateDocumentPages(
+export function duplicateDocumentPages(
   documentPages: readonly DocumentPage[],
   pageIds: Iterable<DocumentPageId>,
   createPageId: DocumentPageIdFactory = createDocumentPageId,
@@ -91,7 +91,7 @@ function duplicateDocumentPages(
   };
 }
 
-function moveDocumentPages(
+export function moveDocumentPages(
   documentPages: readonly DocumentPage[],
   pageIds: Iterable<DocumentPageId>,
   insertIndex: number,
@@ -123,7 +123,7 @@ function moveDocumentPages(
   ];
 }
 
-function mergeDocumentSourcePages({
+export function mergeDocumentSourcePages({
   createPageId = createDocumentPageId,
   documentPages,
   insertIndex,
@@ -161,7 +161,7 @@ function mergeDocumentSourcePages({
   };
 }
 
-function getDocumentPageInsertIndex(
+export function getDocumentPageInsertIndex(
   documentPages: readonly DocumentPage[],
   target: DocumentPageInsertTarget,
 ): DocumentPageInsertIndexResult {
@@ -194,7 +194,7 @@ function getDocumentPageInsertIndex(
   }
 }
 
-function normalizeDocumentPageInsertIndex(
+export function normalizeDocumentPageInsertIndex(
   documentPages: readonly DocumentPage[],
   insertIndex: number,
 ) {
@@ -205,7 +205,7 @@ function normalizeDocumentPageInsertIndex(
   return Math.min(documentPages.length, Math.max(0, Math.trunc(insertIndex)));
 }
 
-function normalizeRotationDegrees(
+export function normalizeRotationDegrees(
   rotationDegrees: number,
 ): DocumentPageRotationDegrees {
   const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360;
@@ -238,21 +238,3 @@ function assertValidSourcePageNumbers(
     }
   }
 }
-
-export type {
-  DocumentPageInsertIndexResult,
-  DocumentPageInsertTarget,
-  DuplicateDocumentPagesResult,
-  MergeDocumentSourcePagesResult,
-};
-
-export {
-  deleteDocumentPages,
-  duplicateDocumentPages,
-  getDocumentPageInsertIndex,
-  mergeDocumentSourcePages,
-  moveDocumentPages,
-  normalizeDocumentPageInsertIndex,
-  normalizeRotationDegrees,
-  rotateDocumentPages,
-};

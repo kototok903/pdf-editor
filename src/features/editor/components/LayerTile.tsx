@@ -23,7 +23,7 @@ type LayerTileProps = {
   style?: CSSProperties;
 };
 
-const LayerTile = memo(
+export const LayerTile = memo(
   forwardRef<HTMLButtonElement, LayerTileProps>(function LayerTile(
     { className, imageAssetById, isSelected, onClick, overlay, style },
     ref,
@@ -201,5 +201,3 @@ function LayerTypeIcon({ overlay }: { overlay: EditorOverlay }) {
       throw new Error(`Unknown overlay type: ${overlay satisfies never}`);
   }
 }
-
-export { LayerTile };

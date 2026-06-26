@@ -7,7 +7,10 @@ const maxInitialImageSize = 220;
 const defaultMinVisibleOverlaySize = 8;
 const keyboardNudgeStep = 1;
 
-function pdfRectToViewportRect(rect: PdfRect, scale: number): ViewportRect {
+export function pdfRectToViewportRect(
+  rect: PdfRect,
+  scale: number,
+): ViewportRect {
   return {
     height: rect.height * scale,
     width: rect.width * scale,
@@ -16,7 +19,10 @@ function pdfRectToViewportRect(rect: PdfRect, scale: number): ViewportRect {
   };
 }
 
-function viewportRectToPdfRect(rect: ViewportRect, scale: number): PdfRect {
+export function viewportRectToPdfRect(
+  rect: ViewportRect,
+  scale: number,
+): PdfRect {
   return {
     height: rect.height / scale,
     width: rect.width / scale,
@@ -25,7 +31,7 @@ function viewportRectToPdfRect(rect: ViewportRect, scale: number): PdfRect {
   };
 }
 
-function createDefaultOverlayRect(pageSize: {
+export function createDefaultOverlayRect(pageSize: {
   height: number;
   width: number;
 }): PdfRect {
@@ -37,7 +43,7 @@ function createDefaultOverlayRect(pageSize: {
   };
 }
 
-function createOverlayRectAtPoint(
+export function createOverlayRectAtPoint(
   point: { x: number; y: number },
   pageSize: { height: number; width: number },
 ): PdfRect {
@@ -53,7 +59,7 @@ function createOverlayRectAtPoint(
   };
 }
 
-function createImageOverlayRectAtPoint(
+export function createImageOverlayRectAtPoint(
   point: { x: number; y: number },
   pageSize: { height: number; width: number },
   imageSize: { height: number; width: number },
@@ -77,7 +83,7 @@ function createImageOverlayRectAtPoint(
   };
 }
 
-function createMarkOverlayRectAtPoint(
+export function createMarkOverlayRectAtPoint(
   point: { x: number; y: number },
   pageSize: { height: number; width: number },
 ): PdfRect {
@@ -97,7 +103,7 @@ function createMarkOverlayRectAtPoint(
   };
 }
 
-function createRectFromDragPoints(
+export function createRectFromDragPoints(
   startPoint: { x: number; y: number },
   endPoint: { x: number; y: number },
   pageSize: { height: number; width: number },
@@ -119,7 +125,7 @@ function createRectFromDragPoints(
   };
 }
 
-function clampMovedOverlayRect(
+export function clampMovedOverlayRect(
   rect: PdfRect,
   pageSize: { height: number; width: number },
   minVisibleOverlaySize = defaultMinVisibleOverlaySize,
@@ -191,7 +197,7 @@ function clampMovedRotatedOverlayRect(
   };
 }
 
-function nudgeOverlayRect(
+export function nudgeOverlayRect(
   rect: PdfRect,
   direction: "down" | "left" | "right" | "up",
   pageSize: { height: number; width: number },
@@ -229,7 +235,7 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function normalizeRotationDegrees(rotationDegrees: number) {
+export function normalizeRotationDegrees(rotationDegrees: number) {
   if (!Number.isFinite(rotationDegrees)) {
     return 0;
   }
@@ -238,16 +244,3 @@ function normalizeRotationDegrees(rotationDegrees: number) {
 
   return normalizedRotation < 0 ? normalizedRotation + 360 : normalizedRotation;
 }
-
-export {
-  clampMovedOverlayRect,
-  createDefaultOverlayRect,
-  createImageOverlayRectAtPoint,
-  createMarkOverlayRectAtPoint,
-  createOverlayRectAtPoint,
-  createRectFromDragPoints,
-  nudgeOverlayRect,
-  normalizeRotationDegrees,
-  pdfRectToViewportRect,
-  viewportRectToPdfRect,
-};

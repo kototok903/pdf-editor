@@ -17,7 +17,7 @@ import {
 
 const systemDarkThemeMediaQuery = "(prefers-color-scheme: dark)";
 
-function useEditorPreferences(): [
+export function useEditorPreferences(): [
   EditorPreferences,
   Dispatch<SetStateAction<EditorPreferences>>,
 ] {
@@ -30,7 +30,7 @@ function useEditorPreferences(): [
   return [preferences, setPreferences];
 }
 
-function useResolvedEditorTheme(
+export function useResolvedEditorTheme(
   themeName: EditorThemeName,
 ): ResolvedEditorThemeName {
   const systemThemeName = useSyncExternalStore(
@@ -73,5 +73,3 @@ function getSystemThemeName(): ResolvedEditorThemeName {
 function getServerThemeName(): ResolvedEditorThemeName {
   return "light";
 }
-
-export { useEditorPreferences, useResolvedEditorTheme };

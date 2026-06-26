@@ -10,7 +10,7 @@ type AppErrorBoundaryState = {
   error: Error | null;
 };
 
-class AppErrorBoundary extends Component<
+export class AppErrorBoundary extends Component<
   AppErrorBoundaryProps,
   AppErrorBoundaryState
 > {
@@ -67,5 +67,3 @@ function AppErrorFallback({ error }: { error: Error }) {
 function handleReturnHome() {
   window.location.assign("/");
 }
-
-export { AppErrorBoundary };

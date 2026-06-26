@@ -12,14 +12,14 @@ import {
   normalizeEditorFormEdits,
 } from "@/features/editor/lib/editor-form-edits";
 
-type EditorHistoryEntry = {
+export type EditorHistoryEntry = {
   documentPages: DocumentPage[];
   formEdits: EditorFormEdits;
   overlays: EditorOverlay[];
   selectedOverlayId: string | null;
 };
 
-type EditorHistoryState = {
+export type EditorHistoryState = {
   future: EditorHistoryEntry[];
   past: EditorHistoryEntry[];
   present: EditorHistoryEntry;
@@ -33,9 +33,9 @@ type RestorableEditorHistoryState = {
   present?: RestorableEditorHistoryEntry;
 };
 
-const editorHistoryLimit = 100;
+export const editorHistoryLimit = 100;
 
-function createEditorHistory(
+export function createEditorHistory(
   overlays: EditorOverlay[] = [],
   selectedOverlayId: string | null = null,
   formEdits: EditorFormEdits = emptyEditorFormEdits,
@@ -53,7 +53,7 @@ function createEditorHistory(
   };
 }
 
-function createHistoryEntry(
+export function createHistoryEntry(
   overlays: EditorOverlay[],
   selectedOverlayId: string | null,
   formEdits: EditorFormEdits = emptyEditorFormEdits,
@@ -67,7 +67,7 @@ function createHistoryEntry(
   };
 }
 
-function commitEditorHistory(
+export function commitEditorHistory(
   history: EditorHistoryState,
   nextEntry: EditorHistoryEntry,
 ): EditorHistoryState {
@@ -89,7 +89,7 @@ function commitEditorHistory(
   };
 }
 
-function commitEditorHistoryFromBase(
+export function commitEditorHistoryFromBase(
   history: EditorHistoryState,
   baseEntry: EditorHistoryEntry,
   nextEntry: EditorHistoryEntry,
@@ -118,7 +118,7 @@ function commitEditorHistoryFromBase(
   };
 }
 
-function replaceEditorHistoryPresent(
+export function replaceEditorHistoryPresent(
   history: EditorHistoryState,
   nextEntry: EditorHistoryEntry,
 ): EditorHistoryState {
@@ -139,7 +139,7 @@ function replaceEditorHistoryPresent(
   };
 }
 
-function resetEditorHistory(
+export function resetEditorHistory(
   overlays: EditorOverlay[] = [],
   selectedOverlayId: string | null = null,
   formEdits: EditorFormEdits = emptyEditorFormEdits,
@@ -153,7 +153,7 @@ function resetEditorHistory(
   );
 }
 
-function restoreEditorHistory(
+export function restoreEditorHistory(
   history: RestorableEditorHistoryState | null | undefined,
 ): EditorHistoryState {
   const future = Array.isArray(history?.future) ? history.future : [];
@@ -166,7 +166,9 @@ function restoreEditorHistory(
   };
 }
 
-function undoEditorHistory(history: EditorHistoryState): EditorHistoryState {
+export function undoEditorHistory(
+  history: EditorHistoryState,
+): EditorHistoryState {
   const previousEntry = history.past.at(-1);
 
   if (!previousEntry) {
@@ -180,7 +182,9 @@ function undoEditorHistory(history: EditorHistoryState): EditorHistoryState {
   };
 }
 
-function redoEditorHistory(history: EditorHistoryState): EditorHistoryState {
+export function redoEditorHistory(
+  history: EditorHistoryState,
+): EditorHistoryState {
   const nextEntry = history.future[0];
 
   if (!nextEntry) {
@@ -194,7 +198,7 @@ function redoEditorHistory(history: EditorHistoryState): EditorHistoryState {
   };
 }
 
-function getHistoryImageAssetIds(history: EditorHistoryState) {
+export function getHistoryImageAssetIds(history: EditorHistoryState) {
   const assetIds = new Set<string>();
 
   for (const entry of [...history.past, history.present, ...history.future]) {
@@ -208,7 +212,9 @@ function getHistoryImageAssetIds(history: EditorHistoryState) {
   return assetIds;
 }
 
-function cloneHistoryEntry(entry: EditorHistoryEntry): EditorHistoryEntry {
+export function cloneHistoryEntry(
+  entry: EditorHistoryEntry,
+): EditorHistoryEntry {
   return createHistoryEntry(
     entry.overlays,
     entry.selectedOverlayId,
@@ -239,7 +245,7 @@ function cloneOverlays(overlays: EditorOverlay[]) {
   }));
 }
 
-function areHistoryEntriesEqual(
+export function areHistoryEntriesEqual(
   left: RestorableEditorHistoryEntry | null | undefined,
   right: RestorableEditorHistoryEntry | null | undefined,
 ) {
@@ -283,7 +289,7 @@ function areDocumentPageEqual(
   );
 }
 
-function areEditorHistoriesEqual(
+export function areEditorHistoriesEqual(
   left: RestorableEditorHistoryState | null | undefined,
   right: RestorableEditorHistoryState | null | undefined,
 ) {
@@ -398,21 +404,3 @@ function isImageBackedOverlay(
 ): overlay is ImageOverlay | SignatureOverlay {
   return overlay.type === "image" || overlay.type === "signature";
 }
-
-export {
-  areEditorHistoriesEqual,
-  areHistoryEntriesEqual,
-  cloneHistoryEntry,
-  commitEditorHistory,
-  commitEditorHistoryFromBase,
-  createEditorHistory,
-  createHistoryEntry,
-  editorHistoryLimit,
-  getHistoryImageAssetIds,
-  redoEditorHistory,
-  replaceEditorHistoryPresent,
-  resetEditorHistory,
-  restoreEditorHistory,
-  undoEditorHistory,
-};
-export type { EditorHistoryEntry, EditorHistoryState };

@@ -2,11 +2,11 @@ const textLineHeightMultiplier = 1.25;
 
 type MeasureTextWidth = (text: string) => number;
 
-function getTextLineHeight(fontSize: number) {
+export function getTextLineHeight(fontSize: number) {
   return fontSize * textLineHeightMultiplier;
 }
 
-function getTextBaselineOffset({
+export function getTextBaselineOffset({
   fontAscent,
   fontHeight,
   fontSize,
@@ -18,11 +18,11 @@ function getTextBaselineOffset({
   return fontAscent + (getTextLineHeight(fontSize) - fontHeight) / 2;
 }
 
-function splitTextOverlayLines(text: string) {
+export function splitTextOverlayLines(text: string) {
   return text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
 }
 
-function wrapTextOverlayLines({
+export function wrapTextOverlayLines({
   measureTextWidth,
   text,
   width,
@@ -106,10 +106,3 @@ function getSoftTextWrapIndex(line: string, hardWrapIndex: number) {
 
   return null;
 }
-
-export {
-  getTextBaselineOffset,
-  getTextLineHeight,
-  splitTextOverlayLines,
-  wrapTextOverlayLines,
-};

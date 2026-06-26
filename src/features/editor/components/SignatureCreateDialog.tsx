@@ -37,7 +37,7 @@ import { signatureFontOptions } from "@/features/editor/lib/signature-fonts";
 import { rgbArrayToHex } from "@/features/editor/lib/editor-utils";
 import { rasterizeDrawnSignature } from "@/features/editor/lib/signature-rasterizer";
 
-type SignatureCreateInput =
+export type SignatureCreateInput =
   | {
       color: string;
       fontId: SignatureFontId;
@@ -75,7 +75,7 @@ type DrawSignatureTabHandle = {
   createBlob: () => Promise<Blob>;
 };
 
-function SignatureCreateDialog({
+export function SignatureCreateDialog({
   onCreateSignature,
   onOpenChange,
   open,
@@ -536,6 +536,3 @@ async function createDrawnSignatureBlob(
 
   return drawTab.createBlob();
 }
-
-export { SignatureCreateDialog };
-export type { SignatureCreateInput };

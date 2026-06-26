@@ -19,7 +19,7 @@ import { createImageOverlayRectAtPoint } from "@/features/editor/lib/overlay-coo
 import { getSignatureFontOption } from "@/features/editor/lib/signature-fonts";
 import { rasterizeTypedSignature } from "@/features/editor/lib/signature-rasterizer";
 
-type ActiveTool =
+export type ActiveTool =
   | { type: "image"; assetId: string }
   | { type: "mark" }
   | { type: "signature"; assetId: string }
@@ -45,7 +45,7 @@ type UseEditorToolsOptions = {
   whiteoutDefaults: WhiteoutOverlayDefaults;
 };
 
-function useEditorTools({
+export function useEditorTools({
   addImageBlob,
   addImageFile,
   addImageUrl,
@@ -445,5 +445,3 @@ function useEditorTools({
     toggleWhiteoutTool,
   };
 }
-
-export { useEditorTools, type ActiveTool };

@@ -41,7 +41,7 @@ function createOverlayId() {
   return crypto.randomUUID();
 }
 
-function useEditorOverlays() {
+export function useEditorOverlays() {
   const [history, setHistory] = useState<EditorHistoryState>(() =>
     createEditorHistory(),
   );
@@ -533,5 +533,3 @@ function arePdfRectsEqual(left: PdfRect, right: PdfRect) {
       left.y === right.y)
   );
 }
-
-export { useEditorOverlays };

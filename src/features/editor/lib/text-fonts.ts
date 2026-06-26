@@ -12,7 +12,7 @@ import {
 } from "@/features/editor/lib/text-font-id-utils";
 import "@/features/editor/lib/text-fonts.css";
 
-type StandardTextFontOption = {
+export type StandardTextFontOption = {
   assetUrl: string;
   cssFontFamily: string;
   id: StandardTextFontId;
@@ -21,7 +21,7 @@ type StandardTextFontOption = {
   source: "standard";
 };
 
-type DocumentTextFontOption = {
+export type DocumentTextFontOption = {
   cssFontFamily: string;
   id: DocumentTextFontId;
   isComplete: boolean;
@@ -32,7 +32,7 @@ type DocumentTextFontOption = {
   sources: DocumentTextFontSource[];
 };
 
-type UnavailableDocumentTextFontOption = {
+export type UnavailableDocumentTextFontOption = {
   cssFontFamily: string;
   fontName: string;
   id: DocumentTextFontId;
@@ -42,13 +42,15 @@ type UnavailableDocumentTextFontOption = {
   source: "document";
 };
 
-type DocumentTextFontMenuOption =
+export type DocumentTextFontMenuOption =
   | DocumentTextFontOption
   | UnavailableDocumentTextFontOption;
 
-type TextFontOption = DocumentTextFontMenuOption | StandardTextFontOption;
+export type TextFontOption =
+  | DocumentTextFontMenuOption
+  | StandardTextFontOption;
 
-type RegisterDocumentTextFontInput = {
+export type RegisterDocumentTextFontInput = {
   bytes: ArrayBuffer;
   displayName: string;
   fontName: string;
@@ -62,7 +64,7 @@ type UnavailableDocumentTextFontInput = {
   reason: string;
 };
 
-type DocumentTextFontSource = {
+export type DocumentTextFontSource = {
   bytes: ArrayBuffer;
   cssFontFamily: string;
   fontName: string;
@@ -71,7 +73,7 @@ type DocumentTextFontSource = {
 };
 
 const requiredTextFontCodePoints = getPrintableAsciiCodePoints();
-const textFontOptions: StandardTextFontOption[] = [
+export const textFontOptions: StandardTextFontOption[] = [
   {
     assetUrl: helveticaFontUrl,
     cssFontFamily: "PdfEditorHelvetica, sans-serif",
@@ -101,22 +103,22 @@ const textFontOptions: StandardTextFontOption[] = [
 const documentTextFontFaces = new Map<DocumentTextFontId, FontFace>();
 let documentTextFontOptions: DocumentTextFontOption[] = [];
 
-function getTextFontOption(fontId: TextFontId) {
+export function getTextFontOption(fontId: TextFontId) {
   return getDocumentTextFontOption(fontId) ?? getStandardTextFontOption(fontId);
 }
 
-function getTextFontFamily(fontId: TextFontId) {
+export function getTextFontFamily(fontId: TextFontId) {
   return getTextFontOption(fontId).cssFontFamily;
 }
 
-function getStandardTextFontOption(fontId: TextFontId) {
+export function getStandardTextFontOption(fontId: TextFontId) {
   return (
     textFontOptions.find((fontOption) => fontOption.id === fontId) ??
     textFontOptions[0]
   );
 }
 
-function getDocumentTextFontOption(fontId: TextFontId) {
+export function getDocumentTextFontOption(fontId: TextFontId) {
   if (!isDocumentTextFontId(fontId)) {
     return null;
   }
@@ -127,7 +129,7 @@ function getDocumentTextFontOption(fontId: TextFontId) {
   );
 }
 
-async function registerDocumentTextFonts(
+export async function registerDocumentTextFonts(
   fonts: RegisterDocumentTextFontInput[],
 ) {
   clearDocumentTextFonts();
@@ -182,7 +184,7 @@ async function registerDocumentTextFonts(
   return documentTextFontOptions;
 }
 
-function createUnavailableDocumentTextFontOptions(
+export function createUnavailableDocumentTextFontOptions(
   fonts: UnavailableDocumentTextFontInput[],
 ): UnavailableDocumentTextFontOption[] {
   const fontsByLabel = groupBy(fonts, (font) =>
@@ -202,7 +204,7 @@ function createUnavailableDocumentTextFontOptions(
   );
 }
 
-function clearDocumentTextFonts() {
+export function clearDocumentTextFonts() {
   for (const fontFace of documentTextFontFaces.values()) {
     document.fonts.delete(fontFace);
   }
@@ -259,23 +261,3 @@ function groupBy<T, K>(values: T[], getKey: (value: T) => K) {
 
   return groups;
 }
-
-export {
-  clearDocumentTextFonts,
-  createUnavailableDocumentTextFontOptions,
-  getDocumentTextFontOption,
-  getStandardTextFontOption,
-  getTextFontFamily,
-  getTextFontOption,
-  registerDocumentTextFonts,
-  textFontOptions,
-};
-export type {
-  DocumentTextFontMenuOption,
-  DocumentTextFontOption,
-  DocumentTextFontSource,
-  RegisterDocumentTextFontInput,
-  StandardTextFontOption,
-  TextFontOption,
-  UnavailableDocumentTextFontOption,
-};

@@ -17,7 +17,7 @@ type SegmentedButtonProps = {
   menuLabel?: string;
 };
 
-function SegmentedButton({
+export function SegmentedButton({
   children,
   isActive = false,
   onClick,
@@ -58,5 +58,3 @@ function SegmentedButton({
     </div>
   );
 }
-
-export { SegmentedButton };

@@ -6,7 +6,7 @@ type ExtractPdfFontsOptions = {
   signal?: AbortSignal;
 };
 
-type ExtractedPdfFont = {
+export type ExtractedPdfFont = {
   bytes: ArrayBuffer | null;
   canEmbedWithPdfLib: boolean;
   canLoadInBrowser: boolean;
@@ -19,7 +19,7 @@ type ExtractedPdfFont = {
   supportedCodePoints: number[];
 };
 
-type AvailablePdfFont = ExtractedPdfFont & {
+export type AvailablePdfFont = ExtractedPdfFont & {
   bytes: ArrayBuffer;
   canEmbedWithPdfLib: true;
   canLoadInBrowser: true;
@@ -46,7 +46,7 @@ type PdfJsCommonObjects = {
 
 const requiredTextFontCodePoints = getPrintableAsciiCodePoints();
 
-async function extractPdfFonts({
+export async function extractPdfFonts({
   pageCount,
   pdfDocument,
   signal,
@@ -84,11 +84,13 @@ async function extractPdfFonts({
   return [...extractedFonts.values()];
 }
 
-function getAvailablePdfFonts(fonts: ExtractedPdfFont[]): AvailablePdfFont[] {
+export function getAvailablePdfFonts(
+  fonts: ExtractedPdfFont[],
+): AvailablePdfFont[] {
   return fonts.filter(isAvailablePdfFont);
 }
 
-function getUnavailablePdfFonts(fonts: ExtractedPdfFont[]) {
+export function getUnavailablePdfFonts(fonts: ExtractedPdfFont[]) {
   return fonts
     .filter((font) => !isAvailablePdfFont(font))
     .map((font) => ({
@@ -278,6 +280,3 @@ function copyUint8ArrayToArrayBuffer(value: Uint8Array) {
 function getPrintableAsciiCodePoints() {
   return Array.from({ length: 95 }, (_, index) => index + 32);
 }
-
-export { extractPdfFonts, getAvailablePdfFonts, getUnavailablePdfFonts };
-export type { AvailablePdfFont, ExtractedPdfFont };

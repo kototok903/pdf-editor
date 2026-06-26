@@ -12,14 +12,14 @@ type ClipboardTextOptions = {
   textSettings: TextOverlayDefaults;
 };
 
-function textOverlayInputFromPlainText(
+export function textOverlayInputFromPlainText(
   text: string,
   options: ClipboardTextOptions,
 ): EditorOverlayInput | null {
   return textOverlayInputUsingCurrentSettings(text, options);
 }
 
-function textOverlayInputUsingCurrentSettings(
+export function textOverlayInputUsingCurrentSettings(
   text: string,
   options: ClipboardTextOptions,
 ): EditorOverlayInput | null {
@@ -38,7 +38,7 @@ function textOverlayInputUsingCurrentSettings(
   };
 }
 
-function textOverlayInputFromHtml(
+export function textOverlayInputFromHtml(
   html: string,
   fallbackText: string,
   options: ClipboardTextOptions,
@@ -63,7 +63,7 @@ function textOverlayInputFromHtml(
   };
 }
 
-function extractPlainTextFromHtml(html: string) {
+export function extractPlainTextFromHtml(html: string) {
   return normalizeClipboardText(extractTextFromHtml(html));
 }
 
@@ -197,10 +197,3 @@ function clampColorPart(value: number) {
 
   return Math.min(255, Math.max(0, Math.round(value)));
 }
-
-export {
-  extractPlainTextFromHtml,
-  textOverlayInputFromHtml,
-  textOverlayInputFromPlainText,
-  textOverlayInputUsingCurrentSettings,
-};

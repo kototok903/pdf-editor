@@ -20,7 +20,7 @@ type OverlayBoxProps = {
   viewportRect: ViewportRect;
 };
 
-const OverlayBox = memo(function OverlayBox({
+export const OverlayBox = memo(function OverlayBox({
   imageAssetById,
   isEditing,
   isSelected,
@@ -103,5 +103,3 @@ const OverlayBox = memo(function OverlayBox({
 });
 
 OverlayBox.displayName = "OverlayBox";
-
-export { OverlayBox };

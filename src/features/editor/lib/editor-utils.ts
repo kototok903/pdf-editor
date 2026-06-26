@@ -1,4 +1,4 @@
-function rgbArrayToHex(value: unknown) {
+export function rgbArrayToHex(value: unknown) {
   const [red = 0, green = 0, blue = 0] = Array.isArray(value) ? value : [];
 
   return `#${[red, green, blue]
@@ -7,5 +7,3 @@ function rgbArrayToHex(value: unknown) {
     )
     .join("")}`;
 }
-
-export { rgbArrayToHex };

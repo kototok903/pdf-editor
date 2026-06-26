@@ -31,6 +31,14 @@ export default defineConfig([
           ],
         },
       ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "ExportNamedDeclaration[declaration=null]",
+          message:
+            'Use individual inline exports instead of aggregate "export { ... }" syntax',
+        },
+      ],
     },
   },
 ]);

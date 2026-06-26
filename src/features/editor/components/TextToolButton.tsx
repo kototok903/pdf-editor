@@ -57,7 +57,7 @@ type TextToolButtonProps = {
   settings: TextOverlayDefaults;
 };
 
-const TextToolButton = memo(function TextToolButton({
+export const TextToolButton = memo(function TextToolButton({
   disabled,
   documentFontOptions,
   isDefault,
@@ -265,5 +265,3 @@ function UnavailableDocumentFontItem({
     </TooltipRoot>
   );
 }
-
-export { TextToolButton };

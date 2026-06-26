@@ -4,14 +4,14 @@ import type {
   PdfFormValue,
 } from "@/features/editor/editor-types";
 
-type PdfFormFieldType = "Btn" | "Ch" | "Tx" | string;
+export type PdfFormFieldType = "Btn" | "Ch" | "Tx" | string;
 
-type PdfChoiceOption = {
+export type PdfChoiceOption = {
   displayValue: string;
   exportValue: string;
 };
 
-type PdfFormWidget = {
+export type PdfFormWidget = {
   buttonValue?: string;
   combo?: boolean;
   exportValue?: string;
@@ -27,7 +27,7 @@ type PdfFormWidget = {
   rect: [number, number, number, number];
 };
 
-type PdfFormField =
+export type PdfFormField =
   | {
       fieldName: string;
       fieldType: "text";
@@ -69,7 +69,7 @@ type PdfFormField =
       widgetIds: string[];
     };
 
-type PdfFormFieldRegistry = {
+export type PdfFormFieldRegistry = {
   fields: PdfFormField[];
   fieldsByName: ReadonlyMap<string, PdfFormField>;
   widgetsById: ReadonlyMap<string, PdfFormWidget>;
@@ -94,7 +94,7 @@ type AnnotationStorageLike = {
   setValue: (key: string, value: object) => void;
 };
 
-function extractPdfFormWidgets(
+export function extractPdfFormWidgets(
   annotations: PdfJsAnnotation[],
   pageNumber: number,
   pageId: DocumentPageId,
@@ -141,7 +141,7 @@ function extractPdfFormWidgets(
   });
 }
 
-function createPdfFormFieldRegistry(
+export function createPdfFormFieldRegistry(
   widgets: PdfFormWidget[],
 ): PdfFormFieldRegistry {
   const widgetsById = new Map(widgets.map((widget) => [widget.id, widget]));
@@ -168,7 +168,7 @@ function createPdfFormFieldRegistry(
   };
 }
 
-function applyFormEditsToAnnotationStorage({
+export function applyFormEditsToAnnotationStorage({
   annotationStorage,
   formEdits,
   widgets,
@@ -218,7 +218,7 @@ function applyFormEditsToAnnotationStorage({
   }
 }
 
-function syncFormControlsWithFormEdits({
+export function syncFormControlsWithFormEdits({
   container,
   formEdits,
   widgets,
@@ -279,7 +279,7 @@ function syncFormControlsWithFormEdits({
   }
 }
 
-function createPdfFormValueFromElement({
+export function createPdfFormValueFromElement({
   element,
   widget,
 }: {
@@ -338,7 +338,9 @@ function createPdfFormValueFromElement({
   return null;
 }
 
-function getFormElementWidgetId(element: EventTarget | null): string | null {
+export function getFormElementWidgetId(
+  element: EventTarget | null,
+): string | null {
   if (!(element instanceof Element)) {
     return null;
   }
@@ -680,19 +682,3 @@ function isPdfRect(rect: unknown): rect is [number, number, number, number] {
     rect.every((value) => typeof value === "number")
   );
 }
-
-export {
-  applyFormEditsToAnnotationStorage,
-  createPdfFormFieldRegistry,
-  createPdfFormValueFromElement,
-  extractPdfFormWidgets,
-  getFormElementWidgetId,
-  syncFormControlsWithFormEdits,
-};
-export type {
-  PdfChoiceOption,
-  PdfFormField,
-  PdfFormFieldRegistry,
-  PdfFormFieldType,
-  PdfFormWidget,
-};

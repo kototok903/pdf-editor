@@ -1,16 +1,16 @@
 import type { PDFPageProxy } from "@/features/pdf/pdf-types";
 
-type PdfRenderTask = {
+export type PdfRenderTask = {
   cancel: () => void;
   promise: Promise<unknown>;
 };
 
-function releaseCanvasBitmap(canvas: HTMLCanvasElement) {
+export function releaseCanvasBitmap(canvas: HTMLCanvasElement) {
   canvas.width = 0;
   canvas.height = 0;
 }
 
-function cleanupPdfPageResources(page: PDFPageProxy | null) {
+export function cleanupPdfPageResources(page: PDFPageProxy | null) {
   if (!page) {
     return;
   }
@@ -44,7 +44,7 @@ function cleanupPdfPageAfterRender({
   );
 }
 
-function cleanupPdfRender({
+export function cleanupPdfRender({
   canvas,
   page,
   releaseCanvas = true,
@@ -67,6 +67,3 @@ function cleanupPdfRender({
 
   cleanupPdfPageAfterRender({ page, renderTask });
 }
-
-export { cleanupPdfPageResources, cleanupPdfRender, releaseCanvasBitmap };
-export type { PdfRenderTask };

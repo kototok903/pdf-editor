@@ -34,7 +34,7 @@ type MarkToolDropdownProps = {
   onSettingsChange: (patch: MarkOverlayPatch) => void;
 };
 
-const MarkToolButton = memo(function MarkToolButton({
+export const MarkToolButton = memo(function MarkToolButton({
   color,
   disabled,
   isDefault,
@@ -147,5 +147,3 @@ const MarkToolButton = memo(function MarkToolButton({
     </DropdownMenu>
   );
 });
-
-export { MarkToolButton };

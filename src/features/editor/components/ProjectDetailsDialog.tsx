@@ -44,7 +44,7 @@ type ProjectDetailsDialogProps = {
   project: Project | null;
 };
 
-function ProjectDetailsDialog({
+export function ProjectDetailsDialog({
   editOpen,
   onEdit,
   onEditOpenChange,
@@ -553,5 +553,3 @@ function ProjectDetailRow({
     </div>
   );
 }
-
-export { ProjectDetailsDialog };

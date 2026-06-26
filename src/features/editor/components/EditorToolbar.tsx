@@ -102,7 +102,7 @@ type EditorToolbarProps = {
   zoomPercent: number;
 };
 
-const EditorToolbar = memo(function EditorToolbar({
+export const EditorToolbar = memo(function EditorToolbar({
   activeProjectId,
   activeProject,
   activeImageAssetId,
@@ -341,5 +341,3 @@ const EditorToolbar = memo(function EditorToolbar({
 });
 
 EditorToolbar.displayName = "EditorToolbar";
-
-export { EditorToolbar };

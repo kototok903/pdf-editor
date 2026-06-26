@@ -1,11 +1,11 @@
-type PdfTrappedStatus = "True" | "False" | "Unknown";
+export type PdfTrappedStatus = "True" | "False" | "Unknown";
 
-type PdfCustomMetadataProperty = {
+export type PdfCustomMetadataProperty = {
   key: string;
   value: string;
 };
 
-type PdfProjectMetadata = {
+export type PdfProjectMetadata = {
   author: string | null;
   creator: string | null;
   customProperties: PdfCustomMetadataProperty[];
@@ -18,7 +18,7 @@ type PdfProjectMetadata = {
   trapped: PdfTrappedStatus | null;
 };
 
-const standardMetadataInfoKeys = new Set([
+export const standardMetadataInfoKeys = new Set([
   "Title",
   "Author",
   "Subject",
@@ -37,7 +37,7 @@ const standardMetadataInfoKeys = new Set([
   "IsLinearized",
 ]);
 
-const emptyPdfProjectMetadata: PdfProjectMetadata = {
+export const emptyPdfProjectMetadata: PdfProjectMetadata = {
   author: null,
   creator: null,
   customProperties: [],
@@ -50,7 +50,7 @@ const emptyPdfProjectMetadata: PdfProjectMetadata = {
   trapped: null,
 };
 
-function createPdfProjectMetadata(
+export function createPdfProjectMetadata(
   metadata:
     | (PdfProjectMetadata & {
         createdAt?: Date | null;
@@ -67,7 +67,7 @@ function createPdfProjectMetadata(
   });
 }
 
-function clonePdfProjectMetadata(
+export function clonePdfProjectMetadata(
   metadata: PdfProjectMetadata,
 ): PdfProjectMetadata {
   return {
@@ -79,7 +79,7 @@ function clonePdfProjectMetadata(
   };
 }
 
-function normalizePdfProjectMetadata(
+export function normalizePdfProjectMetadata(
   metadata: PdfProjectMetadata,
 ): PdfProjectMetadata {
   return {
@@ -101,7 +101,7 @@ function normalizePdfProjectMetadata(
   };
 }
 
-function normalizeMetadataString(value: unknown): string | null {
+export function normalizeMetadataString(value: unknown): string | null {
   if (typeof value === "string") {
     const trimmedValue = value.trim();
     return trimmedValue ? trimmedValue : null;
@@ -117,13 +117,3 @@ function normalizeMetadataString(value: unknown): string | null {
 
   return null;
 }
-
-export {
-  clonePdfProjectMetadata,
-  createPdfProjectMetadata,
-  emptyPdfProjectMetadata,
-  normalizeMetadataString,
-  normalizePdfProjectMetadata,
-  standardMetadataInfoKeys,
-};
-export type { PdfCustomMetadataProperty, PdfProjectMetadata, PdfTrappedStatus };

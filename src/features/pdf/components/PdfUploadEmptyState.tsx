@@ -10,7 +10,7 @@ type PdfUploadEmptyStateProps = {
   title?: string;
 };
 
-function PdfUploadEmptyState({
+export function PdfUploadEmptyState({
   description = "Files stay in your browser. Choose a PDF and it will render into the editor workspace.",
   isPdfDropActive = false,
   onOpenFile,
@@ -42,5 +42,3 @@ function PdfUploadEmptyState({
     </div>
   );
 }
-
-export { PdfUploadEmptyState };

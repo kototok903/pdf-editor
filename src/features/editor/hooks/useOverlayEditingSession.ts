@@ -10,7 +10,7 @@ type UseOverlayEditingSessionOptions = {
   getHistoryEntrySnapshot: () => EditorHistoryEntry;
 };
 
-function useOverlayEditingSession({
+export function useOverlayEditingSession({
   commitHistoryFromBase,
   getHistoryEntrySnapshot,
 }: UseOverlayEditingSessionOptions) {
@@ -78,7 +78,7 @@ function useOverlayEditingSession({
   };
 }
 
-function isEmptyEditorHistory(history: EditorHistoryState) {
+export function isEmptyEditorHistory(history: EditorHistoryState) {
   return (
     history.future.length === 0 &&
     history.past.length === 0 &&
@@ -87,5 +87,3 @@ function isEmptyEditorHistory(history: EditorHistoryState) {
     history.present.selectedOverlayId === null
   );
 }
-
-export { isEmptyEditorHistory, useOverlayEditingSession };

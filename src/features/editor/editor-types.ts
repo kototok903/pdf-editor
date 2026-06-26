@@ -1,27 +1,33 @@
-type OverlayType = "text" | "image" | "mark" | "signature" | "whiteout";
-type MarkType = "ballot-x" | "check" | "dot" | "heavy-check" | "slash-x" | "x";
-type StandardTextFontId = "courier" | "helvetica" | "times-roman";
-type DocumentTextFontId = `document:${string}`;
-type TextFontId = DocumentTextFontId | StandardTextFontId;
+export type OverlayType = "text" | "image" | "mark" | "signature" | "whiteout";
+export type MarkType =
+  | "ballot-x"
+  | "check"
+  | "dot"
+  | "heavy-check"
+  | "slash-x"
+  | "x";
+export type StandardTextFontId = "courier" | "helvetica" | "times-roman";
+export type DocumentTextFontId = `document:${string}`;
+export type TextFontId = DocumentTextFontId | StandardTextFontId;
 
-type PdfRect = {
+export type PdfRect = {
   height: number;
   width: number;
   x: number;
   y: number;
 };
 
-type DocumentSourceId = string;
-type DocumentPageId = string;
+export type DocumentSourceId = string;
+export type DocumentPageId = string;
 
-type DocumentSource = {
+export type DocumentSource = {
   bytes: ArrayBuffer;
   fileName: string;
   id: DocumentSourceId;
   pageCount: number;
 };
 
-type DocumentPage = {
+export type DocumentPage = {
   id: DocumentPageId;
   rotationDegrees: 0 | 90 | 180 | 270;
   sourceId: DocumentSourceId;
@@ -34,7 +40,7 @@ type BaseOverlay = {
   rect: PdfRect;
 };
 
-type TextOverlay = BaseOverlay & {
+export type TextOverlay = BaseOverlay & {
   color: string;
   fontId: TextFontId;
   fontSize: number;
@@ -42,7 +48,7 @@ type TextOverlay = BaseOverlay & {
   type: "text";
 };
 
-type ImageAsset = {
+export type ImageAsset = {
   bytes: ArrayBuffer;
   formatLabel: string;
   height: number;
@@ -56,27 +62,27 @@ type ImageAsset = {
   width: number;
 };
 
-type ImageOverlay = BaseOverlay & {
+export type ImageOverlay = BaseOverlay & {
   assetId: string;
   rotationDegrees: number;
   sha256Signature: string;
   type: "image";
 };
 
-type SignatureOverlay = BaseOverlay & {
+export type SignatureOverlay = BaseOverlay & {
   assetId: string;
   rotationDegrees: number;
   sha256Signature: string;
   type: "signature";
 };
 
-type MarkOverlay = BaseOverlay & {
+export type MarkOverlay = BaseOverlay & {
   color: string;
   markType: MarkType;
   type: "mark";
 };
 
-type WhiteoutOverlay = BaseOverlay & {
+export type WhiteoutOverlay = BaseOverlay & {
   color: string;
   type: "whiteout";
 };
@@ -88,7 +94,7 @@ type BasicOverlay = BaseOverlay & {
   >;
 };
 
-type EditorOverlay =
+export type EditorOverlay =
   | TextOverlay
   | ImageOverlay
   | SignatureOverlay
@@ -96,7 +102,7 @@ type EditorOverlay =
   | WhiteoutOverlay
   | BasicOverlay;
 
-type EditorOverlayInput =
+export type EditorOverlayInput =
   | Omit<TextOverlay, "id">
   | (Omit<ImageOverlay, "id" | "rotationDegrees"> &
       Partial<Pick<ImageOverlay, "rotationDegrees">>)
@@ -110,89 +116,56 @@ type EditorOverlayInput =
       type: BasicOverlay["type"];
     };
 
-type TextOverlayPatch = Partial<
+export type TextOverlayPatch = Partial<
   Pick<TextOverlay, "color" | "fontId" | "fontSize" | "rect" | "text">
 >;
-type MarkOverlayPatch = Partial<Pick<MarkOverlay, "color" | "markType">>;
-type WhiteoutOverlayPatch = Partial<Pick<WhiteoutOverlay, "color">>;
+export type MarkOverlayPatch = Partial<Pick<MarkOverlay, "color" | "markType">>;
+export type WhiteoutOverlayPatch = Partial<Pick<WhiteoutOverlay, "color">>;
 
-type TextOverlayDefaults = {
+export type TextOverlayDefaults = {
   color: string;
   fontId: TextFontId;
   fontSize: number;
   text: string;
 };
 
-type WhiteoutOverlayDefaults = {
+export type WhiteoutOverlayDefaults = {
   color: string;
 };
 
-type ViewportRect = PdfRect;
+export type ViewportRect = PdfRect;
 
 type BasePdfFormValue = {
   fieldName: string;
   pageId: DocumentPageId;
 };
 
-type PdfFormTextValue = BasePdfFormValue & {
+export type PdfFormTextValue = BasePdfFormValue & {
   type: "text";
   value: string;
 };
 
-type PdfFormCheckboxValue = BasePdfFormValue & {
+export type PdfFormCheckboxValue = BasePdfFormValue & {
   checked: boolean;
   type: "checkbox";
 };
 
-type PdfFormRadioValue = BasePdfFormValue & {
+export type PdfFormRadioValue = BasePdfFormValue & {
   selectedValue: string | null;
   type: "radio";
 };
 
-type PdfFormChoiceValue = BasePdfFormValue & {
+export type PdfFormChoiceValue = BasePdfFormValue & {
   type: "choice";
   values: string[];
 };
 
-type PdfFormValue =
+export type PdfFormValue =
   | PdfFormTextValue
   | PdfFormCheckboxValue
   | PdfFormRadioValue
   | PdfFormChoiceValue;
 
-type EditorFormEdits = {
+export type EditorFormEdits = {
   values: PdfFormValue[];
-};
-
-export type {
-  DocumentPage,
-  DocumentPageId,
-  DocumentSource,
-  DocumentSourceId,
-  EditorOverlay,
-  EditorFormEdits,
-  EditorOverlayInput,
-  ImageAsset,
-  ImageOverlay,
-  MarkOverlay,
-  MarkOverlayPatch,
-  MarkType,
-  OverlayType,
-  PdfRect,
-  PdfFormCheckboxValue,
-  PdfFormChoiceValue,
-  PdfFormRadioValue,
-  PdfFormTextValue,
-  PdfFormValue,
-  SignatureOverlay,
-  StandardTextFontId,
-  TextOverlay,
-  TextOverlayDefaults,
-  TextOverlayPatch,
-  DocumentTextFontId,
-  TextFontId,
-  ViewportRect,
-  WhiteoutOverlay,
-  WhiteoutOverlayDefaults,
-  WhiteoutOverlayPatch,
 };

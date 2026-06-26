@@ -68,7 +68,7 @@ type PdfPageViewProps = {
   whiteoutColor: string;
 };
 
-const PdfPageView = memo(function PdfPageView({
+export const PdfPageView = memo(function PdfPageView({
   activeImageAsset,
   activeSignatureAsset,
   editingOverlayId,
@@ -336,5 +336,3 @@ type RenderState = {
   sourcePageNumber: number;
   status: "error" | "rendered";
 };
-
-export { PdfPageView };

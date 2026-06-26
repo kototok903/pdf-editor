@@ -75,14 +75,14 @@ import { loadPdfDocument } from "@/features/pdf/lib/pdfjs";
 import { usePdfSourceDocuments } from "@/features/pdf/hooks/usePdfDocument";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 
-type OrganizePagesDialogSaveInput = {
+export type OrganizePagesDialogSaveInput = {
   documentPages: DocumentPage[];
   documentSources: DocumentSource[];
   formEdits: EditorFormEdits;
   overlays: EditorOverlay[];
 };
 
-type OrganizePagesDialogExportInput = OrganizePagesDialogSaveInput & {
+export type OrganizePagesDialogExportInput = OrganizePagesDialogSaveInput & {
   selectedPageIds: DocumentPageId[];
   selectedRangesLabel: string;
 };
@@ -107,7 +107,7 @@ const emptyPageOverlays: EditorOverlay[] = [];
 const organizerPageDragType = "organizer-page";
 const organizerPageDragGroup = "organizer-pages";
 
-function OrganizePagesDialog({
+export function OrganizePagesDialog({
   document,
   documentPages,
   documentSources,
@@ -1057,7 +1057,3 @@ function groupOverlaysByPageId(overlays: EditorOverlay[]) {
 
   return overlaysByPageId;
 }
-
-export type { OrganizePagesDialogExportInput, OrganizePagesDialogSaveInput };
-
-export { OrganizePagesDialog };

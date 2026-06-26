@@ -1,6 +1,6 @@
 import type { PageSize } from "@/features/pdf/pdf-types";
 
-function isPageInRenderWindow({
+export function isPageInRenderWindow({
   currentPage,
   overscan,
   pageNumber,
@@ -12,14 +12,14 @@ function isPageInRenderWindow({
   return Math.abs(pageNumber - currentPage) <= overscan;
 }
 
-function scalePageSize(pageSize: PageSize, scale: number): PageSize {
+export function scalePageSize(pageSize: PageSize, scale: number): PageSize {
   return {
     height: pageSize.height * scale,
     width: pageSize.width * scale,
   };
 }
 
-function scalePageSizes(
+export function scalePageSizes(
   pageSizes: Record<number, PageSize>,
   scale: number,
 ): Record<number, PageSize> {
@@ -30,5 +30,3 @@ function scalePageSizes(
     ]),
   );
 }
-
-export { isPageInRenderWindow, scalePageSize, scalePageSizes };

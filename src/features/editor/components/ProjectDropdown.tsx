@@ -47,7 +47,7 @@ type ProjectDropdownProps = {
   onUpdateActiveProjectMetadata: (metadata: PdfProjectMetadata) => void;
 };
 
-const ProjectDropdown = memo(function ProjectDropdown({
+export const ProjectDropdown = memo(function ProjectDropdown({
   activeProject,
   hasPdf,
   fileName,
@@ -285,5 +285,3 @@ function formatProjectLastModified(lastModifiedAt: number) {
     month: "short",
   }).format(lastModifiedAt)}`;
 }
-
-export { ProjectDropdown };

@@ -29,7 +29,7 @@ type PdfAnnotationLayerProps = {
   sourcePageNumber: number;
 };
 
-const PdfAnnotationLayer = memo(function PdfAnnotationLayer({
+export const PdfAnnotationLayer = memo(function PdfAnnotationLayer({
   formEdits,
   onCommitFormValue,
   onFormWidgetsChange,
@@ -301,5 +301,3 @@ const pdfAnnotationLinkService = {
     // Internal link navigation can be wired separately from form filling.
   },
 };
-
-export { PdfAnnotationLayer };

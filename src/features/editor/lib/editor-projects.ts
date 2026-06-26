@@ -9,7 +9,7 @@ import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import { clonePdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 
-type Project = {
+export type Project = {
   createdAt: number;
   currentPage: number;
   documentSources: DocumentSource[];
@@ -37,7 +37,7 @@ const projectIdAlphabet =
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
 const defaultProjectIdLength = 10;
 
-function createProjectId(length = defaultProjectIdLength) {
+export function createProjectId(length = defaultProjectIdLength) {
   const randomValues = crypto.getRandomValues(new Uint8Array(length));
 
   return Array.from(
@@ -46,7 +46,7 @@ function createProjectId(length = defaultProjectIdLength) {
   ).join("");
 }
 
-function createProject({
+export function createProject({
   currentPage = 1,
   document,
   history = createEditorHistory(),
@@ -77,7 +77,7 @@ function createProject({
   };
 }
 
-function updateProjectFromDocument(
+export function updateProjectFromDocument(
   project: Project,
   {
     currentPage,
@@ -125,7 +125,7 @@ function updateProjectFromDocument(
   };
 }
 
-function upsertProject(projects: Project[], project: Project) {
+export function upsertProject(projects: Project[], project: Project) {
   if (!projects.some((currentProject) => currentProject.id === project.id)) {
     return [...projects, project];
   }
@@ -135,11 +135,11 @@ function upsertProject(projects: Project[], project: Project) {
   );
 }
 
-function removeProject(projects: Project[], projectId: string) {
+export function removeProject(projects: Project[], projectId: string) {
   return projects.filter((project) => project.id !== projectId);
 }
 
-function getNextActiveProjectAfterClose(
+export function getNextActiveProjectAfterClose(
   projects: Project[],
   closedProjectId: string,
 ) {
@@ -148,7 +148,7 @@ function getNextActiveProjectAfterClose(
   )[0];
 }
 
-function sortProjectsForSwitcher(
+export function sortProjectsForSwitcher(
   projects: Project[],
   activeProjectId: string | null,
 ) {
@@ -190,14 +190,3 @@ function ensureHistoryDocumentPages(
     documentPages,
   );
 }
-
-export {
-  createProject,
-  createProjectId,
-  getNextActiveProjectAfterClose,
-  removeProject,
-  sortProjectsForSwitcher,
-  updateProjectFromDocument,
-  upsertProject,
-};
-export type { Project };

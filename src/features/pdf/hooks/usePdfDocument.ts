@@ -31,7 +31,7 @@ function getErrorMessage(error: unknown) {
   return "Unable to load this PDF.";
 }
 
-function usePdfDocument() {
+export function usePdfDocument() {
   const [state, setState] = useState<PdfDocumentState>(initialState);
   const documentRef = useRef<PDFDocumentProxy | null>(null);
   const loadIdRef = useRef(0);
@@ -128,7 +128,7 @@ function usePdfDocument() {
   };
 }
 
-function usePdfSourceDocuments(
+export function usePdfSourceDocuments(
   documentSources: readonly DocumentSource[],
   primaryDocument: LoadedPdfDocument | null = null,
 ) {
@@ -236,5 +236,3 @@ function usePdfSourceDocuments(
 }
 
 const emptySourceDocuments = new Map<DocumentSourceId, LoadedPdfDocument>();
-
-export { usePdfDocument, usePdfSourceDocuments };

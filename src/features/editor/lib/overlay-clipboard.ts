@@ -8,10 +8,11 @@ import { isSupportedMarkType } from "@/features/editor/lib/mark-definitions";
 import { normalizeRotationDegrees } from "@/features/editor/lib/overlay-coordinate-utils";
 import { isSupportedTextFontId } from "@/features/editor/lib/text-font-id-utils";
 
-const APP_OVERLAY_MIME_TYPE = "web application/x-pdf-editor-overlay+json";
+export const APP_OVERLAY_MIME_TYPE =
+  "web application/x-pdf-editor-overlay+json";
 const overlayPasteOffset = 12;
 const overlayClipboardVersion = 1;
-type OverlayClipboardPayload = {
+export type OverlayClipboardPayload = {
   overlay: EditorOverlayInput;
   sourceOverlayId: string;
   version: typeof overlayClipboardVersion;
@@ -23,7 +24,7 @@ type OverlayPasteOptions = {
   pasteCount: number;
 };
 
-function toOverlayClipboardPayload(
+export function toOverlayClipboardPayload(
   overlay: EditorOverlay,
 ): OverlayClipboardPayload {
   return {
@@ -33,11 +34,13 @@ function toOverlayClipboardPayload(
   };
 }
 
-function serializeOverlayClipboardPayload(payload: OverlayClipboardPayload) {
+export function serializeOverlayClipboardPayload(
+  payload: OverlayClipboardPayload,
+) {
   return JSON.stringify(payload);
 }
 
-function parseOverlayClipboardPayload(
+export function parseOverlayClipboardPayload(
   text: string,
 ): OverlayClipboardPayload | null {
   try {
@@ -53,7 +56,7 @@ function parseOverlayClipboardPayload(
   }
 }
 
-function toOverlayInput(
+export function toOverlayInput(
   payload: OverlayClipboardPayload,
   options: OverlayPasteOptions,
 ): EditorOverlayInput {
@@ -68,7 +71,7 @@ function toOverlayInput(
   };
 }
 
-function duplicateOverlayInput(
+export function duplicateOverlayInput(
   overlay: EditorOverlay,
   options: { pageSize: { height: number; width: number } },
 ): EditorOverlayInput {
@@ -78,11 +81,11 @@ function duplicateOverlayInput(
   };
 }
 
-function getTextFromOverlayPayload(payload: OverlayClipboardPayload) {
+export function getTextFromOverlayPayload(payload: OverlayClipboardPayload) {
   return payload.overlay.type === "text" ? payload.overlay.text : null;
 }
 
-function isSameOverlayClipboardPayload(
+export function isSameOverlayClipboardPayload(
   left: OverlayClipboardPayload,
   right: OverlayClipboardPayload,
 ) {
@@ -226,19 +229,8 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), Math.max(min, max));
 }
 
-function getOverlayClipboardPayloadKey(payload: OverlayClipboardPayload) {
+export function getOverlayClipboardPayloadKey(
+  payload: OverlayClipboardPayload,
+) {
   return `${payload.sourceOverlayId}:${JSON.stringify(payload.overlay)}`;
 }
-
-export {
-  APP_OVERLAY_MIME_TYPE,
-  duplicateOverlayInput,
-  getOverlayClipboardPayloadKey,
-  getTextFromOverlayPayload,
-  isSameOverlayClipboardPayload,
-  parseOverlayClipboardPayload,
-  serializeOverlayClipboardPayload,
-  toOverlayClipboardPayload,
-  toOverlayInput,
-};
-export type { OverlayClipboardPayload };

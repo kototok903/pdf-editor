@@ -1,12 +1,12 @@
-type Platform = "linux" | "mac" | "unknown" | "windows";
+export type Platform = "linux" | "mac" | "unknown" | "windows";
 
-type PlatformInfo = {
+export type PlatformInfo = {
   isMobile: boolean;
   platform: Platform;
   userAgent: string;
 };
 
-type PlatformSymbols = {
+export type PlatformSymbols = {
   alt: string;
   cmd: string;
   command: string;
@@ -19,7 +19,9 @@ type PlatformSymbols = {
   super: string;
 };
 
-function getPlatformInfo(userAgent = getNavigatorUserAgent()): PlatformInfo {
+export function getPlatformInfo(
+  userAgent = getNavigatorUserAgent(),
+): PlatformInfo {
   return {
     isMobile: detectMobile(userAgent),
     platform: detectPlatform(userAgent),
@@ -27,7 +29,7 @@ function getPlatformInfo(userAgent = getNavigatorUserAgent()): PlatformInfo {
   };
 }
 
-function getPlatformSymbols(platform = getPlatformInfo().platform) {
+export function getPlatformSymbols(platform = getPlatformInfo().platform) {
   if (platform === "mac") {
     return macPlatformSymbols;
   }
@@ -39,11 +41,14 @@ function getPlatformSymbols(platform = getPlatformInfo().platform) {
   return linuxPlatformSymbols;
 }
 
-function isPlatformModKey(event: { ctrlKey: boolean; metaKey: boolean }) {
+export function isPlatformModKey(event: {
+  ctrlKey: boolean;
+  metaKey: boolean;
+}) {
   return getPlatformInfo().platform === "mac" ? event.metaKey : event.ctrlKey;
 }
 
-function detectPlatform(userAgent: string): Platform {
+export function detectPlatform(userAgent: string): Platform {
   const normalizedUserAgent = userAgent.toLowerCase();
 
   if (normalizedUserAgent.includes("mac")) {
@@ -61,7 +66,7 @@ function detectPlatform(userAgent: string): Platform {
   return "unknown";
 }
 
-function detectMobile(userAgent: string) {
+export function detectMobile(userAgent: string) {
   const normalizedUserAgent = userAgent.toLowerCase();
 
   return (
@@ -114,15 +119,4 @@ const linuxPlatformSymbols: PlatformSymbols = {
   option: "Alt",
   shift: "Shift",
   super: "Super",
-};
-
-export {
-  detectMobile,
-  detectPlatform,
-  getPlatformInfo,
-  getPlatformSymbols,
-  isPlatformModKey,
-  type Platform,
-  type PlatformInfo,
-  type PlatformSymbols,
 };

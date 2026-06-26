@@ -2,7 +2,7 @@ import type { SVGProps } from "react";
 
 import type { MarkType } from "@/features/editor/editor-types";
 
-function MarkGlyph({
+export function MarkGlyph({
   color,
   markType,
   ...props
@@ -66,5 +66,3 @@ function getMarkGlyph(markType: MarkType) {
       );
   }
 }
-
-export { MarkGlyph };

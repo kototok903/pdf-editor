@@ -5,7 +5,7 @@ import type {
   DocumentSourceId,
 } from "@/features/editor/editor-types";
 
-function createDocumentSource({
+export function createDocumentSource({
   bytes,
   fileName,
   id = createDocumentSourceId(),
@@ -24,7 +24,9 @@ function createDocumentSource({
   };
 }
 
-function createDocumentPagesForSource(source: DocumentSource): DocumentPage[] {
+export function createDocumentPagesForSource(
+  source: DocumentSource,
+): DocumentPage[] {
   return Array.from({ length: source.pageCount }, (_, index) => ({
     id: createDocumentPageId(),
     rotationDegrees: 0,
@@ -33,22 +35,22 @@ function createDocumentPagesForSource(source: DocumentSource): DocumentPage[] {
   }));
 }
 
-function createDocumentSourceId(): DocumentSourceId {
+export function createDocumentSourceId(): DocumentSourceId {
   return crypto.randomUUID();
 }
 
-function createDocumentPageId(): DocumentPageId {
+export function createDocumentPageId(): DocumentPageId {
   return crypto.randomUUID();
 }
 
-function getPageIdForVisiblePage(
+export function getPageIdForVisiblePage(
   documentPages: readonly DocumentPage[],
   pageNumber: number,
 ): DocumentPageId | null {
   return documentPages[pageNumber - 1]?.id ?? null;
 }
 
-function getVisiblePageNumberForPageId(
+export function getVisiblePageNumberForPageId(
   documentPages: readonly DocumentPage[],
   pageId: DocumentPageId | null,
 ) {
@@ -60,12 +62,3 @@ function getVisiblePageNumberForPageId(
 
   return pageIndex === -1 ? null : pageIndex + 1;
 }
-
-export {
-  createDocumentPageId,
-  createDocumentPagesForSource,
-  createDocumentSource,
-  createDocumentSourceId,
-  getPageIdForVisiblePage,
-  getVisiblePageNumberForPageId,
-};

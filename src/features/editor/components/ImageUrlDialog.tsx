@@ -17,7 +17,7 @@ type ImageUrlDialogProps = {
   open: boolean;
 };
 
-function ImageUrlDialog({
+export function ImageUrlDialog({
   onImportImageUrl,
   onOpenChange,
   open,
@@ -102,5 +102,3 @@ function ImageUrlDialog({
     </Dialog>
   );
 }
-
-export { ImageUrlDialog };

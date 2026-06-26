@@ -1,12 +1,12 @@
 import type { EditorOverlay, PdfRect } from "@/features/editor/editor-types";
 
-type ExternalPasteRecord = {
+export type ExternalPasteRecord = {
   overlayId: string;
   rect: PdfRect;
   signature: string;
 };
 
-function shouldSkipExternalPaste(
+export function shouldSkipExternalPaste(
   record: ExternalPasteRecord | null,
   signature: string,
   overlays: EditorOverlay[],
@@ -22,7 +22,7 @@ function shouldSkipExternalPaste(
   return Boolean(overlay && areRectsEqual(overlay.rect, record.rect));
 }
 
-function createExternalPasteRecord(
+export function createExternalPasteRecord(
   overlay: EditorOverlay,
   signature: string,
 ): ExternalPasteRecord {
@@ -41,6 +41,3 @@ function areRectsEqual(left: PdfRect, right: PdfRect) {
     left.y === right.y
   );
 }
-
-export { createExternalPasteRecord, shouldSkipExternalPaste };
-export type { ExternalPasteRecord };

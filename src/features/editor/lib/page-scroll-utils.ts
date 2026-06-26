@@ -1,10 +1,10 @@
-type PageViewportBounds = {
+export type PageViewportBounds = {
   bottom: number;
   pageNumber: number;
   top: number;
 };
 
-function findCenteredPageNumber({
+export function findCenteredPageNumber({
   fallbackPage,
   pages,
   viewportHeight,
@@ -36,7 +36,7 @@ function findCenteredPageNumber({
   return closestPage;
 }
 
-function shouldApplyCenteredPageFromScroll({
+export function shouldApplyCenteredPageFromScroll({
   centeredPage,
   currentPage,
   programmaticScrollTargetPage,
@@ -48,7 +48,7 @@ function shouldApplyCenteredPageFromScroll({
   return programmaticScrollTargetPage === null && centeredPage !== currentPage;
 }
 
-function shouldHandleScrollToPageRequest({
+export function shouldHandleScrollToPageRequest({
   handledRequestId,
   hasPageElement,
   hasWorkspace,
@@ -61,10 +61,3 @@ function shouldHandleScrollToPageRequest({
 }) {
   return handledRequestId !== requestId && hasPageElement && hasWorkspace;
 }
-
-export {
-  findCenteredPageNumber,
-  shouldApplyCenteredPageFromScroll,
-  shouldHandleScrollToPageRequest,
-};
-export type { PageViewportBounds };

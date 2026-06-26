@@ -56,7 +56,7 @@ type PdfDocumentViewProps = {
   whiteoutColor: string;
 };
 
-const PdfDocumentView = memo(function PdfDocumentView({
+export const PdfDocumentView = memo(function PdfDocumentView({
   activeImageAsset,
   activeSignatureAsset,
   currentPage,
@@ -171,5 +171,3 @@ function getDefaultPageSize(scale: number): PageSize {
     width: defaultPageWidth * scale,
   };
 }
-
-export { PdfDocumentView };

@@ -15,7 +15,7 @@ type SidebarsToggleProps = {
   onToggleLayersSidebar: () => void;
 };
 
-const SidebarsToggle = memo(function SidebarsToggle({
+export const SidebarsToggle = memo(function SidebarsToggle({
   isPagesSidebarOpen,
   isLayersSidebarOpen,
   onTogglePagesSidebar,
@@ -60,5 +60,3 @@ const SidebarsToggle = memo(function SidebarsToggle({
     </div>
   );
 });
-
-export { SidebarsToggle };

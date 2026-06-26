@@ -33,7 +33,7 @@ type ImageToolDropdownProps = {
   onUploadImage: () => void;
 };
 
-const ImageToolButton = memo(function ImageToolButton({
+export const ImageToolButton = memo(function ImageToolButton({
   activeImageAssetId,
   disabled,
   imageAssets,
@@ -144,5 +144,3 @@ const ImageToolButton = memo(function ImageToolButton({
     </DropdownMenu>
   );
 });
-
-export { ImageToolButton };

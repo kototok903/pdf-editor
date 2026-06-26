@@ -68,7 +68,7 @@ type UseEditorClipboardActionsOptions = {
   zoom: number;
 };
 
-function useEditorClipboardActions({
+export function useEditorClipboardActions({
   addImageBlob,
   addSignatureBlob,
   addRenderableOverlay,
@@ -467,5 +467,3 @@ function createCenteredImageOverlayInput(
     type: "image",
   };
 }
-
-export { useEditorClipboardActions };

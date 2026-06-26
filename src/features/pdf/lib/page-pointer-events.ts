@@ -4,7 +4,7 @@ type PagePointerDownTarget = {
   target: EventTarget | null;
 };
 
-function shouldClearOverlaySelectionOnPagePointerDown({
+export function shouldClearOverlaySelectionOnPagePointerDown({
   button,
   currentTarget,
   target,
@@ -27,5 +27,3 @@ function shouldClearOverlaySelectionOnPagePointerDown({
     !target.closest(".editor-moveable-controls")
   );
 }
-
-export { shouldClearOverlaySelectionOnPagePointerDown };

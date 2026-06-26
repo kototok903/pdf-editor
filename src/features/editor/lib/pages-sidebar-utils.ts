@@ -1,4 +1,4 @@
-function getSidebarThumbnailRenderPages({
+export function getSidebarThumbnailRenderPages({
   currentPage,
   intersectingPages,
   overscan,
@@ -26,5 +26,3 @@ function getSidebarThumbnailRenderPages({
 
   return pages;
 }
-
-export { getSidebarThumbnailRenderPages };

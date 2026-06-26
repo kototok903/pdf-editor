@@ -4,12 +4,12 @@ import {
   PointerSensor,
 } from "@dnd-kit/dom";
 
-const overlayLayerDragType = "overlay-layer";
-const pageDropType = "page-drop";
+export const overlayLayerDragType = "overlay-layer";
+export const pageDropType = "page-drop";
 const pageDropIdPrefix = "page-drop:";
-const pageHoverMoveDelayMs = 300;
+export const pageHoverMoveDelayMs = 300;
 
-const sidebarDndSensors = [
+export const sidebarDndSensors = [
   PointerSensor.configure({
     activationConstraints: [
       new PointerActivationConstraints.Distance({ value: 4 }),
@@ -18,11 +18,11 @@ const sidebarDndSensors = [
   KeyboardSensor,
 ];
 
-function getPageDropId(pageNumber: number) {
+export function getPageDropId(pageNumber: number) {
   return `${pageDropIdPrefix}${pageNumber}`;
 }
 
-function getPageNumberFromPageDropId(id: string | number) {
+export function getPageNumberFromPageDropId(id: string | number) {
   if (typeof id !== "string" || !id.startsWith(pageDropIdPrefix)) {
     return null;
   }
@@ -31,12 +31,3 @@ function getPageNumberFromPageDropId(id: string | number) {
 
   return Number.isInteger(pageNumber) && pageNumber > 0 ? pageNumber : null;
 }
-
-export {
-  getPageDropId,
-  getPageNumberFromPageDropId,
-  overlayLayerDragType,
-  pageDropType,
-  pageHoverMoveDelayMs,
-  sidebarDndSensors,
-};

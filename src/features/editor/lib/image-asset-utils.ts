@@ -1,6 +1,6 @@
 import type { ImageAsset } from "@/features/editor/editor-types";
 
-const supportedImageTypes = [
+export const supportedImageTypes = [
   { extensions: [".png"], label: "PNG", mimeTypes: ["image/png"] },
   {
     extensions: [".jpg", ".jpeg"],
@@ -17,11 +17,11 @@ const supportedImageMimeTypes = supportedImageTypes.flatMap(
 const supportedImageExtensions = supportedImageTypes.flatMap(
   (imageType) => imageType.extensions,
 );
-const supportedImageAcceptValue = [
+export const supportedImageAcceptValue = [
   ...supportedImageMimeTypes,
   ...supportedImageExtensions,
 ].join(",");
-const supportedImageTypeListLabel = supportedImageTypes
+export const supportedImageTypeListLabel = supportedImageTypes
   .map((imageType) => imageType.label)
   .join(", ");
 const imageMimeTypeLabels: Record<string, string> = Object.fromEntries(
@@ -30,7 +30,7 @@ const imageMimeTypeLabels: Record<string, string> = Object.fromEntries(
   ),
 );
 
-async function createImageAssetFromFile(
+export async function createImageAssetFromFile(
   file: File,
   sha256Signature?: string,
 ): Promise<ImageAsset> {
@@ -42,7 +42,7 @@ async function createImageAssetFromFile(
   });
 }
 
-async function createImageAssetFromClipboardBlob(
+export async function createImageAssetFromClipboardBlob(
   blob: Blob,
   sha256Signature?: string,
 ): Promise<ImageAsset> {
@@ -54,7 +54,7 @@ async function createImageAssetFromClipboardBlob(
   });
 }
 
-async function createImageAssetFromSignatureBlob({
+export async function createImageAssetFromSignatureBlob({
   blob,
   name,
   sha256Signature,
@@ -71,7 +71,9 @@ async function createImageAssetFromSignatureBlob({
   });
 }
 
-async function createImageAssetFromUrl(url: string): Promise<ImageAsset> {
+export async function createImageAssetFromUrl(
+  url: string,
+): Promise<ImageAsset> {
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -129,7 +131,7 @@ async function createImageAssetFromBlob({
   }
 }
 
-function getImageMetadataLabel(asset: ImageAsset) {
+export function getImageMetadataLabel(asset: ImageAsset) {
   if (asset.formatLabel === "SVG") {
     return asset.formatLabel;
   }
@@ -149,19 +151,19 @@ function getImageFormatLabel(mimeType: string, name: string) {
   return extension || "Image";
 }
 
-function findSupportedImageMimeType(mimeTypes: readonly string[]) {
+export function findSupportedImageMimeType(mimeTypes: readonly string[]) {
   return (
     mimeTypes.find((mimeType) => isSupportedImageMimeType(mimeType)) ?? null
   );
 }
 
-function isSupportedImageMimeType(mimeType: string) {
+export function isSupportedImageMimeType(mimeType: string) {
   return supportedImageMimeTypes.includes(
     mimeType as (typeof supportedImageMimeTypes)[number],
   );
 }
 
-function isSupportedImageFileName(fileName: string) {
+export function isSupportedImageFileName(fileName: string) {
   const normalizedFileName = fileName.toLowerCase();
 
   return supportedImageExtensions.some((extension) =>
@@ -186,7 +188,7 @@ function getClipboardImageName(mimeType: string) {
   return extension ? `Pasted image.${extension}` : "Pasted image";
 }
 
-async function createImageSha256Signature(blob: Blob) {
+export async function createImageSha256Signature(blob: Blob) {
   const digest = await crypto.subtle.digest(
     "SHA-256",
     await blob.arrayBuffer(),
@@ -217,18 +219,3 @@ function loadImageDimensions(objectUrl: string) {
     image.src = objectUrl;
   });
 }
-
-export {
-  createImageAssetFromClipboardBlob,
-  createImageAssetFromFile,
-  createImageAssetFromSignatureBlob,
-  createImageAssetFromUrl,
-  createImageSha256Signature,
-  findSupportedImageMimeType,
-  getImageMetadataLabel,
-  isSupportedImageFileName,
-  isSupportedImageMimeType,
-  supportedImageAcceptValue,
-  supportedImageTypes,
-  supportedImageTypeListLabel,
-};

@@ -6,7 +6,7 @@ type MarkDefinition = {
   type: MarkType;
 };
 
-const markDefinitions: MarkDefinition[] = [
+export const markDefinitions: MarkDefinition[] = [
   { label: "Check", type: "check" },
   { label: "X", type: "x" },
   { label: "Dot", type: "dot" },
@@ -18,16 +18,16 @@ const supportedMarkTypes = new Set<MarkType>(
   markDefinitions.map((definition) => definition.type),
 );
 
-const defaultMarkSettings = {
+export const defaultMarkSettings = {
   color: defaultTextOverlay.color,
   markType: "check" as MarkType,
 };
 
-function isSupportedMarkType(value: string): value is MarkType {
+export function isSupportedMarkType(value: string): value is MarkType {
   return supportedMarkTypes.has(value as MarkType);
 }
 
-function createMarkSvgBlob({
+export function createMarkSvgBlob({
   color,
   markType,
 }: {
@@ -39,7 +39,7 @@ function createMarkSvgBlob({
   });
 }
 
-function createMarkSvgMarkup({
+export function createMarkSvgMarkup({
   color,
   markType,
 }: {
@@ -73,11 +73,3 @@ function escapeSvgAttribute(value: string) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
 }
-
-export {
-  createMarkSvgBlob,
-  createMarkSvgMarkup,
-  defaultMarkSettings,
-  isSupportedMarkType,
-  markDefinitions,
-};

@@ -14,7 +14,7 @@ import "@fontsource/satisfy/latin-400.css";
 import "@fontsource/shadows-into-light/latin-400.css";
 import "@fontsource/yellowtail/latin-400.css";
 
-type SignatureFontId =
+export type SignatureFontId =
   | "alex-brush"
   | "allura"
   | "caveat"
@@ -34,13 +34,13 @@ type SignatureFontId =
   | "shadows-into-light"
   | "yellowtail";
 
-type SignatureFontOption = {
+export type SignatureFontOption = {
   cssFontFamily: string;
   id: SignatureFontId;
   label: string;
 };
 
-const signatureFontOptions: SignatureFontOption[] = [
+export const signatureFontOptions: SignatureFontOption[] = [
   {
     cssFontFamily: "'Allura', cursive",
     id: "allura",
@@ -118,12 +118,9 @@ const signatureFontOptions: SignatureFontOption[] = [
   },
 ];
 
-function getSignatureFontOption(fontId: SignatureFontId) {
+export function getSignatureFontOption(fontId: SignatureFontId) {
   return (
     signatureFontOptions.find((fontOption) => fontOption.id === fontId) ??
     signatureFontOptions[0]
   );
 }
-
-export { getSignatureFontOption, signatureFontOptions };
-export type { SignatureFontId, SignatureFontOption };

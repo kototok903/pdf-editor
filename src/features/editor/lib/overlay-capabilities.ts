@@ -5,19 +5,16 @@ import type {
 } from "@/features/editor/editor-types";
 import { normalizeRotationDegrees } from "@/features/editor/lib/overlay-coordinate-utils";
 
-type RotatableOverlay = ImageOverlay | SignatureOverlay;
+export type RotatableOverlay = ImageOverlay | SignatureOverlay;
 
-function isRotatableOverlay(
+export function isRotatableOverlay(
   overlay: EditorOverlay | null,
 ): overlay is RotatableOverlay {
   return overlay?.type === "image" || overlay?.type === "signature";
 }
 
-function getOverlayRotationDegrees(overlay: EditorOverlay | null) {
+export function getOverlayRotationDegrees(overlay: EditorOverlay | null) {
   return isRotatableOverlay(overlay)
     ? normalizeRotationDegrees(overlay.rotationDegrees ?? 0)
     : 0;
 }
-
-export { getOverlayRotationDegrees, isRotatableOverlay };
-export type { RotatableOverlay };

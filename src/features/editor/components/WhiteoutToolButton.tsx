@@ -29,7 +29,7 @@ type WhiteoutToolButtonProps = {
   settings: WhiteoutOverlayDefaults;
 };
 
-const WhiteoutToolButton = memo(function WhiteoutToolButton({
+export const WhiteoutToolButton = memo(function WhiteoutToolButton({
   disabled,
   isDefault,
   isSelected,
@@ -107,5 +107,3 @@ const WhiteoutToolButton = memo(function WhiteoutToolButton({
     </DropdownMenu>
   );
 });
-
-export { WhiteoutToolButton };

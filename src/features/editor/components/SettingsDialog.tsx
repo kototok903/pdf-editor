@@ -36,7 +36,7 @@ type ClearLocalDataDialogProps = {
   open: boolean;
 };
 
-function SettingsDialog({
+export function SettingsDialog({
   onClearLocalDataClick,
   onOpenChange,
   onThemeChange,
@@ -109,7 +109,7 @@ function SettingsDialog({
   );
 }
 
-function ClearLocalDataDialog({
+export function ClearLocalDataDialog({
   isClearing,
   onConfirm,
   onOpenChange,
@@ -147,5 +147,3 @@ function ClearLocalDataDialog({
     </Dialog>
   );
 }
-
-export { ClearLocalDataDialog, SettingsDialog };

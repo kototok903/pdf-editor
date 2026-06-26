@@ -7,7 +7,7 @@ const byteUnits = ["bytes", "KB", "MB", "GB"] as const;
 const pdfPointsPerInch = 72;
 const pageSizeTolerance = 0.5;
 
-type ProjectDetails = {
+export type ProjectDetails = {
   metadata: PdfProjectMetadata | null;
   layerCount: number;
   originalSize: string;
@@ -20,7 +20,7 @@ type GetProjectDetailsOptions = {
   pageSizes?: Record<number, PageSize>;
 };
 
-function getProjectDetails(
+export function getProjectDetails(
   project: Project,
   { metadata = null, pageSizes = {} }: GetProjectDetailsOptions = {},
 ): ProjectDetails {
@@ -35,11 +35,11 @@ function getProjectDetails(
   };
 }
 
-function getEditedPageCount(overlays: EditorOverlay[]) {
+export function getEditedPageCount(overlays: EditorOverlay[]) {
   return new Set(overlays.map((overlay) => overlay.pageId)).size;
 }
 
-function formatByteSize(byteCount: number) {
+export function formatByteSize(byteCount: number) {
   if (byteCount < 0 || !Number.isFinite(byteCount)) {
     return "0 bytes";
   }
@@ -63,7 +63,7 @@ function formatByteSize(byteCount: number) {
   )} bytes)`;
 }
 
-function getProjectPageSize(
+export function getProjectPageSize(
   project: Project,
   pageSizes: Record<number, PageSize>,
 ) {
@@ -109,11 +109,3 @@ function formatInches(points: number) {
     maximumFractionDigits: 2,
   }).format(points / pdfPointsPerInch);
 }
-
-export {
-  formatByteSize,
-  getEditedPageCount,
-  getProjectDetails,
-  getProjectPageSize,
-};
-export type { ProjectDetails };

@@ -25,7 +25,7 @@ type SignatureToolDropdownProps = {
   signatureAssets: ImageAsset[];
 };
 
-const SignatureToolButton = memo(function SignatureToolButton({
+export const SignatureToolButton = memo(function SignatureToolButton({
   activeSignatureAssetId,
   disabled,
   isSelected,
@@ -131,5 +131,3 @@ const SignatureToolButton = memo(function SignatureToolButton({
     </>
   );
 });
-
-export { SignatureToolButton };

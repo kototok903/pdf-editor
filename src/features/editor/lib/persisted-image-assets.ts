@@ -1,7 +1,7 @@
 import type { ImageAsset } from "@/features/editor/editor-types";
 import type { PersistedImageAssetRecord } from "@/features/editor/lib/editor-draft-db";
 
-function toPersistedImageAssetRecord(
+export function toPersistedImageAssetRecord(
   asset: ImageAsset,
   now = Date.now(),
 ): PersistedImageAssetRecord {
@@ -21,7 +21,7 @@ function toPersistedImageAssetRecord(
   };
 }
 
-function imageAssetFromPersistedRecord(
+export function imageAssetFromPersistedRecord(
   record: PersistedImageAssetRecord,
 ): ImageAsset {
   const blob = new Blob([new Uint8Array(record.bytes)], {
@@ -42,5 +42,3 @@ function imageAssetFromPersistedRecord(
     width: record.width,
   };
 }
-
-export { imageAssetFromPersistedRecord, toPersistedImageAssetRecord };

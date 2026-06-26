@@ -89,7 +89,7 @@ type MoveableEventData = {
   startRotationDegrees?: number;
 };
 
-const OverlayLayer = memo(function OverlayLayer({
+export const OverlayLayer = memo(function OverlayLayer({
   activeImageAsset,
   activeSignatureAsset,
   editingOverlayId,
@@ -1066,5 +1066,3 @@ function clampViewportOverlayRect(
 const minMoveableSideSize = 8;
 const moveableCornerHandleOffset = 6;
 const snapRotationDegrees = [0, 45, 90, 135, 180, 225, 270, 315, 360];
-
-export { OverlayLayer };

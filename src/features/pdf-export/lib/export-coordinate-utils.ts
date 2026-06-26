@@ -2,7 +2,7 @@ import { rgb } from "pdf-lib";
 
 import type { PdfRect } from "@/features/editor/editor-types";
 
-function rectToPdfPageRect(rect: PdfRect, pageHeight: number) {
+export function rectToPdfPageRect(rect: PdfRect, pageHeight: number) {
   return {
     height: rect.height,
     width: rect.width,
@@ -11,7 +11,7 @@ function rectToPdfPageRect(rect: PdfRect, pageHeight: number) {
   };
 }
 
-function rotatedRectToPdfPageImageOptions(
+export function rotatedRectToPdfPageImageOptions(
   rect: PdfRect,
   pageHeight: number,
   rotationDegrees: number,
@@ -36,7 +36,7 @@ function rotatedRectToPdfPageImageOptions(
   };
 }
 
-function textRectToPdfPosition(
+export function textRectToPdfPosition(
   rect: PdfRect,
   pageHeight: number,
   baselineOffset: number,
@@ -47,7 +47,7 @@ function textRectToPdfPosition(
   };
 }
 
-function hexToPdfRgb(hexColor: string) {
+export function hexToPdfRgb(hexColor: string) {
   const normalizedHex = hexColor.trim().replace(/^#/, "");
   const fallback = [0, 0, 0] as const;
   const parts =
@@ -65,10 +65,3 @@ function hexToPdfRgb(hexColor: string) {
 
   return rgb(parts[0] / 255, parts[1] / 255, parts[2] / 255);
 }
-
-export {
-  hexToPdfRgb,
-  rectToPdfPageRect,
-  rotatedRectToPdfPageImageOptions,
-  textRectToPdfPosition,
-};

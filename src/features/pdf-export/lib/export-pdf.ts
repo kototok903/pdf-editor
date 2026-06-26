@@ -74,7 +74,7 @@ type ExportContext = {
 
 const exportedPdfProducer = "PDF Editor by kototok903";
 
-async function exportPdf({
+export async function exportPdf({
   documentPages = [],
   documentSources = [],
   documentFonts = [],
@@ -1020,5 +1020,3 @@ async function rasterizeImageToPngBytes(
     }, "image/png");
   });
 }
-
-export { exportPdf };

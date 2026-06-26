@@ -12,7 +12,7 @@ type LayersSidebarProps = {
   selectedOverlayId: string | null;
 };
 
-const LayersSidebar = memo(function LayersSidebar({
+export const LayersSidebar = memo(function LayersSidebar({
   imageAssetById,
   onSelectOverlay,
   pageOverlays,
@@ -94,5 +94,3 @@ const SortableLayerTile = memo(function SortableLayerTile({
 });
 
 SortableLayerTile.displayName = "SortableLayerTile";
-
-export { LayersSidebar };

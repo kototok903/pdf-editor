@@ -5,7 +5,7 @@ import {
 
 type WorkspaceDropFile = Pick<File, "name" | "type">;
 
-type WorkspaceDropAction =
+export type WorkspaceDropAction =
   | {
       file: File;
       type: "image";
@@ -15,9 +15,9 @@ type WorkspaceDropAction =
       type: "pdf";
     };
 
-type WorkspaceDragIntent = "image" | "pdf" | null;
+export type WorkspaceDragIntent = "image" | "pdf" | null;
 
-function getWorkspaceDropAction(
+export function getWorkspaceDropAction(
   files: readonly File[],
   { hasDocument }: { hasDocument: boolean },
 ): WorkspaceDropAction | null {
@@ -34,7 +34,7 @@ function getWorkspaceDropAction(
   return null;
 }
 
-function getWorkspaceDragIntent(
+export function getWorkspaceDragIntent(
   dataTransfer: DataTransfer,
   { hasDocument }: { hasDocument: boolean },
 ): WorkspaceDragIntent {
@@ -74,11 +74,11 @@ function getWorkspaceDragIntentFromItems(
   return null;
 }
 
-function isPdfFile(file: WorkspaceDropFile) {
+export function isPdfFile(file: WorkspaceDropFile) {
   return isPdfMimeType(file.type) || file.name.toLowerCase().endsWith(".pdf");
 }
 
-function isSupportedImageFile(file: WorkspaceDropFile) {
+export function isSupportedImageFile(file: WorkspaceDropFile) {
   return (
     isSupportedImageMimeType(file.type) || isSupportedImageFileName(file.name)
   );
@@ -87,11 +87,3 @@ function isSupportedImageFile(file: WorkspaceDropFile) {
 function isPdfMimeType(mimeType: string) {
   return mimeType === "application/pdf";
 }
-
-export {
-  getWorkspaceDragIntent,
-  getWorkspaceDropAction,
-  isPdfFile,
-  isSupportedImageFile,
-};
-export type { WorkspaceDragIntent, WorkspaceDropAction };

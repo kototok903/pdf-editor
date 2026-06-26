@@ -9,7 +9,7 @@ import {
   createImageSha256Signature,
 } from "@/features/editor/lib/image-asset-utils";
 
-function useImageAssets() {
+export function useImageAssets() {
   const [imageAssets, setImageAssets] = useState<ImageAsset[]>([]);
   const imageAssetsRef = useRef<ImageAsset[]>([]);
 
@@ -221,5 +221,3 @@ function revokeReplacedImageAssetObjectUrls(
     }
   }
 }
-
-export { useImageAssets };

@@ -11,7 +11,9 @@ const pdfjsAssetBaseUrl = new URL(
   globalThis.location?.href ?? import.meta.url,
 ).toString();
 
-async function loadPdfDocument(bytes: ArrayBuffer): Promise<PDFDocumentProxy> {
+export async function loadPdfDocument(
+  bytes: ArrayBuffer,
+): Promise<PDFDocumentProxy> {
   const data = new Uint8Array(bytes.slice(0));
   const loadingTask = getDocument({
     cMapPacked: true,
@@ -25,5 +27,3 @@ async function loadPdfDocument(bytes: ArrayBuffer): Promise<PDFDocumentProxy> {
 
   return loadingTask.promise;
 }
-
-export { loadPdfDocument };

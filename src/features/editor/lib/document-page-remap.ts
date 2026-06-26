@@ -8,7 +8,7 @@ import type {
 type PageIdMap = Map<DocumentPageId, DocumentPageId>;
 type OverlayIdFactory = (overlay: EditorOverlay) => string;
 
-function duplicateOverlaysForPageIds(
+export function duplicateOverlaysForPageIds(
   overlays: readonly EditorOverlay[],
   pageIdMap: PageIdMap,
   createOverlayId: OverlayIdFactory = () => crypto.randomUUID(),
@@ -29,7 +29,7 @@ function duplicateOverlaysForPageIds(
   });
 }
 
-function duplicateFormValuesForPageIds(
+export function duplicateFormValuesForPageIds(
   formEdits: EditorFormEdits,
   pageIdMap: PageIdMap,
 ): EditorFormEdits {
@@ -42,7 +42,7 @@ function duplicateFormValuesForPageIds(
   return { values: duplicatedValues };
 }
 
-function dropOverlaysForMissingPageIds(
+export function dropOverlaysForMissingPageIds(
   overlays: readonly EditorOverlay[],
   pageIds: Iterable<DocumentPageId>,
 ): EditorOverlay[] {
@@ -51,7 +51,7 @@ function dropOverlaysForMissingPageIds(
   return overlays.filter((overlay) => remainingPageIds.has(overlay.pageId));
 }
 
-function dropFormValuesForMissingPageIds(
+export function dropFormValuesForMissingPageIds(
   formEdits: EditorFormEdits,
   pageIds: Iterable<DocumentPageId>,
 ): EditorFormEdits {
@@ -92,10 +92,3 @@ function cloneFormValueWithPageId(
     pageId,
   };
 }
-
-export {
-  dropFormValuesForMissingPageIds,
-  dropOverlaysForMissingPageIds,
-  duplicateFormValuesForPageIds,
-  duplicateOverlaysForPageIds,
-};
