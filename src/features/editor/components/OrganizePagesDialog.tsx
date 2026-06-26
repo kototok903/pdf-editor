@@ -416,7 +416,7 @@ function OrganizePagesDialog({
               onDragEnd={handlePageDragEnd}
               sensors={sidebarDndSensors}
             >
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(148px,1fr))] gap-4">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(148px,1fr))] items-center gap-4">
                 {draftPages.map((page, index) => {
                   const pageNumber = index + 1;
                   const sourceDocument = sourceDocumentsById.get(page.sourceId);

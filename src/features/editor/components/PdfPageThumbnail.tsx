@@ -168,7 +168,7 @@ const PdfPageThumbnail = memo(function PdfPageThumbnail({
 
   return (
     <div
-      className="relative overflow-hidden rounded-[inherit] bg-page"
+      className="relative overflow-hidden bg-page"
       style={{
         height: thumbnailState?.height ?? thumbnailPlaceholderHeight,
         width: thumbnailState?.width ?? width,
