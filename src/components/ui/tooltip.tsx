@@ -58,9 +58,10 @@ type TooltipProps = {
   children: React.ReactNode;
   tooltip: string | React.ReactNode;
   disabled?: boolean;
+  side?: React.ComponentProps<typeof TooltipContent>["side"];
 };
 
-export function Tooltip({ children, tooltip, disabled }: TooltipProps) {
+export function Tooltip({ children, tooltip, disabled, side }: TooltipProps) {
   const [open, setOpen] = React.useState(false);
 
   if (disabled && open) {
@@ -70,7 +71,7 @@ export function Tooltip({ children, tooltip, disabled }: TooltipProps) {
   return (
     <TooltipRoot onOpenChange={setOpen} open={open && !disabled}>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent>{tooltip}</TooltipContent>
+      <TooltipContent side={side}>{tooltip}</TooltipContent>
     </TooltipRoot>
   );
 }

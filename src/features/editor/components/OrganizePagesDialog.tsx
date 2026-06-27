@@ -139,8 +139,7 @@ export function OrganizePagesDialog({
     [selectedPageIds],
   );
   const allPagesSelected =
-    draftPages.length > 0 &&
-    draftPages.every((page) => selectedPageIdSet.has(page.id));
+    draftPages.length > 0 && selectedPageIdSet.size === draftPages.length;
   const selectedRangesLabel = formatPageIdsAsVisibleRanges(
     draftPages,
     selectedPageIds,
@@ -162,6 +161,8 @@ export function OrganizePagesDialog({
     [documentPages, draftPages],
   );
   const canDelete =
+    selectedPageIds.length > 0 && selectedPageIds.length < draftPages.length;
+  const canMove =
     selectedPageIds.length > 0 && selectedPageIds.length < draftPages.length;
 
   const dialogDescriptionClauses = [];
@@ -410,7 +411,7 @@ export function OrganizePagesDialog({
           <DialogTitle>Organize pages</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
-        <div className="-mx-4 grid min-h-0 grid-cols-[minmax(0,1fr)_280px] max-md:grid-cols-1">
+        <div className="-mx-4 grid min-h-0 grid-cols-[minmax(0,1fr)_200px] max-md:grid-cols-1">
           <div className="min-h-0 overflow-auto p-4">
             <DragDropProvider
               onDragEnd={handlePageDragEnd}
@@ -504,59 +505,65 @@ export function OrganizePagesDialog({
               <div className="text-xs font-medium text-muted-foreground">
                 Actions
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <IconActionButton
+              <div className="grid grid-cols-2 gap-2">
+                <ActionButton
                   disabled={selectedPageIds.length === 0}
                   label="Rotate left"
                   onClick={() => applyRotate(-90)}
+                  tooltip
                 >
                   <RotateCcwIcon aria-hidden="true" />
-                </IconActionButton>
-                <IconActionButton
+                </ActionButton>
+                <ActionButton
                   disabled={selectedPageIds.length === 0}
                   label="Rotate right"
                   onClick={() => applyRotate(90)}
+                  tooltip
                 >
                   <RotateCwIcon aria-hidden="true" />
-                </IconActionButton>
-                <IconActionButton
+                </ActionButton>
+                <ActionButton
                   disabled={selectedPageIds.length === 0}
                   label="Duplicate"
                   onClick={applyDuplicate}
+                  tooltip
                 >
                   <CopyIcon aria-hidden="true" />
-                </IconActionButton>
-                <IconActionButton
+                </ActionButton>
+                <ActionButton
                   disabled={!canDelete}
                   label="Delete"
                   onClick={applyDelete}
+                  tooltip
                 >
                   <Trash2Icon aria-hidden="true" />
-                </IconActionButton>
-                <IconActionButton
-                  disabled={selectedPageIds.length === 0}
-                  label="Move"
-                  onClick={() => setIsMoveDialogOpen(true)}
-                >
-                  <MoveIcon aria-hidden="true" />
-                </IconActionButton>
-                <IconActionButton
-                  disabled={selectedPageIds.length === 0 || isExporting}
-                  label="Export selected"
-                  onClick={handleExportSelectedPages}
-                >
-                  <FileDownIcon aria-hidden="true" />
-                </IconActionButton>
+                </ActionButton>
               </div>
-              <Button
-                className="w-full justify-center min-h-10"
+              <ActionButton
+                disabled={!canMove}
+                label="Move"
+                onClick={() => setIsMoveDialogOpen(true)}
+              >
+                <MoveIcon aria-hidden="true" />
+                Move
+              </ActionButton>
+              <ActionButton
+                disabled={selectedPageIds.length === 0 || isExporting}
+                label="Export selected"
+                onClick={handleExportSelectedPages}
+                tooltip
+                tooltipSide="left"
+              >
+                <FileDownIcon aria-hidden="true" />
+                Export
+              </ActionButton>
+              <ActionButton
+                label="Merge PDF"
                 onClick={() => setIsMergeDialogOpen(true)}
-                type="button"
-                variant="outline"
               >
                 <FilePlus2Icon aria-hidden="true" />
                 Merge PDF
-              </Button>
+              </ActionButton>
             </section>
           </aside>
         </div>
@@ -709,28 +716,30 @@ function moveDocumentPagesToSortableIndex(
   ];
 }
 
-function IconActionButton({
+function ActionButton({
   children,
   disabled,
   label,
   onClick,
-  variant = "outline",
+  tooltip,
+  tooltipSide = "top",
 }: {
   children: React.ReactNode;
-  disabled: boolean;
-  label: string;
+  disabled?: boolean;
+  label?: string;
   onClick: () => void;
-  variant?: "destructive" | "outline";
+  tooltip?: boolean;
+  tooltipSide?: "top" | "left";
 }) {
   return (
-    <Tooltip disabled={disabled} tooltip={label}>
+    <Tooltip disabled={!tooltip || disabled} tooltip={label} side={tooltipSide}>
       <Button
         aria-label={label}
-        className="min-h-10"
+        className="w-full justify-center min-h-10"
         disabled={disabled}
         onClick={onClick}
         type="button"
-        variant={variant}
+        variant="outline"
       >
         {children}
       </Button>
