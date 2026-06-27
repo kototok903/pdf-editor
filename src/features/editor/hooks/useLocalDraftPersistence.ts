@@ -4,22 +4,22 @@ import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import {
   activeDraftKey,
   clearActiveDraft,
+  type PersistedEditorDraftRecord,
   putPersistedImageAssets,
   readActiveDraft,
   readPersistedImageAssets,
   writeActiveDraft,
-  type PersistedEditorDraftRecord,
 } from "@/features/editor/lib/editor-draft-db";
 import {
   areEditorHistoriesEqual,
-  getHistoryImageAssetIds,
   type EditorHistoryState,
+  getHistoryImageAssetIds,
 } from "@/features/editor/lib/editor-history";
+import type { Project } from "@/features/editor/lib/editor-projects";
 import {
   imageAssetFromPersistedRecord,
   toPersistedImageAssetRecord,
 } from "@/features/editor/lib/persisted-image-assets";
-import type { Project } from "@/features/editor/lib/editor-projects";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 
 export type LocalDraftHydrationState =

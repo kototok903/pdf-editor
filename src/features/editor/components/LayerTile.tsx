@@ -1,6 +1,3 @@
-import { forwardRef, memo, type CSSProperties } from "react";
-import { cn } from "@/lib/utils";
-import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import {
   CheckIcon,
   ImageIcon,
@@ -8,9 +5,13 @@ import {
   SquareIcon,
   TypeIcon,
 } from "lucide-react";
+import { type CSSProperties,forwardRef, memo } from "react";
+
 import { MarkGlyph } from "@/features/editor/components/MarkGlyph";
+import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import { getOverlayRotationDegrees } from "@/features/editor/lib/overlay-capabilities";
 import { getTextFontFamily } from "@/features/editor/lib/text-fonts";
+import { cn } from "@/lib/utils";
 
 const TYPE_ICON_STROKE_WIDTH = 2.5;
 

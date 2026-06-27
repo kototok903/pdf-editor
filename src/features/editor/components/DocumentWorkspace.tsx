@@ -1,10 +1,10 @@
 import {
+  type DragEvent,
   memo,
   useCallback,
   useEffect,
   useRef,
   useState,
-  type DragEvent,
 } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,14 +13,14 @@ import type {
   EditorFormEdits,
   EditorOverlay,
   ImageAsset,
-  PdfRect,
   PdfFormValue,
+  PdfRect,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
 import {
   findCenteredPageNumber,
-  shouldHandleScrollToPageRequest,
   shouldApplyCenteredPageFromScroll,
+  shouldHandleScrollToPageRequest,
 } from "@/features/editor/lib/page-scroll-utils";
 import {
   getWorkspaceDragIntent,

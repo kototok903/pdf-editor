@@ -1,6 +1,7 @@
 import { MonitorIcon, MoonIcon, SunIcon, Trash2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { GithubIcon } from "@/components/ui/custom-icons";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +18,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { EditorThemeName } from "@/features/editor/lib/editor-preferences";
-import { GithubIcon } from "@/components/ui/custom-icons";
 
 const githubUrl = "https://github.com/kototok903/pdf-editor";
 

@@ -1,4 +1,3 @@
-import { memo, useState } from "react";
 import {
   ChevronDownIcon,
   ExternalLinkIcon,
@@ -9,6 +8,7 @@ import {
   InfoIcon,
   XIcon,
 } from "lucide-react";
+import { memo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,9 +20,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Project } from "@/features/editor/lib/editor-projects";
-import { ProjectDetailsDialog } from "@/features/editor/components/ProjectDetailsDialog";
 import { Tooltip } from "@/components/ui/tooltip";
+import { ProjectDetailsDialog } from "@/features/editor/components/ProjectDetailsDialog";
+import type { Project } from "@/features/editor/lib/editor-projects";
 import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import type { PageSize } from "@/features/pdf/pdf-types";
 import { cn } from "@/lib/utils";

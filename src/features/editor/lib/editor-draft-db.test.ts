@@ -1,21 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  activeDraftKey,
-  clearEditorDraftDatabase,
-  createMemoryEditorDraftStorage,
-  readActiveDraft,
-  readPersistedImageAssets,
-  writeActiveDraft,
-  putPersistedImageAssets,
-  putPersistedImageAsset,
-} from "@/features/editor/lib/editor-draft-db";
-import { createEditorHistory } from "@/features/editor/lib/editor-history";
-import { emptyPdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import type {
   PersistedEditorDraftRecord,
   PersistedImageAssetRecord,
 } from "@/features/editor/lib/editor-draft-db";
+import {
+  activeDraftKey,
+  clearEditorDraftDatabase,
+  createMemoryEditorDraftStorage,
+  putPersistedImageAsset,
+  putPersistedImageAssets,
+  readActiveDraft,
+  readPersistedImageAssets,
+  writeActiveDraft,
+} from "@/features/editor/lib/editor-draft-db";
+import { createEditorHistory } from "@/features/editor/lib/editor-history";
+import { emptyPdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 
 function createImageRecord(
   patch: Partial<PersistedImageAssetRecord> = {},

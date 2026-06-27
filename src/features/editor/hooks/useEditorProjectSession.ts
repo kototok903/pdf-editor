@@ -8,34 +8,34 @@ import type {
 } from "@/features/editor/editor-types";
 import { useLocalDraftPersistence } from "@/features/editor/hooks/useLocalDraftPersistence";
 import {
-  createEditorHistory,
-  areEditorHistoriesEqual,
-  restoreEditorHistory,
-  type EditorHistoryState,
-} from "@/features/editor/lib/editor-history";
-import {
   clearEditorDraftDatabase,
   type PersistedEditorProjectRecord,
 } from "@/features/editor/lib/editor-draft-db";
 import {
+  areEditorHistoriesEqual,
+  createEditorHistory,
+  type EditorHistoryState,
+  restoreEditorHistory,
+} from "@/features/editor/lib/editor-history";
+import {
   createProject,
+  type Project,
   removeProject,
   sortProjectsForSwitcher,
   updateProjectFromDocument,
   upsertProject,
-  type Project,
 } from "@/features/editor/lib/editor-projects";
 import {
   createProjectPath,
   getProjectIdFromPath,
   isProjectPath,
 } from "@/features/editor/lib/project-route-utils";
+import { getPdfDocumentMetadata } from "@/features/pdf/lib/pdf-document-details";
 import {
   createPdfProjectMetadata,
   emptyPdfProjectMetadata,
   type PdfProjectMetadata,
 } from "@/features/pdf/lib/pdf-metadata";
-import { getPdfDocumentMetadata } from "@/features/pdf/lib/pdf-document-details";
 import type {
   LoadedPdfDocument,
   PdfLoadStatus,

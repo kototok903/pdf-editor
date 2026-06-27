@@ -1,5 +1,5 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDroppable } from "@dnd-kit/react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { PageThumbnailButton } from "@/features/editor/components/PageThumbnailButton";
 import {

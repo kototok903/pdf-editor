@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import {
   DragDropProvider,
   type DragEndEvent,
@@ -6,14 +5,8 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/react";
 import { isSortableOperation } from "@dnd-kit/react/sortable";
+import { type ReactNode,useCallback, useEffect, useRef } from "react";
 
-import type {
-  DocumentPage,
-  DocumentPageId,
-  EditorOverlay,
-} from "@/features/editor/editor-types";
-import type { EditorHistoryEntry } from "@/features/editor/lib/editor-history";
-import { getPageIdForVisiblePage } from "@/features/editor/lib/document-pages";
 import {
   getPageNumberFromPageDropId,
   overlayLayerDragType,
@@ -21,6 +14,13 @@ import {
   pageHoverMoveDelayMs,
   sidebarDndSensors,
 } from "@/features/editor/components/sidebar-dnd";
+import type {
+  DocumentPage,
+  DocumentPageId,
+  EditorOverlay,
+} from "@/features/editor/editor-types";
+import { getPageIdForVisiblePage } from "@/features/editor/lib/document-pages";
+import type { EditorHistoryEntry } from "@/features/editor/lib/editor-history";
 import { getPageLayerOverlays } from "@/features/editor/lib/layer-sidebar-utils";
 
 type LayerDragSnapshot = {

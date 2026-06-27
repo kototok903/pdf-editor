@@ -1,10 +1,3 @@
-import {
-  useCallback,
-  useMemo,
-  useState,
-  type ChangeEvent,
-  type KeyboardEvent,
-} from "react";
 import { DragDropProvider, type DragEndEvent } from "@dnd-kit/react";
 import { isSortableOperation, useSortable } from "@dnd-kit/react/sortable";
 import {
@@ -17,6 +10,13 @@ import {
   RotateCwIcon,
   Trash2Icon,
 } from "lucide-react";
+import {
+  type ChangeEvent,
+  type KeyboardEvent,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,6 @@ import type {
   EditorOverlay,
   ImageAsset,
 } from "@/features/editor/editor-types";
-import { createDocumentSource } from "@/features/editor/lib/document-pages";
 import {
   formatPageIdsAsVisibleRanges,
   parsePageRanges,
@@ -56,23 +55,24 @@ import {
   toggleAllDocumentPageIds,
 } from "@/features/editor/lib/document-page-ranges";
 import {
-  deleteDocumentPages,
-  duplicateDocumentPages,
-  getDocumentPageInsertIndex,
-  mergeDocumentSourcePages,
-  moveDocumentPages,
-  rotateDocumentPages,
-  type DocumentPageInsertTarget,
-} from "@/features/editor/lib/document-page-transforms";
-import {
   dropFormValuesForMissingPageIds,
   dropOverlaysForMissingPageIds,
   duplicateFormValuesForPageIds,
   duplicateOverlaysForPageIds,
 } from "@/features/editor/lib/document-page-remap";
 import { getDocumentPageChangeSummary } from "@/features/editor/lib/document-page-summary";
-import { loadPdfDocument } from "@/features/pdf/lib/pdfjs";
+import {
+  deleteDocumentPages,
+  type DocumentPageInsertTarget,
+  duplicateDocumentPages,
+  getDocumentPageInsertIndex,
+  mergeDocumentSourcePages,
+  moveDocumentPages,
+  rotateDocumentPages,
+} from "@/features/editor/lib/document-page-transforms";
+import { createDocumentSource } from "@/features/editor/lib/document-pages";
 import { usePdfSourceDocuments } from "@/features/pdf/hooks/usePdfDocument";
+import { loadPdfDocument } from "@/features/pdf/lib/pdfjs";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 
 export type OrganizePagesDialogSaveInput = {

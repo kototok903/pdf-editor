@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import "@/features/pdf/components/pdf-text-layer.css";
+
 import { TextLayer } from "pdfjs-dist";
+import { useEffect, useRef } from "react";
 
 import type { PDFDocumentProxy } from "@/features/pdf/pdf-types";
-import "@/features/pdf/components/pdf-text-layer.css";
 
 const textLayerEndMarkers = new Map<HTMLDivElement, HTMLDivElement>();
 let textLayerSelectionAbortController: AbortController | null = null;

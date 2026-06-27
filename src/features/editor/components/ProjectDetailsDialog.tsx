@@ -1,5 +1,5 @@
-import { useMemo, useState, type ReactNode } from "react";
 import { RotateCcwIcon, XIcon } from "lucide-react";
+import { type ReactNode,useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import ScrollFade from "@/components/ui/scroll-fade";
 import {
   Select,
   SelectContent,
@@ -25,13 +26,12 @@ import {
   clonePdfProjectMetadata,
   emptyPdfProjectMetadata,
   normalizePdfProjectMetadata,
-  standardMetadataInfoKeys,
   type PdfProjectMetadata,
   type PdfTrappedStatus,
+  standardMetadataInfoKeys,
 } from "@/features/pdf/lib/pdf-metadata";
 import type { PageSize } from "@/features/pdf/pdf-types";
 import { cn, formatDate } from "@/lib/utils";
-import ScrollFade from "@/components/ui/scroll-fade";
 
 type ProjectDetailsDialogProps = {
   editOpen: boolean;

@@ -1,23 +1,24 @@
-import { memo, useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { ChevronDownIcon, RotateCcwIcon, SquareIcon } from "lucide-react";
-import type {
-  WhiteoutOverlayDefaults,
-  WhiteoutOverlayPatch,
-} from "@/features/editor/editor-types";
+import { memo, useState } from "react";
+
+import { Button } from "@/components/ui/button";
 import {
   ColorPicker,
   ColorPickerFormat,
   ColorPickerHue,
   ColorPickerSelection,
 } from "@/components/ui/color-picker";
-import { rgbArrayToHex } from "@/features/editor/lib/editor-utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tooltip } from "@/components/ui/tooltip";
+import type {
+  WhiteoutOverlayDefaults,
+  WhiteoutOverlayPatch,
+} from "@/features/editor/editor-types";
+import { rgbArrayToHex } from "@/features/editor/lib/editor-utils";
 
 type WhiteoutToolButtonProps = {
   disabled: boolean;

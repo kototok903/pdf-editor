@@ -1,5 +1,8 @@
 "use client";
 
+import Color from "color";
+import { PipetteIcon } from "lucide-react";
+import { Slider } from "radix-ui";
 import {
   type ComponentProps,
   createContext,
@@ -12,9 +15,6 @@ import {
   useRef,
   useState,
 } from "react";
-import Color from "color";
-import { PipetteIcon } from "lucide-react";
-import { Slider } from "radix-ui";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

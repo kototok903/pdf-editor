@@ -9,8 +9,8 @@ import { getVisiblePageNumberForPageId } from "@/features/editor/lib/document-pa
 import type { LayerMoveDirection } from "@/features/editor/lib/layer-sidebar-utils";
 import { getOverlayRotationDegrees } from "@/features/editor/lib/overlay-capabilities";
 import { nudgeOverlayRect } from "@/features/editor/lib/overlay-coordinate-utils";
-import { isPlatformModKey } from "@/lib/platform-utils";
 import type { PageSize } from "@/features/pdf/pdf-types";
+import { isPlatformModKey } from "@/lib/platform-utils";
 
 type UseEditorKeyboardShortcutsOptions = {
   documentPages: DocumentPage[];

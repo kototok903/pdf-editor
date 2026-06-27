@@ -1,15 +1,15 @@
 import { memo } from "react";
 
-import { PdfPageView } from "@/features/pdf/components/PdfPageView";
 import type {
   DocumentPage,
   EditorFormEdits,
   EditorOverlay,
   ImageAsset,
-  PdfRect,
   PdfFormValue,
+  PdfRect,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
+import { PdfPageView } from "@/features/pdf/components/PdfPageView";
 import type { PdfFormWidget } from "@/features/pdf/lib/pdf-form-metadata";
 import { isPageInRenderWindow } from "@/features/pdf/lib/pdf-page-size-utils";
 import type { LoadedPdfDocument, PageSize } from "@/features/pdf/pdf-types";

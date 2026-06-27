@@ -1,4 +1,3 @@
-import { memo, useCallback, useState } from "react";
 import {
   Redo2Icon,
   SettingsIcon,
@@ -6,15 +5,20 @@ import {
   ZoomInIcon,
   ZoomOutIcon,
 } from "lucide-react";
+import { memo, useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { TextToolButton } from "@/features/editor/components/TextToolButton";
+import { Tooltip } from "@/components/ui/tooltip";
 import { ImageToolButton } from "@/features/editor/components/ImageToolButton";
 import { ImageUrlDialog } from "@/features/editor/components/ImageUrlDialog";
 import { MarkToolButton } from "@/features/editor/components/MarkToolButton";
-import { SignatureToolButton } from "@/features/editor/components/SignatureToolButton";
+import { ProjectDropdown } from "@/features/editor/components/ProjectDropdown";
+import { SidebarsToggle } from "@/features/editor/components/SidebarsToggle";
 import type { SignatureCreateInput } from "@/features/editor/components/SignatureCreateDialog";
+import { SignatureToolButton } from "@/features/editor/components/SignatureToolButton";
+import { TextToolButton } from "@/features/editor/components/TextToolButton";
+import { WhiteoutToolButton } from "@/features/editor/components/WhiteoutToolButton";
 import type {
   ImageAsset,
   MarkOverlayPatch,
@@ -24,12 +28,8 @@ import type {
   WhiteoutOverlayDefaults,
   WhiteoutOverlayPatch,
 } from "@/features/editor/editor-types";
-import { WhiteoutToolButton } from "@/features/editor/components/WhiteoutToolButton";
-import type { DocumentTextFontMenuOption } from "@/features/editor/lib/text-fonts";
 import type { Project } from "@/features/editor/lib/editor-projects";
-import { ProjectDropdown } from "@/features/editor/components/ProjectDropdown";
-import { SidebarsToggle } from "@/features/editor/components/SidebarsToggle";
-import { Tooltip } from "@/components/ui/tooltip";
+import type { DocumentTextFontMenuOption } from "@/features/editor/lib/text-fonts";
 import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import type { PageSize } from "@/features/pdf/pdf-types";
 

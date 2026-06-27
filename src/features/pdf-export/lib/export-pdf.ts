@@ -6,13 +6,13 @@ import {
   PDFDict,
   PDFDocument,
   PDFDropdown,
+  type PDFFont,
   PDFHexString,
   PDFName,
   PDFOptionList,
-  PDFString,
-  type PDFFont,
   type PDFPage,
   PDFRadioGroup,
+  PDFString,
   PDFTextField,
 } from "pdf-lib";
 
@@ -31,9 +31,9 @@ import type {
   WhiteoutOverlay,
 } from "@/features/editor/editor-types";
 import {
-  getStandardTextFontOption,
   type DocumentTextFontOption,
   type DocumentTextFontSource,
+  getStandardTextFontOption,
 } from "@/features/editor/lib/text-fonts";
 import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import { standardMetadataInfoKeys } from "@/features/pdf/lib/pdf-metadata";

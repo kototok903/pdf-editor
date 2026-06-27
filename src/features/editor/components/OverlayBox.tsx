@@ -1,12 +1,12 @@
 import { memo } from "react";
 
+import { MarkGlyph } from "@/features/editor/components/MarkGlyph";
+import { TextOverlayContent } from "@/features/editor/components/TextOverlayContent";
 import type {
   EditorOverlay,
   ImageAsset,
   ViewportRect,
 } from "@/features/editor/editor-types";
-import { MarkGlyph } from "@/features/editor/components/MarkGlyph";
-import { TextOverlayContent } from "@/features/editor/components/TextOverlayContent";
 import { cn } from "@/lib/utils";
 
 type OverlayBoxProps = {

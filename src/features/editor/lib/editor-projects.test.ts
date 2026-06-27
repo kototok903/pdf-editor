@@ -5,11 +5,11 @@ import {
   createProject,
   createProjectId,
   getNextActiveProjectAfterClose,
+  type Project,
   removeProject,
   sortProjectsForSwitcher,
   updateProjectFromDocument,
   upsertProject,
-  type Project,
 } from "@/features/editor/lib/editor-projects";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
 

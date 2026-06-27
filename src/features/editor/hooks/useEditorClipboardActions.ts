@@ -10,36 +10,36 @@ import type {
   TextOverlayDefaults,
 } from "@/features/editor/editor-types";
 import {
-  getPageIdForVisiblePage,
-  getVisiblePageNumberForPageId,
-} from "@/features/editor/lib/document-pages";
-import {
   extractPlainTextFromHtml,
   textOverlayInputFromHtml,
   textOverlayInputFromPlainText,
   textOverlayInputUsingCurrentSettings,
 } from "@/features/editor/lib/clipboard-text-utils";
 import {
+  getPageIdForVisiblePage,
+  getVisiblePageNumberForPageId,
+} from "@/features/editor/lib/document-pages";
+import {
   buildOverlayClipboardWritePlan,
+  type PasteIntent,
   readPasteIntentFromAsyncClipboard,
   readPasteIntentFromClipboardData,
   writeClipboardPlanToEvent,
   writeClipboardPlanToSystemClipboard,
-  type PasteIntent,
 } from "@/features/editor/lib/editor-clipboard";
 import {
   createExternalPasteRecord,
-  shouldSkipExternalPaste,
   type ExternalPasteRecord,
+  shouldSkipExternalPaste,
 } from "@/features/editor/lib/external-paste-dedupe";
 import { createImageSha256Signature } from "@/features/editor/lib/image-asset-utils";
-import { createImageOverlayRectAtPoint } from "@/features/editor/lib/overlay-coordinate-utils";
 import {
   duplicateOverlayInput,
   getOverlayClipboardPayloadKey,
-  toOverlayInput,
   type OverlayClipboardPayload,
+  toOverlayInput,
 } from "@/features/editor/lib/overlay-clipboard";
+import { createImageOverlayRectAtPoint } from "@/features/editor/lib/overlay-coordinate-utils";
 import type { PageSize } from "@/features/pdf/pdf-types";
 
 type LastOverlayPaste = {

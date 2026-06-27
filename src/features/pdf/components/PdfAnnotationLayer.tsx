@@ -1,5 +1,7 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import "@/features/pdf/components/pdf-annotation-layer.css";
+
 import { AnnotationLayer, setLayerDimensions } from "pdfjs-dist";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
   DocumentPageId,
@@ -11,11 +13,10 @@ import {
   createPdfFormValueFromElement,
   extractPdfFormWidgets,
   getFormElementWidgetId,
-  syncFormControlsWithFormEdits,
   type PdfFormWidget,
+  syncFormControlsWithFormEdits,
 } from "@/features/pdf/lib/pdf-form-metadata";
 import type { PDFDocumentProxy } from "@/features/pdf/pdf-types";
-import "@/features/pdf/components/pdf-annotation-layer.css";
 
 type PdfAnnotationLayerProps = {
   formEdits: EditorFormEdits;

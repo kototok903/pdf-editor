@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { defaultTextOverlay } from "@/features/editor/lib/overlay-defaults";
 import {
   textOverlayInputFromHtml,
   textOverlayInputFromPlainText,
   textOverlayInputUsingCurrentSettings,
 } from "@/features/editor/lib/clipboard-text-utils";
+import { defaultTextOverlay } from "@/features/editor/lib/overlay-defaults";
 
 const options = {
   pageId: "page-2",

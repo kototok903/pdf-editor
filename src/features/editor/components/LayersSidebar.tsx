@@ -1,9 +1,9 @@
-import { memo, useCallback } from "react";
 import { useSortable } from "@dnd-kit/react/sortable";
+import { memo, useCallback } from "react";
 
-import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 import { LayerTile } from "@/features/editor/components/LayerTile";
 import { overlayLayerDragType } from "@/features/editor/components/sidebar-dnd";
+import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
 
 type LayersSidebarProps = {
   imageAssetById: ReadonlyMap<string, ImageAsset>;

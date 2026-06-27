@@ -1,10 +1,10 @@
 import type { DocumentSource } from "@/features/editor/editor-types";
-import type { EditorHistoryState } from "@/features/editor/lib/editor-history";
-import { createEditorHistory } from "@/features/editor/lib/editor-history";
 import {
   createDocumentPagesForSource,
   createDocumentSource,
 } from "@/features/editor/lib/document-pages";
+import type { EditorHistoryState } from "@/features/editor/lib/editor-history";
+import { createEditorHistory } from "@/features/editor/lib/editor-history";
 import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import { clonePdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";

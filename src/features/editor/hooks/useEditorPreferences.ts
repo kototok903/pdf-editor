@@ -1,18 +1,18 @@
 import {
+  type Dispatch,
+  type SetStateAction,
   useEffect,
   useState,
   useSyncExternalStore,
-  type Dispatch,
-  type SetStateAction,
 } from "react";
 
 import {
-  readEditorPreferences,
-  resolveEditorThemeName,
-  writeEditorPreferences,
   type EditorPreferences,
   type EditorThemeName,
+  readEditorPreferences,
   type ResolvedEditorThemeName,
+  resolveEditorThemeName,
+  writeEditorPreferences,
 } from "@/features/editor/lib/editor-preferences";
 
 const systemDarkThemeMediaQuery = "(prefers-color-scheme: dark)";

@@ -1,11 +1,11 @@
+import { FileTextIcon, Layers2Icon } from "lucide-react";
 import { memo } from "react";
 
+import { Button } from "@/components/ui/button";
 import {
   FileTextDashedIcon,
   Layers2DashedIcon,
 } from "@/components/ui/custom-icons";
-import { Button } from "@/components/ui/button";
-import { FileTextIcon, Layers2Icon } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 
 type SidebarsToggleProps = {

@@ -1,22 +1,22 @@
 import {
+  type CSSProperties,
   memo,
   useCallback,
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
 } from "react";
 import { flushSync } from "react-dom";
 import Moveable, {
   type OnDrag,
   type OnDragStart,
-  type OnRotate,
-  type OnRotateStart,
   type OnResize,
   type OnResizeStart,
+  type OnRotate,
+  type OnRotateStart,
 } from "react-moveable";
 
-import { cn } from "@/lib/utils";
+import { OverlayBox } from "@/features/editor/components/OverlayBox";
 import type {
   EditorOverlay,
   ImageAsset,
@@ -24,7 +24,10 @@ import type {
   TextOverlayPatch,
   ViewportRect,
 } from "@/features/editor/editor-types";
-import { OverlayBox } from "@/features/editor/components/OverlayBox";
+import {
+  getOverlayRotationDegrees,
+  isRotatableOverlay,
+} from "@/features/editor/lib/overlay-capabilities";
 import {
   clampMovedOverlayRect,
   createImageOverlayRectAtPoint,
@@ -35,10 +38,7 @@ import {
   pdfRectToViewportRect,
   viewportRectToPdfRect,
 } from "@/features/editor/lib/overlay-coordinate-utils";
-import {
-  getOverlayRotationDegrees,
-  isRotatableOverlay,
-} from "@/features/editor/lib/overlay-capabilities";
+import { cn } from "@/lib/utils";
 
 type OverlayLayerProps = {
   activeImageAsset: ImageAsset | null;

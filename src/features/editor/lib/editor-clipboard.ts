@@ -1,13 +1,13 @@
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
+import { findSupportedImageMimeType } from "@/features/editor/lib/image-asset-utils";
 import { createMarkSvgBlob } from "@/features/editor/lib/mark-definitions";
 import {
   APP_OVERLAY_MIME_TYPE,
+  type OverlayClipboardPayload,
   parseOverlayClipboardPayload,
   serializeOverlayClipboardPayload,
   toOverlayClipboardPayload,
-  type OverlayClipboardPayload,
 } from "@/features/editor/lib/overlay-clipboard";
-import { findSupportedImageMimeType } from "@/features/editor/lib/image-asset-utils";
 
 export type ClipboardWritePlan = {
   customPayload: OverlayClipboardPayload;

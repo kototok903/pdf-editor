@@ -1,13 +1,13 @@
+import { PaletteIcon } from "lucide-react";
 import {
+  type CSSProperties,
   forwardRef,
   useCallback,
   useEffect,
   useImperativeHandle,
   useRef,
   useState,
-  type CSSProperties,
 } from "react";
-import { PaletteIcon } from "lucide-react";
 import SignaturePad from "signature_pad";
 
 import { Button } from "@/components/ui/button";
@@ -31,11 +31,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
+import { rgbArrayToHex } from "@/features/editor/lib/editor-utils";
 import type { SignatureFontId } from "@/features/editor/lib/signature-fonts";
 import { signatureFontOptions } from "@/features/editor/lib/signature-fonts";
-import { rgbArrayToHex } from "@/features/editor/lib/editor-utils";
 import { rasterizeDrawnSignature } from "@/features/editor/lib/signature-rasterizer";
+import { cn } from "@/lib/utils";
 
 export type SignatureCreateInput =
   | {

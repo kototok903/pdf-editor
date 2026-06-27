@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
-import { createEditorHistory } from "@/features/editor/lib/editor-history";
 import {
   getPersistedDraftImageAssetIds,
   getPersistedProjectImageAssetIds,
 } from "@/features/editor/hooks/useLocalDraftPersistence";
+import { createEditorHistory } from "@/features/editor/lib/editor-history";
 
 function createImageAsset(patch: Partial<ImageAsset> = {}): ImageAsset {
   return {

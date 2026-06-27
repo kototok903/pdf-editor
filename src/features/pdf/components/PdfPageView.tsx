@@ -1,5 +1,5 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { AnnotationMode } from "pdfjs-dist";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 import { OverlayLayer } from "@/features/editor/components/OverlayLayer";
 import type {
@@ -7,18 +7,18 @@ import type {
   EditorFormEdits,
   EditorOverlay,
   ImageAsset,
-  PdfRect,
   PdfFormValue,
+  PdfRect,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
 import { PdfAnnotationLayer } from "@/features/pdf/components/PdfAnnotationLayer";
 import { PdfTextLayer } from "@/features/pdf/components/PdfTextLayer";
 import { shouldClearOverlaySelectionOnPagePointerDown } from "@/features/pdf/lib/page-pointer-events";
+import type { PdfFormWidget } from "@/features/pdf/lib/pdf-form-metadata";
 import {
   cleanupPdfRender,
   type PdfRenderTask,
 } from "@/features/pdf/lib/pdf-render-cleanup";
-import type { PdfFormWidget } from "@/features/pdf/lib/pdf-form-metadata";
 import type {
   PageSize,
   PDFDocumentProxy,

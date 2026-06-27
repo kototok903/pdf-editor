@@ -1,38 +1,38 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type {
+  DocumentPageId,
   EditorFormEdits,
   EditorOverlay,
   EditorOverlayInput,
-  DocumentPageId,
   MarkOverlayPatch,
-  PdfRect,
   PdfFormValue,
+  PdfRect,
   TextOverlayPatch,
   WhiteoutOverlayPatch,
 } from "@/features/editor/editor-types";
+import {
+  emptyEditorFormEdits,
+  updatePdfFormValue,
+} from "@/features/editor/lib/editor-form-edits";
 import {
   cloneHistoryEntry,
   commitEditorHistory,
   commitEditorHistoryFromBase,
   createEditorHistory,
   createHistoryEntry,
+  type EditorHistoryEntry,
+  type EditorHistoryState,
   redoEditorHistory,
   replaceEditorHistoryPresent,
   resetEditorHistory,
   restoreEditorHistory,
   undoEditorHistory,
-  type EditorHistoryEntry,
-  type EditorHistoryState,
 } from "@/features/editor/lib/editor-history";
 import {
-  emptyEditorFormEdits,
-  updatePdfFormValue,
-} from "@/features/editor/lib/editor-form-edits";
-import {
+  type LayerMoveDirection,
   moveOverlayLayerRelative,
   moveOverlayToPageLayer,
-  type LayerMoveDirection,
 } from "@/features/editor/lib/layer-sidebar-utils";
 import { isRotatableOverlay } from "@/features/editor/lib/overlay-capabilities";
 import { normalizeRotationDegrees } from "@/features/editor/lib/overlay-coordinate-utils";

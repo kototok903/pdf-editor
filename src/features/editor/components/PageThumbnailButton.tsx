@@ -1,6 +1,6 @@
 import {
-  memo,
   type ComponentProps,
+  memo,
   type ReactNode,
   type RefCallback,
 } from "react";

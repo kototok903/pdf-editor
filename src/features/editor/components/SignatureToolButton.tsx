@@ -1,5 +1,5 @@
-import { useState, memo } from "react";
 import { ChevronDownIcon, PlusIcon, SignatureIcon, XIcon } from "lucide-react";
+import { memo,useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,10 +10,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-import { SignatureCreateDialog } from "@/features/editor/components/SignatureCreateDialog";
 import type { SignatureCreateInput } from "@/features/editor/components/SignatureCreateDialog";
+import { SignatureCreateDialog } from "@/features/editor/components/SignatureCreateDialog";
 import type { ImageAsset } from "@/features/editor/editor-types";
+import { cn } from "@/lib/utils";
 
 type SignatureToolDropdownProps = {
   activeSignatureAssetId: string | null;

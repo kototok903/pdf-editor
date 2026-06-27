@@ -1,8 +1,8 @@
 import {
   normalizeMetadataString,
-  standardMetadataInfoKeys,
   type PdfCustomMetadataProperty,
   type PdfTrappedStatus,
+  standardMetadataInfoKeys,
 } from "@/features/pdf/lib/pdf-metadata";
 import type { PDFDocumentProxy } from "@/features/pdf/pdf-types";
 

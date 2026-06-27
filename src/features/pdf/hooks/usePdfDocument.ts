@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { loadPdfDocument } from "@/features/pdf/lib/pdfjs";
 import type {
   DocumentSource,
   DocumentSourceId,
 } from "@/features/editor/editor-types";
+import { loadPdfDocument } from "@/features/pdf/lib/pdfjs";
 import type {
   LoadedPdfDocument,
   PDFDocumentProxy,

@@ -6,8 +6,8 @@ import type { Project } from "@/features/editor/lib/editor-projects";
 import {
   formatByteSize,
   getEditedPageCount,
-  getProjectPageSize,
   getProjectDetails,
+  getProjectPageSize,
 } from "@/features/editor/lib/project-details";
 import { emptyPdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 

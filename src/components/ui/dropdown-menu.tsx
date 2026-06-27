@@ -1,14 +1,14 @@
-import * as React from "react";
+import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
+import * as React from "react";
 
 import {
   ensureInputModalityTracking,
   getLastInputModality,
-  shouldRestoreFocusOnMenuClose,
   type InputModality,
+  shouldRestoreFocusOnMenuClose,
 } from "@/lib/input-modality";
 import { cn } from "@/lib/utils";
-import { CheckIcon, ChevronRightIcon } from "lucide-react";
 
 const DropdownMenuOpenModalityContext =
   React.createContext<React.RefObject<InputModality> | null>(null);

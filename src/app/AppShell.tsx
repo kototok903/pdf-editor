@@ -1,10 +1,10 @@
 import {
+  type ChangeEvent,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-  type ChangeEvent,
 } from "react";
 import { toast } from "sonner";
 
@@ -29,39 +29,48 @@ import {
   type OrganizePagesDialogSaveInput,
 } from "@/features/editor/components/OrganizePagesDialog";
 import { PagesSidebar } from "@/features/editor/components/PagesSidebar";
-import { SidebarDragDropProvider } from "@/features/editor/components/SidebarDragDropProvider";
 import {
   ClearLocalDataDialog,
   SettingsDialog,
 } from "@/features/editor/components/SettingsDialog";
+import { SidebarDragDropProvider } from "@/features/editor/components/SidebarDragDropProvider";
 import type {
   DocumentSource,
   EditorOverlay,
   ImageAsset,
   MarkOverlay,
   MarkOverlayPatch,
+  PdfFormValue,
   TextOverlay,
   TextOverlayDefaults,
   TextOverlayPatch,
-  PdfFormValue,
   WhiteoutOverlay,
   WhiteoutOverlayPatch,
 } from "@/features/editor/editor-types";
-import {
-  getPageIdForVisiblePage,
-  getVisiblePageNumberForPageId,
-} from "@/features/editor/lib/document-pages";
 import { useEditorClipboardActions } from "@/features/editor/hooks/useEditorClipboardActions";
-import { useEditorOverlays } from "@/features/editor/hooks/useEditorOverlays";
 import { useEditorKeyboardShortcuts } from "@/features/editor/hooks/useEditorKeyboardShortcuts";
-import { useEditorProjectSession } from "@/features/editor/hooks/useEditorProjectSession";
-import { useEditorTools } from "@/features/editor/hooks/useEditorTools";
-import { useOverlayEditingSession } from "@/features/editor/hooks/useOverlayEditingSession";
-import { useImageAssets } from "@/features/editor/hooks/useImageAssets";
+import { useEditorOverlays } from "@/features/editor/hooks/useEditorOverlays";
 import {
   useEditorPreferences,
   useResolvedEditorTheme,
 } from "@/features/editor/hooks/useEditorPreferences";
+import { useEditorProjectSession } from "@/features/editor/hooks/useEditorProjectSession";
+import { useEditorTools } from "@/features/editor/hooks/useEditorTools";
+import { useImageAssets } from "@/features/editor/hooks/useImageAssets";
+import { useOverlayEditingSession } from "@/features/editor/hooks/useOverlayEditingSession";
+import {
+  getPageIdForVisiblePage,
+  getVisiblePageNumberForPageId,
+} from "@/features/editor/lib/document-pages";
+import { updatePdfFormValue } from "@/features/editor/lib/editor-form-edits";
+import type { EditorHistoryEntry } from "@/features/editor/lib/editor-history";
+import {
+  clearEditorPreferences,
+  defaultEditorPreferences,
+  type EditorPreferences,
+  maxEditorZoom,
+  minEditorZoom,
+} from "@/features/editor/lib/editor-preferences";
 import { supportedImageAcceptValue } from "@/features/editor/lib/image-asset-utils";
 import { getPageLayerOverlays } from "@/features/editor/lib/layer-sidebar-utils";
 import { defaultMarkSettings } from "@/features/editor/lib/mark-definitions";
@@ -69,41 +78,32 @@ import {
   defaultTextOverlay,
   defaultWhiteoutOverlay,
 } from "@/features/editor/lib/overlay-defaults";
-import {
-  clearEditorPreferences,
-  defaultEditorPreferences,
-  maxEditorZoom,
-  minEditorZoom,
-  type EditorPreferences,
-} from "@/features/editor/lib/editor-preferences";
 import { isDocumentTextFontId } from "@/features/editor/lib/text-font-id-utils";
 import {
   clearDocumentTextFonts,
   createUnavailableDocumentTextFontOptions,
-  registerDocumentTextFonts,
   type DocumentTextFontMenuOption,
   type DocumentTextFontOption,
+  registerDocumentTextFonts,
 } from "@/features/editor/lib/text-fonts";
-import {
-  createExportFileName,
-  createSelectedPagesExportFileName,
-} from "@/features/pdf-export/lib/export-file-name";
 import {
   usePdfDocument,
   usePdfSourceDocuments,
 } from "@/features/pdf/hooks/usePdfDocument";
 import { usePdfPageSizes } from "@/features/pdf/hooks/usePdfPageSizes";
+import { isDocumentFontExtractionEnabled } from "@/features/pdf/lib/pdf-font-extraction-config";
 import {
   createPdfFormFieldRegistry,
   createPdfFormValueFromElement,
   getFormElementWidgetId,
   type PdfFormWidget,
 } from "@/features/pdf/lib/pdf-form-metadata";
-import { updatePdfFormValue } from "@/features/editor/lib/editor-form-edits";
-import { isDocumentFontExtractionEnabled } from "@/features/pdf/lib/pdf-font-extraction-config";
 import { scalePageSizes } from "@/features/pdf/lib/pdf-page-size-utils";
 import type { LoadedPdfDocument, PageSize } from "@/features/pdf/pdf-types";
-import type { EditorHistoryEntry } from "@/features/editor/lib/editor-history";
+import {
+  createExportFileName,
+  createSelectedPagesExportFileName,
+} from "@/features/pdf-export/lib/export-file-name";
 
 const zoomStep = 0.1;
 

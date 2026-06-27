@@ -1,5 +1,5 @@
-import { memo, useState } from "react";
 import { ChevronDownIcon, RotateCcwIcon } from "lucide-react";
+import { memo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,14 +13,14 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip } from "@/components/ui/tooltip";
 import { MarkGlyph } from "@/features/editor/components/MarkGlyph";
 import type {
   MarkOverlayPatch,
   MarkType,
 } from "@/features/editor/editor-types";
-import { markDefinitions } from "@/features/editor/lib/mark-definitions";
 import { rgbArrayToHex } from "@/features/editor/lib/editor-utils";
-import { Tooltip } from "@/components/ui/tooltip";
+import { markDefinitions } from "@/features/editor/lib/mark-definitions";
 
 type MarkToolDropdownProps = {
   color: string;

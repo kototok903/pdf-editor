@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { describe, expect, it } from "vitest";
+
 import {
   PDFDict,
   PDFDocument,
@@ -8,6 +8,7 @@ import {
   PDFString,
   StandardFonts,
 } from "pdf-lib";
+import { describe, expect, it } from "vitest";
 
 import type { EditorFormEdits } from "@/features/editor/editor-types";
 import { exportPdf } from "@/features/pdf-export/lib/export-pdf";

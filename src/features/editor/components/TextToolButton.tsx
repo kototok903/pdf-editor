@@ -1,4 +1,3 @@
-import { memo, useState } from "react";
 import {
   ChevronDownIcon,
   RotateCcwIcon,
@@ -6,6 +5,8 @@ import {
   TriangleAlertIcon,
   TypeIcon,
 } from "lucide-react";
+import { memo, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   ColorPicker,
@@ -35,15 +36,15 @@ import {
   TooltipRoot,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { rgbArrayToHex } from "@/features/editor/lib/editor-utils";
 import type {
   TextFontId,
   TextOverlayDefaults,
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
+import { rgbArrayToHex } from "@/features/editor/lib/editor-utils";
 import {
-  textFontOptions,
   type DocumentTextFontMenuOption,
+  textFontOptions,
 } from "@/features/editor/lib/text-fonts";
 
 type TextToolButtonProps = {

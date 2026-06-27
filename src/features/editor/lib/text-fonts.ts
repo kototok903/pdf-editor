@@ -1,16 +1,17 @@
+import "@/features/editor/lib/text-fonts.css";
+
+import courierFontUrl from "@/assets/fonts/pdf-standard/texgyrecursor-regular.otf?url";
+import helveticaFontUrl from "@/assets/fonts/pdf-standard/texgyreheros-regular.otf?url";
+import timesRomanFontUrl from "@/assets/fonts/pdf-standard/texgyretermes-regular.otf?url";
 import type {
   DocumentTextFontId,
   StandardTextFontId,
   TextFontId,
 } from "@/features/editor/editor-types";
-import helveticaFontUrl from "@/assets/fonts/pdf-standard/texgyreheros-regular.otf?url";
-import timesRomanFontUrl from "@/assets/fonts/pdf-standard/texgyretermes-regular.otf?url";
-import courierFontUrl from "@/assets/fonts/pdf-standard/texgyrecursor-regular.otf?url";
 import {
   getDocumentTextFontId,
   isDocumentTextFontId,
 } from "@/features/editor/lib/text-font-id-utils";
-import "@/features/editor/lib/text-fonts.css";
 
 export type StandardTextFontOption = {
   assetUrl: string;
