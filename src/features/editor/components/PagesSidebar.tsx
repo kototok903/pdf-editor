@@ -174,6 +174,7 @@ export const PagesSidebar = memo(function PagesSidebar({
                 pageOverlays={
                   overlaysByPage.get(pageNumber) ?? emptyPageOverlays
                 }
+                pageRotationDegrees={documentPage.rotationDegrees}
                 pageNumber={pageNumber}
                 pdfDocument={
                   sourceDocument?.pdfDocument ?? document.pdfDocument
@@ -202,6 +203,7 @@ const SidebarPageButton = memo(function SidebarPageButton({
   isActive,
   onSelectPage,
   pageOverlays,
+  pageRotationDegrees,
   pageNumber,
   pdfDocument,
   registerPageButton,
@@ -212,6 +214,7 @@ const SidebarPageButton = memo(function SidebarPageButton({
   isActive: boolean;
   onSelectPage: (pageNumber: number) => void;
   pageOverlays: EditorOverlay[];
+  pageRotationDegrees?: number;
   pageNumber: number;
   pdfDocument: LoadedPdfDocument["pdfDocument"];
   registerPageButton: (
@@ -247,6 +250,7 @@ const SidebarPageButton = memo(function SidebarPageButton({
       isDropTarget={isDropTarget}
       pageNumber={pageNumber}
       pageOverlays={pageOverlays}
+      pageRotationDegrees={pageRotationDegrees}
       pdfDocument={pdfDocument}
       shouldRenderThumbnail={shouldRenderThumbnail}
       sourcePageNumber={sourcePageNumber}
