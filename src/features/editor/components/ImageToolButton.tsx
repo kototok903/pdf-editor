@@ -6,7 +6,7 @@ import {
   UploadIcon,
   XIcon,
 } from "lucide-react";
-import { memo,useState } from "react";
+import { memo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {

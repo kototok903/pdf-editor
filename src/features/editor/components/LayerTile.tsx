@@ -5,7 +5,7 @@ import {
   SquareIcon,
   TypeIcon,
 } from "lucide-react";
-import { type CSSProperties,forwardRef, memo } from "react";
+import { type CSSProperties, forwardRef, memo } from "react";
 
 import { MarkGlyph } from "@/features/editor/components/MarkGlyph";
 import type { EditorOverlay, ImageAsset } from "@/features/editor/editor-types";
