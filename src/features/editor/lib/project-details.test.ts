@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import type { EditorOverlay } from "@/features/editor/editor-types";
+import type {
+  EditorFormEdits,
+  EditorOverlay,
+} from "@/features/editor/editor-types";
 import { createEditorHistory } from "@/features/editor/lib/editor-history";
 import type { Project } from "@/features/editor/lib/editor-projects";
 import {
@@ -29,19 +32,35 @@ function createTextOverlay(id: string, pageNumber: number): EditorOverlay {
   };
 }
 
-function createTestProject(overlays: EditorOverlay[]): Project {
+function createTestProject(
+  overlays: EditorOverlay[],
+  formEdits?: EditorFormEdits,
+): Project {
   return {
     createdAt: 100,
     currentPage: 1,
     documentSources: [],
     fileName: "form.pdf",
-    history: createEditorHistory(overlays),
+    history: createEditorHistory(overlays, null, formEdits),
     id: "project-a",
     lastModifiedAt: 200,
     metadata: emptyPdfProjectMetadata,
     originalMetadata: emptyPdfProjectMetadata,
     pageCount: 4,
     pdfBytes: new Uint8Array(1536).buffer,
+  };
+}
+
+function createTextFormEdit(pageNumber: number): EditorFormEdits {
+  return {
+    values: [
+      {
+        fieldName: `field-${pageNumber}`,
+        pageId: `page-${pageNumber}`,
+        type: "text",
+        value: "Filled value",
+      },
+    ],
   };
 }
 
@@ -70,15 +89,30 @@ describe("project details", () => {
     ).toBe(2);
   });
 
+  it("counts pages with form field edits", () => {
+    expect(getEditedPageCount([], createTextFormEdit(2))).toBe(1);
+  });
+
+  it("deduplicates pages with overlays and form field edits", () => {
+    expect(
+      getEditedPageCount([createTextOverlay("text-1", 1)], {
+        values: [
+          ...createTextFormEdit(1).values,
+          ...createTextFormEdit(3).values,
+        ],
+      }),
+    ).toBe(2);
+  });
+
   it("builds project details from the current history entry", () => {
-    const project = createTestProject([
-      createTextOverlay("text-1", 1),
-      createTextOverlay("text-2", 4),
-    ]);
+    const project = createTestProject(
+      [createTextOverlay("text-1", 1), createTextOverlay("text-2", 4)],
+      createTextFormEdit(2),
+    );
 
     expect(getProjectDetails(project)).toMatchObject({
       layerCount: 2,
-      pagesEdited: 2,
+      pagesEdited: 3,
     });
     expect(getProjectDetails(project).originalSize).toContain("KB");
   });

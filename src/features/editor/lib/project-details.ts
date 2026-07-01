@@ -1,4 +1,8 @@
-import type { EditorOverlay } from "@/features/editor/editor-types";
+import type {
+  EditorFormEdits,
+  EditorOverlay,
+} from "@/features/editor/editor-types";
+import { emptyEditorFormEdits } from "@/features/editor/lib/editor-form-edits";
 import type { Project } from "@/features/editor/lib/editor-projects";
 import type { PdfProjectMetadata } from "@/features/pdf/lib/pdf-metadata";
 import type { PageSize } from "@/features/pdf/pdf-types";
@@ -24,19 +28,25 @@ export function getProjectDetails(
   project: Project,
   { metadata = null, pageSizes = {} }: GetProjectDetailsOptions = {},
 ): ProjectDetails {
-  const overlays = project.history.present.overlays;
+  const { formEdits, overlays } = project.history.present;
 
   return {
     layerCount: overlays.length,
     metadata,
     originalSize: formatByteSize(project.pdfBytes.byteLength),
     pageSize: getProjectPageSize(project, pageSizes),
-    pagesEdited: getEditedPageCount(overlays),
+    pagesEdited: getEditedPageCount(overlays, formEdits),
   };
 }
 
-export function getEditedPageCount(overlays: EditorOverlay[]) {
-  return new Set(overlays.map((overlay) => overlay.pageId)).size;
+export function getEditedPageCount(
+  overlays: EditorOverlay[],
+  formEdits: EditorFormEdits = emptyEditorFormEdits,
+) {
+  return new Set([
+    ...overlays.map((overlay) => overlay.pageId),
+    ...formEdits.values.map((value) => value.pageId),
+  ]).size;
 }
 
 export function formatByteSize(byteCount: number) {
