@@ -14,6 +14,7 @@ import {
 import {
   areEditorHistoriesEqual,
   createEditorHistory,
+  type EditorHistoryEntry,
   type EditorHistoryState,
   restoreEditorHistory,
 } from "@/features/editor/lib/editor-history";
@@ -64,6 +65,7 @@ type UseEditorProjectSessionOptions = {
     nextOverlays?: EditorOverlay[],
     nextSelectedOverlayId?: string | null,
     nextHistory?: EditorHistoryState,
+    nextDocumentPages?: EditorHistoryEntry["documentPages"],
   ) => void;
   resetProjectRuntimeState: () => void;
   setCurrentPage: (pageNumber: number) => void;
@@ -141,6 +143,9 @@ export function useEditorProjectSession({
       overlays,
       projects,
     });
+  const resetEmptyProjectHistory = useCallback(() => {
+    resetHistory([], null, undefined, []);
+  }, [resetHistory]);
 
   const replaceProjectPath = useCallback((projectId: string | null) => {
     const nextPath = projectId ? createProjectPath(projectId) : rootPath;
@@ -221,7 +226,7 @@ export function useEditorProjectSession({
           if (!targetProject) {
             setActiveProjectId(null);
             clearFile();
-            resetHistory();
+            resetEmptyProjectHistory();
           } else {
             const restoredDocument = await openBytes(
               targetProject.pdfBytes,
@@ -305,7 +310,7 @@ export function useEditorProjectSession({
             } else {
               setActiveProjectId(null);
               clearFile();
-              resetHistory();
+              resetEmptyProjectHistory();
             }
           } else {
             try {
@@ -338,6 +343,7 @@ export function useEditorProjectSession({
     openBytes,
     replaceImageAssets,
     resetHistory,
+    resetEmptyProjectHistory,
     setCurrentPage,
     setScrollToPageRequest,
   ]);
@@ -375,7 +381,7 @@ export function useEditorProjectSession({
     }
 
     if (!isEmptyEditorHistory(history)) {
-      resetHistory();
+      resetEmptyProjectHistory();
     }
 
     resetProjectRuntimeState();
@@ -385,7 +391,7 @@ export function useEditorProjectSession({
     document,
     history,
     isProjectViewCleared,
-    resetHistory,
+    resetEmptyProjectHistory,
     resetProjectRuntimeState,
     setCurrentPage,
     status,
@@ -489,7 +495,7 @@ export function useEditorProjectSession({
       options: { pathUpdate?: "none" | "push" | "replace" } = {},
     ) => {
       setCurrentPage(1);
-      resetHistory();
+      resetEmptyProjectHistory();
       resetProjectRuntimeState();
       setActiveProjectId(project.id);
 
@@ -535,6 +541,7 @@ export function useEditorProjectSession({
       pushProjectPath,
       replaceProjectPath,
       resetHistory,
+      resetEmptyProjectHistory,
       resetProjectRuntimeState,
       setCurrentPage,
       setScrollToPageRequest,
@@ -553,7 +560,7 @@ export function useEditorProjectSession({
       }
 
       setCurrentPage(1);
-      resetHistory();
+      resetEmptyProjectHistory();
       resetProjectRuntimeState();
 
       const openedDocument = await openFile(file);
@@ -605,6 +612,7 @@ export function useEditorProjectSession({
       openFile,
       pushProjectPath,
       resetHistory,
+      resetEmptyProjectHistory,
       resetProjectRuntimeState,
       setCurrentPage,
     ],
@@ -629,14 +637,14 @@ export function useEditorProjectSession({
     pushProjectPath(null);
     setCurrentPage(1);
     clearFile();
-    resetHistory();
+    resetEmptyProjectHistory();
     resetProjectRuntimeState();
   }, [
     clearFile,
     commitPendingTextEdit,
     getActiveProjectSnapshot,
     pushProjectPath,
-    resetHistory,
+    resetEmptyProjectHistory,
     resetProjectRuntimeState,
     setCurrentPage,
   ]);
@@ -667,7 +675,7 @@ export function useEditorProjectSession({
     replaceProjectPath(null);
     setCurrentPage(1);
     clearFile();
-    resetHistory();
+    resetEmptyProjectHistory();
     resetProjectRuntimeState();
 
     if (nextProjects.length === 0) {
@@ -684,7 +692,7 @@ export function useEditorProjectSession({
     pendingRemoveProjectId,
     projects,
     replaceProjectPath,
-    resetHistory,
+    resetEmptyProjectHistory,
     resetProjectRuntimeState,
     setCurrentPage,
   ]);
@@ -971,14 +979,14 @@ export function useEditorProjectSession({
     replaceProjectPath(null);
     setCurrentPage(1);
     clearFile();
-    resetHistory();
+    resetEmptyProjectHistory();
     resetProjectRuntimeState();
     setPendingRemoveProjectId(null);
     setIsRemoveProjectDialogOpen(false);
   }, [
     clearFile,
     replaceProjectPath,
-    resetHistory,
+    resetEmptyProjectHistory,
     resetProjectRuntimeState,
     setCurrentPage,
   ]);
@@ -1062,6 +1070,7 @@ function isEmptyEditorHistory(history: EditorHistoryState) {
     history.future.length === 0 &&
     history.past.length === 0 &&
     (history.present.formEdits?.values.length ?? 0) === 0 &&
+    history.present.documentPages.length === 0 &&
     history.present.overlays.length === 0 &&
     history.present.selectedOverlayId === null
   );
