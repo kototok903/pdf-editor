@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import {
   type ChangeEvent,
+  type ComponentProps,
   type KeyboardEvent,
   useCallback,
   useMemo,
@@ -160,6 +161,10 @@ export function OrganizePagesDialog({
   const summary = useMemo(
     () => getDocumentPageChangeSummary(documentPages, draftPages),
     [documentPages, draftPages],
+  );
+  const originalPageNumberById = useMemo(
+    () => new Map(documentPages.map((p, index) => [p.id, index + 1])),
+    [documentPages],
   );
   const canDelete =
     selectedPageIds.length > 0 && selectedPageIds.length < draftPages.length;
@@ -434,6 +439,9 @@ export function OrganizePagesDialog({
                         onSelectPage={selectPage}
                         page={page}
                         pageNumber={pageNumber}
+                        originalPageNumber={
+                          originalPageNumberById.get(page.id) ?? pageNumber
+                        }
                         pageOverlays={
                           draftOverlaysByPageId.get(page.id) ??
                           emptyPageOverlays
@@ -638,6 +646,7 @@ function SortableOrganizerPage({
   onSelectPage,
   page,
   pageNumber,
+  originalPageNumber,
   pageOverlays,
   pdfDocument,
 }: {
@@ -647,6 +656,7 @@ function SortableOrganizerPage({
   onSelectPage: (pageId: DocumentPageId, isShiftPressed: boolean) => void;
   page: DocumentPage;
   pageNumber: number;
+  originalPageNumber: number;
   pageOverlays: EditorOverlay[];
   pdfDocument: LoadedPdfDocument["pdfDocument"];
 }) {
@@ -664,6 +674,23 @@ function SortableOrganizerPage({
     },
     [handleRef, ref],
   );
+  const cornerSlots = useMemo(() => {
+    const slots: ComponentProps<typeof PageThumbnailButton>["cornerSlots"] = {};
+    if (page.rotationDegrees !== 0) {
+      slots.bl = `${page.rotationDegrees}°`;
+    }
+    if (pageNumber === originalPageNumber) {
+      slots.br = pageNumber;
+    } else {
+      slots.br = (
+        <span>
+          {pageNumber}{" "}
+          <span className="text-muted-foreground">({originalPageNumber})</span>
+        </span>
+      );
+    }
+    return slots;
+  }, [page.rotationDegrees, pageNumber, originalPageNumber]);
 
   return (
     <PageThumbnailButton
@@ -681,10 +708,7 @@ function SortableOrganizerPage({
       shouldRenderThumbnail
       sourcePageNumber={page.sourcePageNumber}
       thumbnailWidth={128}
-      cornerSlots={{
-        ...(page.rotationDegrees !== 0 && { bl: `${page.rotationDegrees}°` }),
-        br: pageNumber,
-      }}
+      cornerSlots={cornerSlots}
     />
   );
 }
