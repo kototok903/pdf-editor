@@ -1,4 +1,9 @@
-import { DragDropProvider, type DragEndEvent } from "@dnd-kit/react";
+import {
+  DragDropProvider,
+  type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
+} from "@dnd-kit/react";
 import { isSortableOperation, useSortable } from "@dnd-kit/react/sortable";
 import {
   ArrowRightIcon,
@@ -76,6 +81,7 @@ import { createDocumentSource } from "@/features/editor/lib/document-pages";
 import { usePdfSourceDocuments } from "@/features/pdf/hooks/usePdfDocument";
 import { loadPdfDocument } from "@/features/pdf/lib/pdfjs";
 import type { LoadedPdfDocument } from "@/features/pdf/pdf-types";
+import { cn } from "@/lib/utils";
 
 export type OrganizePagesDialogSaveInput = {
   documentPages: DocumentPage[];
@@ -104,6 +110,10 @@ type OrganizePagesDialogProps = {
 };
 
 type InsertMode = "after" | "before" | "beginning" | "end";
+type PageDragOverlayState = {
+  activePageId: DocumentPageId;
+  pageIds: DocumentPageId[];
+};
 
 const emptyPageOverlays: EditorOverlay[] = [];
 const organizerPageDragType = "organizer-page";
@@ -135,6 +145,8 @@ export function OrganizePagesDialog({
     useState<DocumentPageId | null>(null);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
+  const [pageDragOverlayState, setPageDragOverlayState] =
+    useState<PageDragOverlayState | null>(null);
   const sourceDocumentsById = usePdfSourceDocuments(draftSources, document);
   const selectedPageIdSet = useMemo(
     () => new Set(selectedPageIds),
@@ -166,6 +178,21 @@ export function OrganizePagesDialog({
     () => new Map(documentPages.map((p, index) => [p.id, index + 1])),
     [documentPages],
   );
+  const draftPageNumberById = useMemo(
+    () => new Map(draftPages.map((p, index) => [p.id, index + 1])),
+    [draftPages],
+  );
+  const draggingPageIdSet = useMemo(
+    () => new Set(pageDragOverlayState?.pageIds ?? []),
+    [pageDragOverlayState],
+  );
+  const dragOverlayPages = useMemo(() => {
+    if (!pageDragOverlayState) {
+      return [];
+    }
+    const pageIdSet = new Set(pageDragOverlayState.pageIds);
+    return draftPages.filter((page) => pageIdSet.has(page.id));
+  }, [draftPages, pageDragOverlayState]);
   const canDelete =
     selectedPageIds.length > 0 && selectedPageIds.length < draftPages.length;
   const canMove =
@@ -330,8 +357,36 @@ export function OrganizePagesDialog({
     [draftPages],
   );
 
+  const handlePageDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const { source } = event.operation;
+
+      if (!source || source.type !== organizerPageDragType) {
+        return;
+      }
+
+      const activePageId = String(source.id);
+      const movingPageIds = selectedPageIdSet.has(activePageId)
+        ? selectedPageIds
+        : [activePageId];
+      const movingPageIdSet = new Set(movingPageIds);
+      movingPageIdSet.add(activePageId);
+      const orderedMovingPageIds = draftPages
+        .filter((page) => movingPageIdSet.has(page.id))
+        .map((page) => page.id);
+
+      setPageDragOverlayState({
+        activePageId,
+        pageIds: orderedMovingPageIds,
+      });
+    },
+    [draftPages, selectedPageIdSet, selectedPageIds],
+  );
+
   const handlePageDragEnd = useCallback(
     (event: DragEndEvent) => {
+      setPageDragOverlayState(null);
+
       const { source } = event.operation;
 
       if (
@@ -422,6 +477,7 @@ export function OrganizePagesDialog({
           <div className="min-h-0 overflow-auto p-4">
             <DragDropProvider
               onDragEnd={handlePageDragEnd}
+              onDragStart={handlePageDragStart}
               sensors={sidebarDndSensors}
             >
               <div className="grid grid-cols-[repeat(auto-fill,minmax(148px,1fr))] items-center gap-4">
@@ -434,6 +490,7 @@ export function OrganizePagesDialog({
                       <SortableOrganizerPage
                         imageAssetById={imageAssetById}
                         index={index}
+                        isDragPlaceholder={draggingPageIdSet.has(page.id)}
                         isSelected={selectedPageIdSet.has(page.id)}
                         key={page.id}
                         onSelectPage={selectPage}
@@ -452,6 +509,25 @@ export function OrganizePagesDialog({
                   );
                 })}
               </div>
+              <DragOverlay
+                className="pointer-events-none z-50"
+                dropAnimation={null}
+              >
+                {pageDragOverlayState && dragOverlayPages.length > 0 && (
+                  <OrganizerPageStackDragOverlay
+                    activePageId={pageDragOverlayState.activePageId}
+                    draftPageNumberById={draftPageNumberById}
+                    draftOverlaysByPageId={draftOverlaysByPageId}
+                    imageAssetById={imageAssetById}
+                    isSelected={selectedPageIdSet.has(
+                      pageDragOverlayState.activePageId,
+                    )}
+                    originalPageNumberById={originalPageNumberById}
+                    pages={dragOverlayPages}
+                    sourceDocumentsById={sourceDocumentsById}
+                  />
+                )}
+              </DragOverlay>
             </DragDropProvider>
           </div>
           <aside className="flex min-h-0 flex-col gap-4 border-l p-4 max-md:border-t max-md:border-l-0">
@@ -642,6 +718,7 @@ export function OrganizePagesDialog({
 function SortableOrganizerPage({
   imageAssetById,
   index,
+  isDragPlaceholder,
   isSelected,
   onSelectPage,
   page,
@@ -652,6 +729,7 @@ function SortableOrganizerPage({
 }: {
   imageAssetById: ReadonlyMap<string, ImageAsset>;
   index: number;
+  isDragPlaceholder: boolean;
   isSelected: boolean;
   onSelectPage: (pageId: DocumentPageId, isShiftPressed: boolean) => void;
   page: DocumentPage;
@@ -674,28 +752,28 @@ function SortableOrganizerPage({
     },
     [handleRef, ref],
   );
-  const cornerSlots = useMemo(() => {
-    const slots: ComponentProps<typeof PageThumbnailButton>["cornerSlots"] = {};
-    if (page.rotationDegrees !== 0) {
-      slots.bl = `${page.rotationDegrees}°`;
-    }
-    if (pageNumber === originalPageNumber) {
-      slots.br = pageNumber;
-    } else {
-      slots.br = (
-        <span>
-          {pageNumber}{" "}
-          <span className="text-muted-foreground">({originalPageNumber})</span>
-        </span>
-      );
-    }
-    return slots;
-  }, [page.rotationDegrees, pageNumber, originalPageNumber]);
+  const cornerSlots = useMemo(
+    () =>
+      getOrganizerPageCornerSlots({
+        isSelected,
+        originalPageNumber,
+        pageNumber,
+        rotationDegrees: page.rotationDegrees,
+      }),
+    [isSelected, page.rotationDegrees, pageNumber, originalPageNumber],
+  );
 
   return (
     <PageThumbnailButton
       buttonRef={setPageRef}
-      className={isDragging ? "cursor-grabbing opacity-80" : "cursor-grab"}
+      className={cn(
+        isDragging
+          ? "cursor-grabbing opacity-40"
+          : isDragPlaceholder
+            ? "cursor-grab opacity-40"
+            : "cursor-grab",
+        "transition-opacity duration-200",
+      )}
       imageAssetById={imageAssetById}
       isSelected={isSelected}
       onClick={(event) => {
@@ -711,6 +789,122 @@ function SortableOrganizerPage({
       cornerSlots={cornerSlots}
     />
   );
+}
+
+function OrganizerPageStackDragOverlay({
+  activePageId,
+  draftPageNumberById,
+  draftOverlaysByPageId,
+  imageAssetById,
+  isSelected,
+  originalPageNumberById,
+  pages,
+  sourceDocumentsById,
+}: {
+  activePageId: DocumentPageId;
+  draftPageNumberById: Map<DocumentPageId, number>;
+  draftOverlaysByPageId: Map<DocumentPageId, EditorOverlay[]>;
+  imageAssetById: ReadonlyMap<string, ImageAsset>;
+  isSelected: boolean;
+  originalPageNumberById: Map<DocumentPageId, number>;
+  pages: DocumentPage[];
+  sourceDocumentsById: ReadonlyMap<string, LoadedPdfDocument>;
+}) {
+  const activePage = pages.find((page) => page.id === activePageId);
+  const visiblePages = [
+    ...(activePage ? [activePage] : []),
+    ...pages.filter((page) => page.id !== activePageId),
+  ].slice(0, 4);
+  const hiddenPageCount = Math.max(0, pages.length - visiblePages.length);
+
+  return (
+    <div className="relative h-48 w-40">
+      {[...visiblePages].reverse().map((page, reverseIndex) => {
+        const stackIndex = visiblePages.length - reverseIndex - 1;
+        const pageNumber = draftPageNumberById.get(page.id) ?? 1;
+        const sourceDocument = sourceDocumentsById.get(page.sourceId);
+
+        if (!sourceDocument) {
+          return null;
+        }
+
+        return (
+          <PageThumbnailButton
+            aria-hidden
+            className="absolute top-0 left-0 cursor-grabbing shadow-xl"
+            imageAssetById={imageAssetById}
+            isSelected={isSelected}
+            key={page.id}
+            pageNumber={pageNumber}
+            pageOverlays={
+              draftOverlaysByPageId.get(page.id) ?? emptyPageOverlays
+            }
+            pageRotationDegrees={page.rotationDegrees}
+            pdfDocument={sourceDocument.pdfDocument}
+            shouldRenderThumbnail
+            sourcePageNumber={page.sourcePageNumber}
+            style={{
+              opacity: 1 - stackIndex * 0.08,
+              transform: `translate(${stackIndex * 8}px, ${stackIndex * 6}px) rotate(${stackIndex + 1}deg)`,
+              zIndex: visiblePages.length - stackIndex,
+            }}
+            tabIndex={-1}
+            thumbnailWidth={128}
+            cornerSlots={getOrganizerPageCornerSlots({
+              isSelected,
+              originalPageNumber:
+                originalPageNumberById.get(page.id) ?? pageNumber,
+              pageNumber,
+              rotationDegrees: page.rotationDegrees,
+            })}
+          />
+        );
+      })}
+      {pages.length > 1 && (
+        <div className="absolute -top-2 -right-2 z-10 rounded-full px-2 py-0.5 text-xs font-semibold bg-primary text-primary-foreground shadow-md">
+          {pages.length}
+        </div>
+      )}
+      {hiddenPageCount > 0 && (
+        <div className="absolute -bottom-5 -right-2 z-10 opacity-80 rounded-full px-2 py-0.5 text-xs font-medium bg-toolbar-button text-toolbar-foreground shadow-sm ring-1 ring-border">
+          +{hiddenPageCount}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function getOrganizerPageCornerSlots({
+  isSelected,
+  originalPageNumber,
+  pageNumber,
+  rotationDegrees,
+}: {
+  isSelected: boolean;
+  originalPageNumber: number;
+  pageNumber: number;
+  rotationDegrees: number;
+}): ComponentProps<typeof PageThumbnailButton>["cornerSlots"] {
+  const slots: ComponentProps<typeof PageThumbnailButton>["cornerSlots"] = {};
+
+  if (rotationDegrees !== 0) {
+    slots.bl = `${rotationDegrees}°`;
+  }
+
+  if (pageNumber === originalPageNumber) {
+    slots.br = pageNumber;
+  } else {
+    slots.br = (
+      <span>
+        {pageNumber}{" "}
+        <span className={!isSelected ? "text-muted-foreground" : ""}>
+          ({originalPageNumber})
+        </span>
+      </span>
+    );
+  }
+
+  return slots;
 }
 
 function ActionButton({
