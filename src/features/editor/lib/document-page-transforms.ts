@@ -123,6 +123,58 @@ export function moveDocumentPages(
   ];
 }
 
+export function moveDocumentPagesBySortableIndex(
+  documentPages: readonly DocumentPage[],
+  pageIds: Iterable<DocumentPageId>,
+  activePageId: DocumentPageId,
+  sortableIndex: number,
+): DocumentPage[] {
+  const selectedPageIds = new Set(pageIds);
+  selectedPageIds.add(activePageId);
+
+  const activePage = documentPages.find((page) => page.id === activePageId);
+
+  if (!activePage) {
+    return [...documentPages];
+  }
+
+  const movingPages = documentPages.filter((page) =>
+    selectedPageIds.has(page.id),
+  );
+
+  if (movingPages.length === 0) {
+    return [...documentPages];
+  }
+
+  const pagesWithoutActive = documentPages.filter(
+    (page) => page.id !== activePageId,
+  );
+  const projectedSortableIndex = normalizeDocumentPageInsertIndex(
+    pagesWithoutActive,
+    sortableIndex,
+  );
+  const projectedSinglePageOrder = [
+    ...pagesWithoutActive.slice(0, projectedSortableIndex),
+    activePage,
+    ...pagesWithoutActive.slice(projectedSortableIndex),
+  ];
+  const activeProjectedIndex = projectedSinglePageOrder.findIndex(
+    (page) => page.id === activePageId,
+  );
+  const remainingInsertIndex = projectedSinglePageOrder
+    .slice(0, activeProjectedIndex)
+    .filter((page) => !selectedPageIds.has(page.id)).length;
+  const remainingPages = documentPages.filter(
+    (page) => !selectedPageIds.has(page.id),
+  );
+
+  return [
+    ...remainingPages.slice(0, remainingInsertIndex),
+    ...movingPages,
+    ...remainingPages.slice(remainingInsertIndex),
+  ];
+}
+
 export function mergeDocumentSourcePages({
   createPageId = createDocumentPageId,
   documentPages,

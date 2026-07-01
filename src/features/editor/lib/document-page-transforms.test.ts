@@ -10,6 +10,7 @@ import {
   getDocumentPageInsertIndex,
   mergeDocumentSourcePages,
   moveDocumentPages,
+  moveDocumentPagesBySortableIndex,
   normalizeRotationDegrees,
   rotateDocumentPages,
 } from "@/features/editor/lib/document-page-transforms";
@@ -69,6 +70,44 @@ describe("document page transform helpers", () => {
     ).toEqual(["page-2", "page-3", "page-1", "page-4", "page-5"]);
     expect(
       moveDocumentPages(createPages(5), ["page-2"], 4).map((page) => page.id),
+    ).toEqual(["page-1", "page-3", "page-4", "page-2", "page-5"]);
+  });
+
+  it("moves grouped sortable pages relative to unselected destination pages", () => {
+    expect(
+      moveDocumentPagesBySortableIndex(
+        createPages(5),
+        ["page-2", "page-3"],
+        "page-2",
+        2,
+      ).map((page) => page.id),
+    ).toEqual(["page-1", "page-2", "page-3", "page-4", "page-5"]);
+    expect(
+      moveDocumentPagesBySortableIndex(
+        createPages(5),
+        ["page-2", "page-3"],
+        "page-3",
+        3,
+      ).map((page) => page.id),
+    ).toEqual(["page-1", "page-4", "page-2", "page-3", "page-5"]);
+    expect(
+      moveDocumentPagesBySortableIndex(
+        createPages(5),
+        ["page-2", "page-3"],
+        "page-2",
+        5,
+      ).map((page) => page.id),
+    ).toEqual(["page-1", "page-4", "page-5", "page-2", "page-3"]);
+  });
+
+  it("moves a single sortable page by its projected index", () => {
+    expect(
+      moveDocumentPagesBySortableIndex(
+        createPages(5),
+        ["page-2"],
+        "page-2",
+        3,
+      ).map((page) => page.id),
     ).toEqual(["page-1", "page-3", "page-4", "page-2", "page-5"]);
   });
 

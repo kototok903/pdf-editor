@@ -68,6 +68,7 @@ import {
   getDocumentPageInsertIndex,
   mergeDocumentSourcePages,
   moveDocumentPages,
+  moveDocumentPagesBySortableIndex,
   rotateDocumentPages,
 } from "@/features/editor/lib/document-page-transforms";
 import { createDocumentSource } from "@/features/editor/lib/document-pages";
@@ -357,9 +358,10 @@ export function OrganizePagesDialog({
       }
 
       setDraftPages((currentPages) =>
-        moveDocumentPagesToSortableIndex(
+        moveDocumentPagesBySortableIndex(
           currentPages,
           movingPageIds,
+          activePageId,
           sortableSource.index,
         ),
       );
@@ -685,35 +687,6 @@ function SortableOrganizerPage({
       }}
     />
   );
-}
-
-function moveDocumentPagesToSortableIndex(
-  documentPages: readonly DocumentPage[],
-  pageIds: Iterable<DocumentPageId>,
-  sortableIndex: number,
-) {
-  const movingPageIds = new Set(pageIds);
-  const movingPages = documentPages.filter((page) =>
-    movingPageIds.has(page.id),
-  );
-
-  if (movingPages.length === 0) {
-    return [...documentPages];
-  }
-
-  const remainingPages = documentPages.filter(
-    (page) => !movingPageIds.has(page.id),
-  );
-  const insertIndex = Math.min(
-    remainingPages.length,
-    Math.max(0, Math.trunc(sortableIndex)),
-  );
-
-  return [
-    ...remainingPages.slice(0, insertIndex),
-    ...movingPages,
-    ...remainingPages.slice(insertIndex),
-  ];
 }
 
 function ActionButton({
