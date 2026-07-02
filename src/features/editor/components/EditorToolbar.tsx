@@ -176,91 +176,96 @@ export const EditorToolbar = memo(function EditorToolbar({
 
   return (
     <header className="sticky top-0 z-20 border-b bg-toolbar text-toolbar-foreground">
-      <div className="flex h-12 items-center gap-1.5 px-2.5">
-        <ProjectDropdown
-          activeProject={activeProject}
-          hasPdf={hasPdf}
-          fileName={fileName}
-          pageSizes={pageSizes}
-          projects={projects}
-          activeProjectId={activeProjectId}
-          isExporting={isExporting}
-          isLoading={isLoading}
-          canCloseProject={canCloseProject}
-          onExportPdf={onExportPdf}
-          onOpenFile={onOpenFile}
-          onOpenOrganizePages={onOpenOrganizePages}
-          onCloseActiveProject={onCloseActiveProject}
-          onOpenProjectInNewTab={onOpenProjectInNewTab}
-          onSelectProject={onSelectProject}
-          onRemoveProject={onRemoveProject}
-          onUpdateActiveProjectMetadata={onUpdateActiveProjectMetadata}
-        />
+      <div className="flex h-12 items-center justify-between gap-1.5 px-2.5">
+        <div className="flex items-center gap-1.5">
+          <ProjectDropdown
+            activeProject={activeProject}
+            hasPdf={hasPdf}
+            fileName={fileName}
+            pageSizes={pageSizes}
+            projects={projects}
+            activeProjectId={activeProjectId}
+            isExporting={isExporting}
+            isLoading={isLoading}
+            canCloseProject={canCloseProject}
+            onExportPdf={onExportPdf}
+            onOpenFile={onOpenFile}
+            onOpenOrganizePages={onOpenOrganizePages}
+            onCloseActiveProject={onCloseActiveProject}
+            onOpenProjectInNewTab={onOpenProjectInNewTab}
+            onSelectProject={onSelectProject}
+            onRemoveProject={onRemoveProject}
+            onUpdateActiveProjectMetadata={onUpdateActiveProjectMetadata}
+          />
 
-        <SidebarsToggle
-          isPagesSidebarOpen={isPagesSidebarOpen}
-          isLayersSidebarOpen={isLayersSidebarOpen}
-          onTogglePagesSidebar={onTogglePagesSidebar}
-          onToggleLayersSidebar={onToggleLayersSidebar}
-        />
+          <SidebarsToggle
+            isPagesSidebarOpen={isPagesSidebarOpen}
+            isLayersSidebarOpen={isLayersSidebarOpen}
+            onTogglePagesSidebar={onTogglePagesSidebar}
+            onToggleLayersSidebar={onToggleLayersSidebar}
+          />
 
-        <Separator className="mx-1 h-6 self-center!" orientation="vertical" />
+          <Separator className="mx-1 h-6 self-center!" orientation="vertical" />
 
-        <TextToolButton
-          disabled={!hasPdf}
-          documentFontOptions={documentFontOptions}
-          isDefault={isTextSettingsDefault}
-          isSelected={isTextToolActive}
-          onSettingsChange={onTextSettingsChange}
-          onSettingsReset={onTextSettingsReset}
-          onTextToolClick={onTextToolClick}
-          settings={textSettings}
-        />
+          <TextToolButton
+            disabled={!hasPdf}
+            documentFontOptions={documentFontOptions}
+            isDefault={isTextSettingsDefault}
+            isSelected={isTextToolActive}
+            onSettingsChange={onTextSettingsChange}
+            onSettingsReset={onTextSettingsReset}
+            onTextToolClick={onTextToolClick}
+            settings={textSettings}
+          />
 
-        <ImageToolButton
-          activeImageAssetId={activeImageAssetId}
-          disabled={!hasPdf}
-          imageAssets={imageAssets}
-          isSelected={isImageToolActive}
-          onImportImageFromClipboard={onImportImageFromClipboard}
-          onOpenUrlDialog={handleOpenImageUrlDialog}
-          onRemoveImageAssetFromRecents={onRemoveImageAssetFromRecents}
-          onSelectImageAsset={onSelectImageAsset}
-          onUploadImage={onOpenImageDialog}
-        />
-        <SignatureToolButton
-          activeSignatureAssetId={activeSignatureAssetId}
-          disabled={!hasPdf}
-          isSelected={isSignatureToolActive}
-          onCreateSignature={onCreateSignature}
-          onRemoveSignatureAssetFromRecents={onRemoveSignatureAssetFromRecents}
-          onSelectSignatureAsset={onSelectSignatureAsset}
-          signatureAssets={signatureAssets}
-        />
+          <ImageToolButton
+            activeImageAssetId={activeImageAssetId}
+            disabled={!hasPdf}
+            imageAssets={imageAssets}
+            isSelected={isImageToolActive}
+            onImportImageFromClipboard={onImportImageFromClipboard}
+            onOpenUrlDialog={handleOpenImageUrlDialog}
+            onRemoveImageAssetFromRecents={onRemoveImageAssetFromRecents}
+            onSelectImageAsset={onSelectImageAsset}
+            onUploadImage={onOpenImageDialog}
+          />
 
-        <MarkToolButton
-          color={markSettings.color}
-          disabled={!hasPdf}
-          isDefault={isMarkSettingsDefault}
-          isSelected={isMarkToolActive}
-          markType={markSettings.markType}
-          onMarkToolActivate={onMarkToolActivate}
-          onMarkToolClick={onMarkToolClick}
-          onSettingsChange={onMarkSettingsChange}
-          onSettingsReset={onMarkSettingsReset}
-        />
+          <SignatureToolButton
+            activeSignatureAssetId={activeSignatureAssetId}
+            disabled={!hasPdf}
+            isSelected={isSignatureToolActive}
+            onCreateSignature={onCreateSignature}
+            onRemoveSignatureAssetFromRecents={
+              onRemoveSignatureAssetFromRecents
+            }
+            onSelectSignatureAsset={onSelectSignatureAsset}
+            signatureAssets={signatureAssets}
+          />
 
-        <WhiteoutToolButton
-          disabled={!hasPdf}
-          isDefault={isWhiteoutSettingsDefault}
-          isSelected={isWhiteoutToolActive}
-          onSettingsChange={onWhiteoutSettingsChange}
-          onSettingsReset={onWhiteoutSettingsReset}
-          onWhiteoutToolClick={onWhiteoutToolClick}
-          settings={whiteoutSettings}
-        />
+          <MarkToolButton
+            color={markSettings.color}
+            disabled={!hasPdf}
+            isDefault={isMarkSettingsDefault}
+            isSelected={isMarkToolActive}
+            markType={markSettings.markType}
+            onMarkToolActivate={onMarkToolActivate}
+            onMarkToolClick={onMarkToolClick}
+            onSettingsChange={onMarkSettingsChange}
+            onSettingsReset={onMarkSettingsReset}
+          />
 
-        <div className="ml-auto flex items-center gap-1">
+          <WhiteoutToolButton
+            disabled={!hasPdf}
+            isDefault={isWhiteoutSettingsDefault}
+            isSelected={isWhiteoutToolActive}
+            onSettingsChange={onWhiteoutSettingsChange}
+            onSettingsReset={onWhiteoutSettingsReset}
+            onWhiteoutToolClick={onWhiteoutToolClick}
+            settings={whiteoutSettings}
+          />
+        </div>
+
+        <div className="flex items-center gap-1.5">
           <Tooltip tooltip="Undo" disabled={!canUndo}>
             <Button
               className="w-7.5 px-0"
@@ -300,7 +305,7 @@ export const EditorToolbar = memo(function EditorToolbar({
               <ZoomOutIcon aria-hidden="true" />
             </Button>
           </Tooltip>
-          <div className="w-11 text-center text-xs text-muted-foreground">
+          <div className="w-[5ch] text-center text-xs text-muted-foreground">
             {zoomPercent}%
           </div>
           <Tooltip tooltip="Zoom in" disabled={!hasPdf}>
@@ -331,6 +336,7 @@ export const EditorToolbar = memo(function EditorToolbar({
           </Tooltip>
         </div>
       </div>
+
       <ImageUrlDialog
         onImportImageUrl={onImportImageUrl}
         onOpenChange={setIsImageUrlDialogOpen}
