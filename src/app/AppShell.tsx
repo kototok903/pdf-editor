@@ -104,6 +104,12 @@ import {
   createExportFileName,
   createSelectedPagesExportFileName,
 } from "@/features/pdf-export/lib/export-file-name";
+import { SearchSidebar } from "@/features/pdf-search/components/SearchSidebar";
+import { usePdfSearch } from "@/features/pdf-search/hooks/usePdfSearch";
+import type {
+  PdfSearchMatch,
+  PdfSearchOptions,
+} from "@/features/pdf-search/pdf-search-types";
 
 const zoomStep = 0.1;
 
@@ -119,6 +125,14 @@ export function AppShell() {
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [isOrganizePagesDialogOpen, setIsOrganizePagesDialogOpen] =
     useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOptions, setSearchOptions] = useState<PdfSearchOptions>({
+    matchCase: false,
+    wholeWord: false,
+  });
+  const [activeSearchMatchId, setActiveSearchMatchId] = useState<string | null>(
+    null,
+  );
   const [organizerBaseEntry, setOrganizerBaseEntry] =
     useState<EditorHistoryEntry | null>(null);
   const [renderedBasePageSizes, setRenderedBasePageSizes] = useState<
@@ -138,6 +152,7 @@ export function AppShell() {
   >([]);
   const {
     isPagesSidebarOpen,
+    isSearchSidebarOpen,
     markDefaults,
     textDefaults,
     themeName,
@@ -499,6 +514,8 @@ export function AppShell() {
     setRenderedBasePageSizes({});
     setFormWidgetsByPage({});
     setScrollToPageRequest(null);
+    setSearchQuery("");
+    setActiveSearchMatchId(null);
     clearDocumentTextFonts();
     setDocumentFontOptions([]);
     setEditorPreferences((currentPreferences) =>
@@ -570,6 +587,12 @@ export function AppShell() {
     activeDocumentSources,
     loadedDocument,
   );
+  const searchResults = usePdfSearch({
+    documentPages,
+    options: searchOptions,
+    query: searchQuery,
+    sourceDocumentsById,
+  });
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1083,6 +1106,13 @@ export function AppShell() {
     }));
   }, [setEditorPreferences]);
 
+  const handleToggleSearchSidebar = useCallback(() => {
+    setEditorPreferences((currentPreferences) => ({
+      ...currentPreferences,
+      isSearchSidebarOpen: !currentPreferences.isSearchSidebarOpen,
+    }));
+  }, [setEditorPreferences]);
+
   const handleClearLocalAppData = useCallback(async () => {
     if (isClearingLocalData) {
       return;
@@ -1137,6 +1167,36 @@ export function AppShell() {
     [handleRequestWorkspacePageScroll],
   );
 
+  const handleSearchQueryChange = useCallback((nextQuery: string) => {
+    setSearchQuery(nextQuery);
+    setActiveSearchMatchId(null);
+  }, []);
+
+  const handleSearchMatchCaseChange = useCallback((enabled: boolean) => {
+    setSearchOptions((currentOptions) => ({
+      ...currentOptions,
+      matchCase: enabled,
+    }));
+    setActiveSearchMatchId(null);
+  }, []);
+
+  const handleSearchWholeWordChange = useCallback((enabled: boolean) => {
+    setSearchOptions((currentOptions) => ({
+      ...currentOptions,
+      wholeWord: enabled,
+    }));
+    setActiveSearchMatchId(null);
+  }, []);
+
+  const handleSearchResultClick = useCallback(
+    (match: PdfSearchMatch) => {
+      setActiveSearchMatchId(match.id);
+      setCurrentPage(match.pageNumber);
+      handleRequestWorkspacePageScroll(match.pageNumber);
+    },
+    [handleRequestWorkspacePageScroll],
+  );
+
   return (
     <TooltipProvider delayDuration={700}>
       <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
@@ -1168,6 +1228,7 @@ export function AppShell() {
           isImageToolActive={activeTool?.type === "image"}
           isLayersSidebarOpen={editorPreferences.isLayersSidebarOpen}
           isPagesSidebarOpen={isPagesSidebarOpen}
+          isSearchSidebarOpen={isSearchSidebarOpen}
           isMarkSettingsDefault={isMarkSettingsDefault}
           isMarkToolActive={activeTool?.type === "mark"}
           isSignatureToolActive={activeTool?.type === "signature"}
@@ -1204,6 +1265,7 @@ export function AppShell() {
           onTextToolClick={handleTextToolClick}
           onToggleLayersSidebar={handleToggleLayersSidebar}
           onTogglePagesSidebar={handleTogglePagesSidebar}
+          onToggleSearchSidebar={handleToggleSearchSidebar}
           onUndo={handleUndo}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
@@ -1300,6 +1362,21 @@ export function AppShell() {
             whiteoutColor={currentWhiteoutSettings.color}
             zoom={zoom}
           />
+          {loadedDocument && isSearchSidebarOpen && (
+            <SearchSidebar
+              activeMatchId={activeSearchMatchId}
+              groups={searchResults.groups}
+              isSearching={searchResults.isSearching}
+              matchCase={searchOptions.matchCase}
+              onMatchCaseChange={handleSearchMatchCaseChange}
+              onQueryChange={handleSearchQueryChange}
+              onResultClick={handleSearchResultClick}
+              onWholeWordChange={handleSearchWholeWordChange}
+              query={searchQuery}
+              resultCount={searchResults.resultCount}
+              wholeWord={searchOptions.wholeWord}
+            />
+          )}
         </div>
         {isOrganizePagesDialogOpen && (
           <OrganizePagesDialog

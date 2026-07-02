@@ -59,6 +59,27 @@ export const Layers2DashedIcon = createLucideIcon("Layers2DashedIcon", [
   ],
 ]);
 
+export const SearchDashedIcon = createLucideIcon("SearchDashedIcon", [
+  [
+    "path",
+    {
+      d: "m21 21-4.34-4.34",
+      strokeDasharray: "4 3",
+      key: "search-handle",
+    },
+  ],
+  [
+    "circle",
+    {
+      cx: "11",
+      cy: "11",
+      r: "8",
+      strokeDasharray: "4 3",
+      key: "search-circle",
+    },
+  ],
+]);
+
 export const GithubIcon = createLucideIcon("GithubIcon", [
   [
     "path",

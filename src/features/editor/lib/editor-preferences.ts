@@ -20,6 +20,7 @@ export type EditorThemeName = "system" | ResolvedEditorThemeName;
 export type EditorPreferences = {
   isLayersSidebarOpen: boolean;
   isPagesSidebarOpen: boolean;
+  isSearchSidebarOpen: boolean;
   markDefaults: {
     color: string;
     markType: MarkType;
@@ -40,6 +41,7 @@ export const maxEditorZoom = 2;
 export const defaultEditorPreferences: EditorPreferences = {
   isLayersSidebarOpen: false,
   isPagesSidebarOpen: true,
+  isSearchSidebarOpen: false,
   markDefaults: defaultMarkSettings,
   textDefaults: defaultTextOverlay,
   themeName: "system",
@@ -119,6 +121,10 @@ function normalizeEditorPreferences(value: unknown): EditorPreferences {
     isPagesSidebarOpen: asBoolean(
       value.isPagesSidebarOpen,
       defaultEditorPreferences.isPagesSidebarOpen,
+    ),
+    isSearchSidebarOpen: asBoolean(
+      value.isSearchSidebarOpen,
+      defaultEditorPreferences.isSearchSidebarOpen,
     ),
     markDefaults: {
       color: asColor(

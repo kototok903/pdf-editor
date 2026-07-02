@@ -1,5 +1,6 @@
 import {
   Redo2Icon,
+  SearchIcon,
   SettingsIcon,
   Undo2Icon,
   ZoomInIcon,
@@ -8,6 +9,7 @@ import {
 import { memo, useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { SearchDashedIcon } from "@/components/ui/custom-icons";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ImageToolButton } from "@/features/editor/components/ImageToolButton";
@@ -44,6 +46,7 @@ type EditorToolbarProps = {
   isImageToolActive: boolean;
   isLayersSidebarOpen: boolean;
   isPagesSidebarOpen: boolean;
+  isSearchSidebarOpen: boolean;
   isMarkSettingsDefault: boolean;
   isMarkToolActive: boolean;
   isSignatureToolActive: boolean;
@@ -78,6 +81,7 @@ type EditorToolbarProps = {
   onUpdateActiveProjectMetadata: (metadata: PdfProjectMetadata) => void;
   onToggleLayersSidebar: () => void;
   onTogglePagesSidebar: () => void;
+  onToggleSearchSidebar: () => void;
   onUndo: () => void;
   onWhiteoutSettingsChange: (patch: WhiteoutOverlayPatch) => void;
   onWhiteoutSettingsReset: () => void;
@@ -113,6 +117,7 @@ export const EditorToolbar = memo(function EditorToolbar({
   isImageToolActive,
   isLayersSidebarOpen,
   isPagesSidebarOpen,
+  isSearchSidebarOpen,
   isMarkSettingsDefault,
   isMarkToolActive,
   isSignatureToolActive,
@@ -151,6 +156,7 @@ export const EditorToolbar = memo(function EditorToolbar({
   onUpdateActiveProjectMetadata,
   onToggleLayersSidebar,
   onTogglePagesSidebar,
+  onToggleSearchSidebar,
   onUndo,
   onWhiteoutSettingsChange,
   onWhiteoutSettingsReset,
@@ -266,6 +272,27 @@ export const EditorToolbar = memo(function EditorToolbar({
         </div>
 
         <div className="flex items-center gap-1.5">
+          <Tooltip tooltip="Toggle search" disabled={!hasPdf}>
+            <Button
+              aria-label="Toggle search sidebar"
+              aria-pressed={isSearchSidebarOpen}
+              className="w-7.5 px-0"
+              disabled={!hasPdf}
+              onClick={onToggleSearchSidebar}
+              size="sm"
+              type="button"
+              variant="toolbar"
+            >
+              {isSearchSidebarOpen ? (
+                <SearchDashedIcon aria-hidden="true" />
+              ) : (
+                <SearchIcon aria-hidden="true" />
+              )}
+            </Button>
+          </Tooltip>
+
+          <Separator className="mx-1 h-6 self-center!" orientation="vertical" />
+
           <Tooltip tooltip="Undo" disabled={!canUndo}>
             <Button
               className="w-7.5 px-0"

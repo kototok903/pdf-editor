@@ -48,6 +48,7 @@ describe("editor preferences persistence", () => {
       JSON.stringify({
         isLayersSidebarOpen: true,
         isPagesSidebarOpen: false,
+        isSearchSidebarOpen: true,
         markDefaults: { color: "#ff0000", markType: "x" },
         textDefaults: {
           color: "#00ff00",
@@ -65,6 +66,7 @@ describe("editor preferences persistence", () => {
     expect(readEditorPreferences(storage)).toEqual({
       isLayersSidebarOpen: true,
       isPagesSidebarOpen: false,
+      isSearchSidebarOpen: true,
       markDefaults: { color: "#ff0000", markType: "x" },
       textDefaults: {
         color: "#00ff00",
@@ -88,6 +90,18 @@ describe("editor preferences persistence", () => {
     );
 
     expect(readEditorPreferences(storage).isLayersSidebarOpen).toBe(false);
+  });
+
+  it("defaults the search sidebar to closed for older stored preferences", () => {
+    const storage = createMemoryStorage(
+      JSON.stringify({
+        isPagesSidebarOpen: true,
+        themeName: "dark",
+        version: 1,
+      }),
+    );
+
+    expect(readEditorPreferences(storage).isSearchSidebarOpen).toBe(false);
   });
 
   it("falls back to defaults for malformed JSON", () => {
