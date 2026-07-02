@@ -963,15 +963,17 @@ function MovePagesDialog({
           <DialogTitle>Move pages</DialogTitle>
           <DialogDescription>Select where selected pages go.</DialogDescription>
         </DialogHeader>
-        <InsertTargetFields
-          insertMode={insertMode}
-          onInsertModeChange={setInsertMode}
-          onPageNumberInputChange={setPageNumberInput}
-          pageNumberInput={pageNumberInput}
-        />
-        {!validation.ok && (
-          <div className="text-xs text-destructive">{validation.error}</div>
-        )}
+        <div className="grid gap-3">
+          <InsertTargetFields
+            insertMode={insertMode}
+            onInsertModeChange={setInsertMode}
+            onPageNumberInputChange={setPageNumberInput}
+            pageNumberInput={pageNumberInput}
+          />
+          {!validation.ok && (
+            <div className="text-xs text-destructive">{validation.error}</div>
+          )}
+        </div>
         <DialogFooter>
           <Button
             onClick={() => onOpenChange(false)}
@@ -1046,7 +1048,7 @@ function MergePagesDialog({
             Pages
             <Input
               onChange={(event) => setSourcePageRanges(event.target.value)}
-              placeholder="All pages, or 1-3, 5"
+              placeholder="e.g., 1-3, 5. Default: All pages"
               value={sourcePageRanges}
             />
           </label>
@@ -1131,6 +1133,7 @@ function InsertTargetFields({
             onChange={(event) => onPageNumberInputChange(event.target.value)}
             type="number"
             value={pageNumberInput}
+            placeholder="Enter page number"
           />
         </label>
       )}
