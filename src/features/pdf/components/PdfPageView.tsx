@@ -12,7 +12,10 @@ import type {
   TextOverlayPatch,
 } from "@/features/editor/editor-types";
 import { PdfAnnotationLayer } from "@/features/pdf/components/PdfAnnotationLayer";
-import { PdfTextLayer } from "@/features/pdf/components/PdfTextLayer";
+import {
+  PdfTextLayer,
+  type PdfTextLayerRenderState,
+} from "@/features/pdf/components/PdfTextLayer";
 import { shouldClearOverlaySelectionOnPagePointerDown } from "@/features/pdf/lib/page-pointer-events";
 import type { PdfFormWidget } from "@/features/pdf/lib/pdf-form-metadata";
 import {
@@ -24,6 +27,8 @@ import type {
   PDFDocumentProxy,
   PDFPageProxy,
 } from "@/features/pdf/pdf-types";
+import { PdfSearchHighlightLayer } from "@/features/pdf-search/components/PdfSearchHighlightLayer";
+import type { PdfSearchMatch } from "@/features/pdf-search/pdf-search-types";
 
 type PdfPageViewProps = {
   activeImageAsset: ImageAsset | null;
@@ -36,6 +41,7 @@ type PdfPageViewProps = {
   isSignatureToolActive: boolean;
   isTextToolActive: boolean;
   isWhiteoutToolActive: boolean;
+  activeSearchMatchId: string | null;
   onCancelActiveTool: () => void;
   onClearSelection: () => void;
   onCommitFormValue: (value: PdfFormValue) => void;
@@ -56,6 +62,7 @@ type PdfPageViewProps = {
   onUpdateOverlayRect: (overlayId: string, rect: PdfRect) => void;
   onUpdateOverlayRotation: (overlayId: string, rotationDegrees: number) => void;
   pageOverlays: EditorOverlay[];
+  pageSearchMatches: PdfSearchMatch[];
   pageId: DocumentPageId;
   pageRotationDegrees: number;
   pageSize: PageSize;
@@ -79,6 +86,7 @@ export const PdfPageView = memo(function PdfPageView({
   isSignatureToolActive,
   isTextToolActive,
   isWhiteoutToolActive,
+  activeSearchMatchId,
   onCancelActiveTool,
   onClearSelection,
   onCommitFormValue,
@@ -96,6 +104,7 @@ export const PdfPageView = memo(function PdfPageView({
   onUpdateOverlayRect,
   onUpdateOverlayRotation,
   pageOverlays,
+  pageSearchMatches,
   pageId,
   pageRotationDegrees,
   pageSize,
@@ -108,7 +117,10 @@ export const PdfPageView = memo(function PdfPageView({
   whiteoutColor,
 }: PdfPageViewProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [pageElement, setPageElement] = useState<HTMLElement | null>(null);
   const [renderState, setRenderState] = useState<RenderState | null>(null);
+  const [textLayerRenderState, setTextLayerRenderState] =
+    useState<PdfTextLayerRenderState | null>(null);
   const displayPageSize = pageSize;
   const isCurrentRenderState =
     renderState?.pageNumber === pageNumber &&
@@ -123,6 +135,7 @@ export const PdfPageView = memo(function PdfPageView({
   const isRendering = shouldRender && !isCurrentRenderState;
   const articleRef = useCallback(
     (element: HTMLElement | null) => {
+      setPageElement(element);
       onPageElementChange(pageNumber, element);
     },
     [onPageElementChange, pageNumber],
@@ -276,10 +289,17 @@ export const PdfPageView = memo(function PdfPageView({
       )}
       <canvas className="relative z-0 block" ref={canvasRef} />
       <PdfTextLayer
+        onTextLayerRender={setTextLayerRenderState}
         pdfDocument={pdfDocument}
         scale={scale}
         shouldRender={shouldRender}
         sourcePageNumber={sourcePageNumber}
+      />
+      <PdfSearchHighlightLayer
+        activeMatchId={activeSearchMatchId}
+        matches={pageSearchMatches}
+        pageElement={pageElement}
+        textLayerRenderState={textLayerRenderState}
       />
       <PdfAnnotationLayer
         formEdits={formEdits}

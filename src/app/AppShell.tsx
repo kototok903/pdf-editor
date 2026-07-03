@@ -593,6 +593,15 @@ export function AppShell() {
     query: searchQuery,
     sourceDocumentsById,
   });
+  const searchMatchesByPage = useMemo(
+    () =>
+      new Map(
+        searchResults.groups.map(
+          (group) => [group.pageNumber, group.matches] as const,
+        ),
+      ),
+    [searchResults.groups],
+  );
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1318,6 +1327,7 @@ export function AppShell() {
             )}
           </SidebarDragDropProvider>
           <DocumentWorkspace
+            activeSearchMatchId={activeSearchMatchId}
             currentPage={currentPage}
             document={loadedDocument}
             documentPages={documentPages}
@@ -1359,6 +1369,7 @@ export function AppShell() {
             selectedOverlayPageNumber={selectedOverlayPageNumber}
             status={displayStatus}
             scrollToPageRequest={scrollToPageRequest}
+            searchMatchesByPage={searchMatchesByPage}
             whiteoutColor={currentWhiteoutSettings.color}
             zoom={zoom}
           />

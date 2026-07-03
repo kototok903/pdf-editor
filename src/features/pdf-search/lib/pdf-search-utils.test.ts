@@ -71,12 +71,14 @@ describe("pdf search utils", () => {
           sourceId: "source-a",
           sourcePageNumber: 1,
           text: "No hit",
+          textContentItemsStr: ["No hit"],
         },
         {
           pageNumber: 3,
           sourceId: "source-a",
           sourcePageNumber: 3,
           text: "Common and common.",
+          textContentItemsStr: ["Common and ", "common."],
         },
       ],
       query: "common",
@@ -84,6 +86,14 @@ describe("pdf search utils", () => {
 
     expect(groups).toHaveLength(1);
     expect(groups[0]?.pageNumber).toBe(3);
+    expect(groups[0]?.matches[0]?.range).toEqual({
+      begin: { divIndex: 0, offset: 0 },
+      end: { divIndex: 0, offset: 6 },
+    });
+    expect(groups[0]?.matches[1]?.range).toEqual({
+      begin: { divIndex: 1, offset: 0 },
+      end: { divIndex: 1, offset: 6 },
+    });
     expect(countPdfSearchMatches(groups)).toBe(2);
   });
 });

@@ -3,6 +3,7 @@ import type {
   PdfSearchOptions,
   PdfSearchPageGroup,
   PdfSearchSnippetPart,
+  PdfSearchTextRange,
 } from "@/features/pdf-search/pdf-search-types";
 
 type SearchablePageText = {
@@ -10,6 +11,7 @@ type SearchablePageText = {
   sourceId: string;
   sourcePageNumber: number;
   text: string;
+  textContentItemsStr: string[];
 };
 
 type TextMatchRange = {
@@ -65,6 +67,11 @@ export function createSearchablePageGroups({
           length: match.length,
           matchIndexOnPage,
           pageNumber: page.pageNumber,
+          range: convertMatchToTextRange({
+            length: match.length,
+            start: match.start,
+            textContentItemsStr: page.textContentItemsStr,
+          }),
           snippetParts: createSearchSnippetParts({
             length: match.length,
             start: match.start,
@@ -178,6 +185,50 @@ function createPdfSearchMatchId({
   start: number;
 }) {
   return `${sourceId}:${sourcePageNumber}:${pageNumber}:${matchIndexOnPage}:${start}`;
+}
+
+export function convertMatchToTextRange({
+  length,
+  start,
+  textContentItemsStr,
+}: {
+  length: number;
+  start: number;
+  textContentItemsStr: string[];
+}): PdfSearchTextRange {
+  let divIndex = 0;
+  let divStartIndex = 0;
+  const lastDivIndex = textContentItemsStr.length - 1;
+
+  while (
+    divIndex !== lastDivIndex &&
+    start >= divStartIndex + textContentItemsStr[divIndex].length
+  ) {
+    divStartIndex += textContentItemsStr[divIndex].length;
+    divIndex += 1;
+  }
+
+  const begin = {
+    divIndex,
+    offset: start - divStartIndex,
+  };
+  const endIndex = start + length;
+
+  while (
+    divIndex !== lastDivIndex &&
+    endIndex > divStartIndex + textContentItemsStr[divIndex].length
+  ) {
+    divStartIndex += textContentItemsStr[divIndex].length;
+    divIndex += 1;
+  }
+
+  return {
+    begin,
+    end: {
+      divIndex,
+      offset: endIndex - divStartIndex,
+    },
+  };
 }
 
 function isWholeWordMatch(text: string, start: number, end: number) {

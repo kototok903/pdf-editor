@@ -13,8 +13,10 @@ import { PdfPageView } from "@/features/pdf/components/PdfPageView";
 import type { PdfFormWidget } from "@/features/pdf/lib/pdf-form-metadata";
 import { isPageInRenderWindow } from "@/features/pdf/lib/pdf-page-size-utils";
 import type { LoadedPdfDocument, PageSize } from "@/features/pdf/pdf-types";
+import type { PdfSearchMatch } from "@/features/pdf-search/pdf-search-types";
 
 type PdfDocumentViewProps = {
+  activeSearchMatchId: string | null;
   activeImageAsset: ImageAsset | null;
   activeSignatureAsset: ImageAsset | null;
   currentPage: number;
@@ -49,6 +51,7 @@ type PdfDocumentViewProps = {
   onUpdateOverlayRotation: (overlayId: string, rotationDegrees: number) => void;
   overlaysByPage: ReadonlyMap<number, EditorOverlay[]>;
   pageSizes: Record<number, PageSize>;
+  searchMatchesByPage: ReadonlyMap<number, PdfSearchMatch[]>;
   scale: number;
   selectedOverlayId: string | null;
   selectedOverlayPageNumber: number | null;
@@ -57,6 +60,7 @@ type PdfDocumentViewProps = {
 };
 
 export const PdfDocumentView = memo(function PdfDocumentView({
+  activeSearchMatchId,
   activeImageAsset,
   activeSignatureAsset,
   currentPage,
@@ -88,6 +92,7 @@ export const PdfDocumentView = memo(function PdfDocumentView({
   onUpdateOverlayRotation,
   overlaysByPage,
   pageSizes,
+  searchMatchesByPage,
   scale,
   selectedOverlayId,
   selectedOverlayPageNumber,
@@ -102,6 +107,7 @@ export const PdfDocumentView = memo(function PdfDocumentView({
 
         return (
           <PdfPageView
+            activeSearchMatchId={activeSearchMatchId}
             activeImageAsset={activeImageAsset}
             activeSignatureAsset={activeSignatureAsset}
             editingOverlayId={editingOverlayId}
@@ -131,6 +137,9 @@ export const PdfDocumentView = memo(function PdfDocumentView({
             onUpdateOverlayRotation={onUpdateOverlayRotation}
             pageId={documentPage.id}
             pageOverlays={overlaysByPage.get(pageNumber) ?? emptyPageOverlays}
+            pageSearchMatches={
+              searchMatchesByPage.get(pageNumber) ?? emptyPageSearchMatches
+            }
             pageRotationDegrees={documentPage.rotationDegrees}
             pageSize={pageSizes[pageNumber] ?? getDefaultPageSize(scale)}
             pageNumber={pageNumber}
@@ -164,6 +173,7 @@ const workspacePageRenderOverscan = 5;
 const defaultPageWidth = 612;
 const defaultPageHeight = 792;
 const emptyPageOverlays: EditorOverlay[] = [];
+const emptyPageSearchMatches: PdfSearchMatch[] = [];
 
 function getDefaultPageSize(scale: number): PageSize {
   return {

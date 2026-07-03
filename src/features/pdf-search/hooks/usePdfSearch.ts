@@ -24,11 +24,17 @@ type ExtractedPageText = {
   sourceId: string;
   sourcePageNumber: number;
   text: string;
+  textContentItemsStr: string[];
 };
 
 type PdfTextContentItem = {
   hasEOL?: boolean;
   str?: string;
+};
+
+type ExtractedTextCacheEntry = {
+  text: string;
+  textContentItemsStr: string[];
 };
 
 const searchDebounceMs = 200;
@@ -42,7 +48,9 @@ export function usePdfSearch({
   const [debouncedQuery, setDebouncedQuery] = useState(query);
   const [groups, setGroups] = useState<PdfSearchPageGroup[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const extractedTextCacheRef = useRef<Map<string, string>>(new Map());
+  const extractedTextCacheRef = useRef<Map<string, ExtractedTextCacheEntry>>(
+    new Map(),
+  );
   const requestIdRef = useRef(0);
   const lastSearchKeyRef = useRef<string | null>(null);
   const documentSignature = useMemo(
@@ -118,9 +126,9 @@ export function usePdfSearch({
           sourceId: documentPage.sourceId,
           sourcePageNumber,
         });
-        const cachedText = extractedTextCacheRef.current.get(cacheKey);
-        const text =
-          cachedText ??
+        const cachedEntry = extractedTextCacheRef.current.get(cacheKey);
+        const extractedEntry =
+          cachedEntry ??
           (await extractPageText({
             sourceDocument,
             sourcePageNumber,
@@ -130,15 +138,16 @@ export function usePdfSearch({
           return;
         }
 
-        if (cachedText === undefined) {
-          extractedTextCacheRef.current.set(cacheKey, text);
+        if (cachedEntry === undefined) {
+          extractedTextCacheRef.current.set(cacheKey, extractedEntry);
         }
 
         extractedPages.push({
           pageNumber,
           sourceId: documentPage.sourceId,
           sourcePageNumber,
-          text,
+          text: extractedEntry.text,
+          textContentItemsStr: extractedEntry.textContentItemsStr,
         });
       }
 
@@ -187,22 +196,22 @@ async function extractPageText({
   const page = await sourceDocument.pdfDocument.getPage(sourcePageNumber);
   const textContent = await page.getTextContent({
     disableNormalization: true,
+    includeMarkedContent: true,
   });
-  const textParts: string[] = [];
+  const textContentItemsStr: string[] = [];
 
   for (const item of textContent.items) {
     if (!isPdfTextContentItem(item)) {
       continue;
     }
 
-    textParts.push(item.str ?? "");
-
-    if (item.hasEOL) {
-      textParts.push("\n");
-    }
+    textContentItemsStr.push(item.str ?? "");
   }
 
-  return textParts.join("");
+  return {
+    text: textContentItemsStr.join(""),
+    textContentItemsStr,
+  };
 }
 
 function createExtractedTextCacheKey({

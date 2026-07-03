@@ -35,8 +35,10 @@ import type {
   PageSize,
   PdfLoadStatus,
 } from "@/features/pdf/pdf-types";
+import type { PdfSearchMatch } from "@/features/pdf-search/pdf-search-types";
 
 type DocumentWorkspaceProps = {
+  activeSearchMatchId: string | null;
   activeImageAsset: ImageAsset | null;
   activeSignatureAsset: ImageAsset | null;
   currentPage: number;
@@ -78,6 +80,7 @@ type DocumentWorkspaceProps = {
   sourceDocumentsById: ReadonlyMap<string, LoadedPdfDocument>;
   status: PdfLoadStatus;
   scrollToPageRequest: ScrollToPageRequest | null;
+  searchMatchesByPage: ReadonlyMap<number, PdfSearchMatch[]>;
   whiteoutColor: string;
   zoom: number;
 };
@@ -89,6 +92,7 @@ type ScrollToPageRequest = {
 };
 
 export const DocumentWorkspace = memo(function DocumentWorkspace({
+  activeSearchMatchId,
   activeImageAsset,
   activeSignatureAsset,
   currentPage,
@@ -130,6 +134,7 @@ export const DocumentWorkspace = memo(function DocumentWorkspace({
   sourceDocumentsById,
   status,
   scrollToPageRequest,
+  searchMatchesByPage,
   whiteoutColor,
   zoom,
 }: DocumentWorkspaceProps) {
@@ -444,6 +449,7 @@ export const DocumentWorkspace = memo(function DocumentWorkspace({
 
       {status === "loaded" && document && (
         <PdfDocumentView
+          activeSearchMatchId={activeSearchMatchId}
           activeImageAsset={activeImageAsset}
           activeSignatureAsset={activeSignatureAsset}
           currentPage={currentPage}
@@ -475,6 +481,7 @@ export const DocumentWorkspace = memo(function DocumentWorkspace({
           onUpdateOverlayRotation={onUpdateOverlayRotation}
           overlaysByPage={overlaysByPage}
           pageSizes={pageSizes}
+          searchMatchesByPage={searchMatchesByPage}
           scale={zoom}
           selectedOverlayId={selectedOverlayId}
           selectedOverlayPageNumber={selectedOverlayPageNumber}

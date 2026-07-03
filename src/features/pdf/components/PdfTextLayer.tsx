@@ -10,13 +10,21 @@ let textLayerSelectionAbortController: AbortController | null = null;
 let previousSelectionRange: Range | null = null;
 
 type PdfTextLayerProps = {
+  onTextLayerRender?: (state: PdfTextLayerRenderState | null) => void;
   pdfDocument: PDFDocumentProxy;
   scale: number;
   shouldRender: boolean;
   sourcePageNumber: number;
 };
 
+export type PdfTextLayerRenderState = {
+  element: HTMLDivElement;
+  textContentItemsStr: string[];
+  textDivs: HTMLElement[];
+};
+
 export function PdfTextLayer({
+  onTextLayerRender,
   pdfDocument,
   scale,
   shouldRender,
@@ -79,6 +87,11 @@ export function PdfTextLayer({
           textLayerContainer.append(endOfContent);
           markWhitespaceTextSpans(textLayerContainer);
           bindTextLayerSelection(textLayerContainer, endOfContent);
+          onTextLayerRender?.({
+            element: textLayerContainer,
+            textContentItemsStr: textLayer.textContentItemsStr,
+            textDivs: textLayer.textDivs,
+          });
         }
       } catch (error) {
         if (isCancelled) {
@@ -98,10 +111,11 @@ export function PdfTextLayer({
     return () => {
       isCancelled = true;
       unbindTextLayerSelection(textLayerContainer);
+      onTextLayerRender?.(null);
       textLayer?.cancel();
       textLayerContainer.replaceChildren();
     };
-  }, [pdfDocument, scale, shouldRender, sourcePageNumber]);
+  }, [onTextLayerRender, pdfDocument, scale, shouldRender, sourcePageNumber]);
 
   return <div aria-hidden="true" className="textLayer" ref={textLayerRef} />;
 }
