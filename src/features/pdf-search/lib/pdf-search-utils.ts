@@ -7,6 +7,7 @@ import type {
 } from "@/features/pdf-search/pdf-search-types";
 
 type SearchablePageText = {
+  rawIndexBySearchIndex: Array<number | null>;
   pageNumber: number;
   sourceId: string;
   sourcePageNumber: number;
@@ -21,6 +22,10 @@ type TextMatchRange = {
 
 const defaultSnippetContextLength = 64;
 
+export function normalizeSearchQuery(query: string) {
+  return query.trim().replace(/\s+/g, " ");
+}
+
 export function createPdfSearchKey({
   documentSignature,
   options,
@@ -30,9 +35,11 @@ export function createPdfSearchKey({
   options: PdfSearchOptions;
   query: string;
 }) {
+  const normalizedQuery = normalizeSearchQuery(query);
+
   return [
     documentSignature,
-    query.trim(),
+    normalizedQuery,
     options.matchCase ? "case" : "nocase",
     options.wholeWord ? "word" : "partial",
   ].join("\u001f");
@@ -47,7 +54,7 @@ export function createSearchablePageGroups({
   pages: SearchablePageText[];
   query: string;
 }): PdfSearchPageGroup[] {
-  const normalizedQuery = query.trim();
+  const normalizedQuery = normalizeSearchQuery(query);
 
   if (!normalizedQuery) {
     return [];
@@ -67,11 +74,18 @@ export function createSearchablePageGroups({
           length: match.length,
           matchIndexOnPage,
           pageNumber: page.pageNumber,
-          range: convertMatchToTextRange({
-            length: match.length,
-            start: match.start,
-            textContentItemsStr: page.textContentItemsStr,
-          }),
+          range:
+            convertSearchMatchToTextRange({
+              length: match.length,
+              rawIndexBySearchIndex: page.rawIndexBySearchIndex,
+              start: match.start,
+              textContentItemsStr: page.textContentItemsStr,
+            }) ??
+            convertMatchToTextRange({
+              length: match.length,
+              start: match.start,
+              textContentItemsStr: page.textContentItemsStr,
+            }),
           snippetParts: createSearchSnippetParts({
             length: match.length,
             start: match.start,
@@ -229,6 +243,35 @@ export function convertMatchToTextRange({
       offset: endIndex - divStartIndex,
     },
   };
+}
+
+export function convertSearchMatchToTextRange({
+  length,
+  rawIndexBySearchIndex,
+  start,
+  textContentItemsStr,
+}: {
+  length: number;
+  rawIndexBySearchIndex: Array<number | null>;
+  start: number;
+  textContentItemsStr: string[];
+}): PdfSearchTextRange | null {
+  const rawIndexes = rawIndexBySearchIndex
+    .slice(start, start + length)
+    .filter((index): index is number => index !== null);
+
+  if (rawIndexes.length === 0) {
+    return null;
+  }
+
+  const rawStart = rawIndexes[0];
+  const rawEnd = rawIndexes[rawIndexes.length - 1] + 1;
+
+  return convertMatchToTextRange({
+    length: rawEnd - rawStart,
+    start: rawStart,
+    textContentItemsStr,
+  });
 }
 
 function isWholeWordMatch(text: string, start: number, end: number) {

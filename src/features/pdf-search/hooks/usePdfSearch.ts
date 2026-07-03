@@ -6,6 +6,7 @@ import {
   countPdfSearchMatches,
   createPdfSearchKey,
   createSearchablePageGroups,
+  normalizeSearchQuery,
 } from "@/features/pdf-search/lib/pdf-search-utils";
 import type {
   PdfSearchOptions,
@@ -21,6 +22,7 @@ type UsePdfSearchInput = {
 
 type ExtractedPageText = {
   pageNumber: number;
+  rawIndexBySearchIndex: Array<number | null>;
   sourceId: string;
   sourcePageNumber: number;
   text: string;
@@ -33,6 +35,7 @@ type PdfTextContentItem = {
 };
 
 type ExtractedTextCacheEntry = {
+  rawIndexBySearchIndex: Array<number | null>;
   text: string;
   textContentItemsStr: string[];
 };
@@ -45,6 +48,7 @@ export function usePdfSearch({
   query,
   sourceDocumentsById,
 }: UsePdfSearchInput) {
+  const normalizedInputQuery = normalizeSearchQuery(query);
   const [debouncedQuery, setDebouncedQuery] = useState(query);
   const [groups, setGroups] = useState<PdfSearchPageGroup[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -66,7 +70,7 @@ export function usePdfSearch({
   const resultCount = useMemo(() => countPdfSearchMatches(groups), [groups]);
 
   useEffect(() => {
-    if (!query.trim()) {
+    if (!normalizedInputQuery) {
       requestIdRef.current += 1;
       lastSearchKeyRef.current = null;
     }
@@ -78,7 +82,7 @@ export function usePdfSearch({
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [query]);
+  }, [normalizedInputQuery, query]);
 
   useEffect(() => {
     extractedTextCacheRef.current = new Map();
@@ -86,7 +90,7 @@ export function usePdfSearch({
   }, [sourceDocumentsById]);
 
   useEffect(() => {
-    const normalizedQuery = debouncedQuery.trim();
+    const normalizedQuery = normalizeSearchQuery(debouncedQuery);
 
     if (!normalizedQuery) {
       requestIdRef.current += 1;
@@ -144,6 +148,7 @@ export function usePdfSearch({
 
         extractedPages.push({
           pageNumber,
+          rawIndexBySearchIndex: extractedEntry.rawIndexBySearchIndex,
           sourceId: documentPage.sourceId,
           sourcePageNumber,
           text: extractedEntry.text,
@@ -180,9 +185,9 @@ export function usePdfSearch({
   ]);
 
   return {
-    groups: query.trim() ? groups : [],
-    isSearching: query.trim() ? isSearching : false,
-    resultCount: query.trim() ? resultCount : 0,
+    groups: normalizedInputQuery ? groups : [],
+    isSearching: normalizedInputQuery ? isSearching : false,
+    resultCount: normalizedInputQuery ? resultCount : 0,
   };
 }
 
@@ -198,6 +203,9 @@ async function extractPageText({
     disableNormalization: true,
     includeMarkedContent: true,
   });
+  const rawIndexBySearchIndex: Array<number | null> = [];
+  let rawTextLength = 0;
+  let searchableText = "";
   const textContentItemsStr: string[] = [];
 
   for (const item of textContent.items) {
@@ -205,11 +213,27 @@ async function extractPageText({
       continue;
     }
 
-    textContentItemsStr.push(item.str ?? "");
+    const text = item.str ?? "";
+
+    textContentItemsStr.push(text);
+    searchableText += text;
+    rawIndexBySearchIndex.push(
+      ...Array.from(
+        { length: text.length },
+        (_, index) => rawTextLength + index,
+      ),
+    );
+    rawTextLength += text.length;
+
+    if (item.hasEOL) {
+      searchableText += " ";
+      rawIndexBySearchIndex.push(null);
+    }
   }
 
   return {
-    text: textContentItemsStr.join(""),
+    rawIndexBySearchIndex,
+    text: searchableText,
     textContentItemsStr,
   };
 }
